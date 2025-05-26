@@ -1,0 +1,16 @@
+# Global ignores
+node_modules
+dist
+.env
+.env.*
+*.log
+*.tsbuildinfo
+
+# Turborepo / monorepo specific
+.vscode
+.next
+coverage
+apps/**/node_modules
+apps/**/dist
+apps/**/.next
+packages/**/node_modules

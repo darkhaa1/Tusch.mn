@@ -1,4 +1,13 @@
-export async function getUsers() {
-  const response = await fetch(`${process.env.API_URL}/user`);
-  return response.json();
-}
+
+import { useQuery } from '@tanstack/react-query';
+
+export const useUsers = () => {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`);
+      if (!res.ok) throw new Error('Failed to fetch users');
+      return res.json();
+    }
+  });
+};
