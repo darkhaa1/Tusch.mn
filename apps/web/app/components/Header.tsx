@@ -11,7 +11,7 @@ export default function Header() {
     <header className="border-b px-4 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src="/favicon.ico" alt="logo" className="w-6 h-6" />
+          <img src="/favicon.ico" alt="logo" className="w-10 h-12" />
           <Link href="/" className="text-xl font-bold text-blue-700">
             Tusch.mn
           </Link>
@@ -24,14 +24,19 @@ export default function Header() {
         </div>
 
         <nav className="hidden md:flex gap-6 text-sm text-gray-800">
-          <Link href="/annonces">Зар</Link>
-          <Link href="/categories">Ангилалууд</Link>
-          <Link href="/about">Бидний тухай</Link>
+          <Link href="/annonces" className=" hover:text-blue-600 transition">Зар</Link>
+          <Link href="/categories" className=" hover:text-blue-600 transition">Ангилалууд</Link>
+          <Link href="/about" className=" hover:text-blue-600 transition">Бидний тухай</Link>
         </nav>
 
         <div className="hidden md:flex gap-2">
-          <button className="text-sm px-3 py-1 border rounded">Нэвтрэх</button>
-          <button className="text-sm px-3 py-1 bg-blue-600 text-white rounded">Бүртгүүлэх</button>
+          <Link href="/login">
+        
+          <button className="text-sm px-3 py-1 border rounded hover:bg-gray-200 transition">Нэвтрэх</button>
+          </Link>
+          <Link href="/register">
+            <button className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 transition">Бүртгүүлэх</button>
+          </Link>
         </div>
       </div>
 
