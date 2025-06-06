@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu } from "lucide-react";
+import SignupModal from "./SignUpModal";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
-
+  const [openModal, setOpenModal] = useState(false);
   return (
     <header className="border-b px-4 py-3">
       <div className="flex items-center justify-between">
@@ -30,13 +31,9 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex gap-2">
-          <Link href="/login">
-        
-          <button className="text-sm px-3 py-1 border rounded hover:bg-gray-200 transition">Нэвтрэх</button>
-          </Link>
-          <Link href="/register">
-            <button className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-800 transition">Бүртгүүлэх</button>
-          </Link>
+          <button className="text-sm px-3 py-1 border rounded hover:bg-gray-100 transition">Нэвтрэх</button>
+          <button onClick={() => setOpenModal(true)} className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Бүртгүүлэх</button>
+          <SignupModal open={openModal} onClose={() => setOpenModal(false)} />
         </div>
       </div>
 
