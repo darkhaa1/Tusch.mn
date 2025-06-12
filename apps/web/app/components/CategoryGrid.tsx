@@ -28,7 +28,7 @@ export default function CategoryGrid() {
         {categories.map(({ icon: Icon, label }, index) => (
           <div
             key={index}
-            className="flex flex-col items-center justify-center border rounded-lg p-3 text-center hover:shadow-md transition"
+            className="flex flex-col items-center justify-center border rounded-lg p-3 text-center hover:shadow-lg transition hover:bg-gray-100"
           >
             <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mb-2" />
             <p className="text-xs sm:text-sm font-medium leading-tight">{label}</p>
