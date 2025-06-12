@@ -2,6 +2,9 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",
+    "types": [
+      "next-auth"
+    ],
     "lib": [
       "dom",
       "esnext"
@@ -24,6 +27,7 @@
     "isolatedModules": true
   },
   "include": [
+    "types",
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",

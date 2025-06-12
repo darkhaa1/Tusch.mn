@@ -1,7 +1,7 @@
 
 // app/layout.tsx
 import './globals.css';
-import { Providers } from "../components/Providers";
+import { Providers } from "./components/Providers";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 export const metadata = {
