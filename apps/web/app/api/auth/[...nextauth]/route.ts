@@ -14,38 +14,19 @@ const handler = NextAuth({
       clientId: process.env.FACEBOOK_CLIENT_ID!,
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
     }),
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        const res = await fetch("http://localhost:3310/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(credentials),
-        });
-
-        const user = await res.json();
-        if (res.ok && user) return user;
-        return null;
-      },
-    }),
   ],
-  callbacks: {
-    async jwt({ token, account, user }) {
-      if (account && user) {
-        token.accessToken = account.access_token || user.accessToken;
-      }
-      return token;
+    pages: {
+    signIn: '/', // ou ta page d'accueil
+  },
+    callbacks: {
+    async jwt({ token, account, profile }) {
+      return token; // Google/Facebook géré automatiquement
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken;
+      session.user = token as any;
       return session;
     },
   },
-  session: { strategy: "jwt" },
 });
 
 export { handler as GET, handler as POST };

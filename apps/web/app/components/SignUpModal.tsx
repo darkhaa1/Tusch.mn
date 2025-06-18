@@ -1,4 +1,5 @@
 // components/SignupModal.tsx
+"use client";
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { signIn } from 'next-auth/react';

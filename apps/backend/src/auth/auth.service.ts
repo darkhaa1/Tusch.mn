@@ -6,6 +6,10 @@ import { UserService } from '../user/user.service';
 @Injectable()
 export class AuthService {
   constructor(private jwtService: JwtService, private userService: UserService) {}
+ 
+  async getUserById(id: string) {
+    return this.userService.findById(id); // Should return a user or null/undefined
+  }
 
   async register(body: {
     email: string;
@@ -40,7 +44,7 @@ export class AuthService {
     };
   }
 
-  async login(body: { email: string; password: string }) {
+  async login(body: { email: string; password: string;}) {
     const user = await this.userService.findByEmail(body.email);
     if (!user) throw new UnauthorizedException('Имэйл буруу байна');
 
@@ -51,11 +55,11 @@ export class AuthService {
       sub: user.id,
       email: user.email,
     });
-
+    console.log('Access token generated for user:', accessToken);
     return {
-      id: user.id,
-      email: user.email,
-      accessToken,
+    id: user.id,
+    email: user.email,
+    accessToken,
     };
   }
 }
