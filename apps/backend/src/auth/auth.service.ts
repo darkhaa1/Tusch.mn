@@ -54,8 +54,11 @@ export class AuthService {
     const accessToken = this.jwtService.sign({
       sub: user.id,
       email: user.email,
+      firstname: user.firstName,
+      lastname: user.lastName,
+      phone: user.phone,
+      accountType: user.accountType,
     });
-    console.log('Access token generated for user:', accessToken);
     return {
     id: user.id,
     email: user.email,

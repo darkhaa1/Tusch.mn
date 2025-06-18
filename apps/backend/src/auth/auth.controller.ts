@@ -2,7 +2,7 @@ import { Controller, Post, Body, Res, Get, Req, UnauthorizedException, UseGuards
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/register.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -16,7 +16,6 @@ export class AuthController {
 
   @Post('login')
 async login(@Body() body, @Res({ passthrough: true }) res: Response) {
-  console.log('Login request body:', body);
   const result = await this.authService.login(body);
 
   res.cookie('accessToken', result.accessToken, {
@@ -33,9 +32,8 @@ async login(@Body() body, @Res({ passthrough: true }) res: Response) {
 }
 }
 
-
 @Get('me')
-@UseGuards(AuthGuard) // 👈 ton JWT guard ici
+@UseGuards(JwtAuthGuard) // 👈 ton JWT guard ici
 getMe(@Req() req) {
   return { user: req.user }; // req.user doit être injecté par le guard
 }

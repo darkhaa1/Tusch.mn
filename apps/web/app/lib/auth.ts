@@ -5,6 +5,7 @@ export async function fetchBackendUser(): Promise<any | null> {
     });
     if (!res.ok) throw new Error();
     const data = await res.json();
+    console.log('Backend user data:', data);
     return data.user;
   } catch (err) {
     return null;
