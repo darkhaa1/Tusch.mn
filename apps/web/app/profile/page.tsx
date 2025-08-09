@@ -1,6 +1,6 @@
 'use client';
 
-import { getSession, signOut, useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { fetchBackendUser } from '../lib/auth';
@@ -32,6 +32,7 @@ useEffect(() => {
   if (loading) return <p className="text-center mt-10">Түр хүлээнэ үү...</p>;
 
   const user = session?.user || backendUser;
+  console.log('User data:', user);
   if (!user) {
     return (
       <div className="max-w-3xl mx-auto py-12 px-4">
@@ -42,30 +43,30 @@ useEffect(() => {
   }
 
   const logout = async () => {
-  const session = await getSession(); // ou `useSession()` si dans un composant
-
-  if (session?.user?.provider === 'credentials') {
-    // logout du backend
-    await fetch('http://localhost:3310/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    });
-    
-  } else {
+  try {
+      await fetch('http://localhost:3310/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      router.push('/');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  
     // logout NextAuth
-    // signOut({ callbackUrl: '/' });
+    signOut({ callbackUrl: '/' });
   }
-};
+;
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
       <h1 className="text-3xl font-bold mb-6">Таны профайл</h1>
 
       <div className="bg-white shadow rounded p-6 space-y-4">
         <div>
-          <strong>Нэр:</strong> {user?.firstname ?? '...'}
+          <strong>Нэр:</strong> {user?.firstname ?? user?.given_name ?? '...'}
         </div>
         <div>
-          <strong>Овог:</strong> {user?.lastname ?? '...'}
+          <strong>Овог:</strong> {user?.lastname ?? user?.family_name ?? '...'}
         </div>
         <div>
           <strong>Имэйл:</strong> {user?.email ?? '...'}

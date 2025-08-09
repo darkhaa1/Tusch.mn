@@ -5,11 +5,13 @@ import { useState } from "react";
 import { Menu } from "lucide-react";
 import SignupModal from "./SignUpModal";
 import LoginModal from "./LoginModal";
+import NewListingModal from "./NewListingModal";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
   const [openSignUpModal, setOpenSignUpModal] = useState(false);
   const [openLoginModal, setOpenLoginModal] = useState(false);
+  const [openNewListingModal, setOpenNewListingModal] = useState(false); // 
   return (
     <header className="border-b px-4 py-3">
       <div className="flex items-center justify-between">
@@ -26,11 +28,29 @@ export default function Header() {
           </button>
         </div>
 
-        <nav className="hidden md:flex gap-6 text-sm text-gray-800">
-          <Link href="/annonces" className=" hover:text-blue-600 transition">Зар</Link>
-          <Link href="/categories" className=" hover:text-blue-600 transition">Ангилалууд</Link>
-          <Link href="/about" className=" hover:text-blue-600 transition">Бидний тухай</Link>
-        </nav>
+<nav className="hidden md:flex items-end gap-10 text-sm text-blue-800">
+  <Link href="/offreurs" className="flex flex-col items-center hover:text-blue-600 transition">
+    <div className="text-2xl">👥</div>
+    <span className="text-xs mt-1 font-medium">Үйлчилгээ үзүүлэгч</span>
+  </Link>
+
+  <button
+    onClick={() => setOpenNewListingModal(true)}
+    className="flex flex-col items-center group"
+  >
+    <div className="w-8 h-8 rounded-full bg-green-400 text-white flex items-center justify-center text-lg font-bold group-hover:bg-green-500 transition">
+      +
+    </div>
+    <span className="text-xs font-medium text-blue-800 mt-1">Зар нэмэх</span>
+  </button>
+  <NewListingModal open={openNewListingModal} onClose={() => setOpenNewListingModal(false)} />
+
+  <Link href="/messages" className="flex flex-col items-center hover:text-blue-600 transition">
+    <div className="text-2xl">💬</div>
+    <span className="text-xs mt-1 font-medium">Мессеж</span>
+  </Link>
+</nav>
+
 
         <div className="hidden md:flex gap-2">
           <button className="text-sm px-3 py-1 border rounded hover:bg-gray-100 transition" onClick={() => setOpenLoginModal(true)}>Нэвтрэх</button>
