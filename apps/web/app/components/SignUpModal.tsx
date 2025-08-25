@@ -69,11 +69,11 @@ export default function SignupModal({ open, onClose }: Props) {
 
         {step === 1 && (
           <div className="space-y-3">
-            <button onClick={() => signIn('google')} className="w-full border rounded-full py-2 font-medium hover:bg-gray-100">
+            <button
+              onClick={() => signIn('google', { callbackUrl: '/profile' })}
+              className="w-full border rounded-full py-2 font-medium hover:bg-gray-100"
+            >
               Google-ээр холбогдох
-            </button>
-            <button onClick={() => signIn('facebook')} className="w-full bg-blue-600 text-white rounded-full py-2 font-medium hover:bg-blue-700">
-              Facebook-ээр үргэлжлүүлэх
             </button>
 
             <div className="flex items-center gap-2 text-gray-400 text-sm justify-center">

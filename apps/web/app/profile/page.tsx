@@ -42,30 +42,25 @@ useEffect(() => {
   }
 
   const logout = async () => {
-  const session = await getSession(); // ou `useSession()` si dans un composant
-
-  if (session?.user?.provider === 'credentials') {
-    // logout du backend
-    await fetch('http://localhost:3310/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    });
-    
-  } else {
-    // logout NextAuth
-    // signOut({ callbackUrl: '/' });
-  }
-};
+    const session = await getSession();
+    if (session?.user?.provider === 'credentials') {
+      await fetch('http://localhost:3310/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    }
+    await signOut({ callbackUrl: '/' });
+  };
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
       <h1 className="text-3xl font-bold mb-6">Таны профайл</h1>
 
       <div className="bg-white shadow rounded p-6 space-y-4">
         <div>
-          <strong>Нэр:</strong> {user?.firstname ?? '...'}
+          <strong>Нэр:</strong> {user?.firstName ?? '...'}
         </div>
         <div>
-          <strong>Овог:</strong> {user?.lastname ?? '...'}
+          <strong>Овог:</strong> {user?.lastName ?? '...'}
         </div>
         <div>
           <strong>Имэйл:</strong> {user?.email ?? '...'}
@@ -74,7 +69,7 @@ useEffect(() => {
           <strong>Утасны дугаар:</strong> {user?.phone ?? '...'}
         </div>
         <div>
-          <strong>ID:</strong> {user?.sub ?? '...'}
+          <strong>ID:</strong> {user?.id ?? user?.sub ?? '...'}
         </div>
         <div>
           <strong>Хэрэглэгчийн төрөл:</strong> {user?.accountType ?? '...'}
