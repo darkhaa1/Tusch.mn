@@ -35,6 +35,10 @@ export class AuthService {
     const accessToken = this.jwtService.sign({
       sub: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      accountType: user.accountType,
     });
 
     return {
@@ -56,6 +60,15 @@ export class AuthService {
       email: user.email,
       firstname: user.firstName,
       lastname: user.lastName,
+      phone: user.phone,
+      accountType: user.accountType,
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
       phone: user.phone,
       accountType: user.accountType,
     });
