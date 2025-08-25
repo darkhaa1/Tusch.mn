@@ -3,7 +3,7 @@
 import Hero from "./components/Hero";
 import CategoryGrid from "./components/CategoryGrid";
 import NewListings from "./components/NewListings";
-import CallToAction from "./CallToAction";
+import CallToAction from "./components/CallToAction";
 
 export default function Home() {
 
