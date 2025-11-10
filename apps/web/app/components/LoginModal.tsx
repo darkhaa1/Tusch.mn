@@ -22,26 +22,18 @@ export default function LoginModal({ open, onClose }: Props) {
   const handleEmailLogin = async () => {
     setLoading(true);
     setError('');
-
-    try {
-      const res = await fetch('http://localhost:3310/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // pour envoyer le cookie
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Нэвтрэхэд алдаа гарлаа');
-
-      // success
+    const res = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+    });
+    if (res?.error) {
+      setError(res.error);
+    } else {
       onClose();
       router.push('/profile');
-    } catch (err: any) {
-      setError(err.message || 'Unknown error');
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
