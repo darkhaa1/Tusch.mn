@@ -71,7 +71,7 @@ export class AuthService {
       lastName: user.lastName,
       phone: user.phone,
       accountType: user.accountType,
-    });
+    };
     return {
     id: user.id,
     email: user.email,
