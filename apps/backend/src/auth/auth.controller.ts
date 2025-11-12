@@ -7,36 +7,37 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 @Controller('auth')
 export class AuthController {
   jwtService: any;
-  constructor(private authService: AuthService) {}
-  
+  constructor(private authService: AuthService) { }
+
   @Post('register')
   register(@Body() dto: AuthDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
-async login(@Body() body, @Res({ passthrough: true }) res: Response) {
-  const result = await this.authService.login(body);
+  async login(@Body() body, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.login(body);
 
-  res.cookie('accessToken', result.accessToken, {
-    httpOnly: true,
-    secure: false, // true en production avec HTTPS
-    sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24,
-  });
-  return {user:{
-    id:result.id,
-    email: result.email,
-    accessToken: result.accessToken,
-  },
-}
-}
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: false, // true en production avec HTTPS
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24,
+      path: '/',
+    });
+    return {
+      user: {
+        id: result.id,
+        email: result.email,
+      },
+    }
+  }
 
-@Get('me')
-@UseGuards(JwtAuthGuard) // 👈 ton JWT guard ici
-getMe(@Req() req) {
-  return { user: req.user }; // req.user doit être injecté par le guard
-}
+  @Get('me')
+  @UseGuards(JwtAuthGuard) // 👈 ton JWT guard ici
+  getMe(@Req() req) {
+    return { user: req.user }; // req.user doit être injecté par le guard
+  }
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
