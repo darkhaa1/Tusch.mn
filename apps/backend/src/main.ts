@@ -13,14 +13,14 @@ async function bootstrap() {
       credentials: true, // ✅ Permet l'envoi de cookies
     }
   ); // 🔓 Active les requêtes cross-origin
-  app.useGlobalPipes(new ValidationPipe()); // 🧹 Valide tous les DTO
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // ✅ Swagger config
   const config = new DocumentBuilder()
     .setTitle('Tusch API')
     .setDescription('API documentation for tusch.mn')
     .setVersion('1.0')
-    .addBearerAuth() 
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
