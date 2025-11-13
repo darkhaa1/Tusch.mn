@@ -3,6 +3,7 @@ import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { OAuthLoginDto } from './dto/oauth-login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -43,5 +44,27 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('accessToken');
     return { message: 'Logout successful' };
+  }
+
+  @Post('oauth-login')
+  async oauthLogin(@Body() body: OAuthLoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.oauthLogin(body);
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: false,         // true en prod (HTTPS)
+      sameSite: 'lax' as const,
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+    };
+
+    res.cookie('accessToken', result.accessToken, cookieOptions);
+
+    return {
+      user: {
+        id: result.id,
+        email: result.email,
+      },
+    };
   }
 }
