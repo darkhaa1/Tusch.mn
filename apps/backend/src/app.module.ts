@@ -4,10 +4,11 @@ import { UserService } from './user/user.service';
 import { UserController } from './user/user.controller';
 import { AuthModule } from './auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
+import { ListingsModule } from './listings/listings.module';
 
 @Module({
   providers: [PrismaService, UserService, JwtService],
   controllers: [UserController],
-  imports:[ AuthModule]
+  imports: [AuthModule, ListingsModule],
 })
-export class AppModule {}
+export class AppModule { }

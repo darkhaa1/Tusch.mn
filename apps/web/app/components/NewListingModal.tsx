@@ -1,83 +1,168 @@
-'use client';
+"use client";
 
-import { X } from 'lucide-react';
-import { useState } from 'react';
+import React from "react";
+import { createPortal } from "react-dom";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 
-type Props = {
-  open: boolean;
+const ListingSchema = z.object({
+  title: z.string().min(3, "Minimum 3 caractères"),
+  description: z.string().min(10, "Minimum 10 caractères"),
+  price: z.number().int().nonnegative("Doit être ≥ 0"), // <-- pas de coerce
+  location: z.string().optional(),
+});
+
+type ListingForm = z.infer<typeof ListingSchema>;
+
+type NewListingModalProps = {
+  isOpen: boolean;
   onClose: () => void;
 };
 
-export default function NewListingModal({ open, onClose }: Props) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
+export default function NewListingModal({ isOpen, onClose }: NewListingModalProps) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ListingForm>({
+    resolver: zodResolver(ListingSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      price: 0,
+      location: "",
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const mutation = useMutation({
+    mutationFn: async (payload: ListingForm) => {
+      // Si ton backend lit req.user.id via un guard, on n’envoie pas userId depuis le front
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // utile si JWT en cookie
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Échec de création");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      reset();
+      onClose();
+    },
+  });
 
-    // Exemple d'appel backend ici
-    console.log({ title, description, category });
+  const onSubmit = (data: ListingForm) => mutation.mutate(data);
 
-    // Fermer le modal après soumission
-    onClose();
-  };
+  if (!isOpen) return null;
 
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white w-full max-w-lg rounded-xl shadow-lg p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-black">
-          <X size={20} />
-        </button>
-
-        <h2 className="text-xl font-bold text-center mb-4">Шинэ зар нэмэх</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Гарчиг"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border px-4 py-2 rounded"
-            required
-          />
-
-          <textarea
-            placeholder="Дэлгэрэнгүй"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full border px-4 py-2 rounded"
-            rows={4}
-            required
-          />
-
-          <label className="block text-sm font-medium text-gray-700 mt-4">
-  Ангилал
-</label>
-<select
-  value={category}
-  onChange={(e) => setCategory(e.target.value)}
-  className="mt-1 block w-full border rounded px-3 py-2 bg-white"
->
-  <option value="">-- Сонгох --</option>
-  <option value="cleaning">Цэвэрлэгээ</option>
-  <option value="plumbing">Сантехник</option>
-  <option value="electrical">Цахилгаан</option>
-  <option value="delivery">Хүргэлт</option>
-  <option value="it">IT үйлчилгээ</option>
-  <option value="other">Бусад</option>
-</select>
-
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={() => (!mutation.isPending ? onClose() : null)}
+      />
+      {/* Dialog */}
+      <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-100">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Шинэ зар нэмэх</h2>
           <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            onClick={() => (!mutation.isPending ? onClose() : null)}
+            className="rounded p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            aria-label="Fermer"
           >
-            Нэмэх
+            ✕
           </button>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="mb-1 block">Гарчиг</label>
+            <input
+              className="w-full rounded border p-2"
+              {...register("title")}
+              placeholder="Жишээ нь: Хүүхэд асрагч"
+              disabled={mutation.isPending}
+            />
+            {errors.title && (
+              <p className="text-sm text-red-500">{errors.title.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1 block">Дэлгэрэнгүй</label>
+            <textarea
+              rows={4}
+              className="w-full rounded border p-2"
+              {...register("description")}
+              placeholder="Дэлгэрэнгүй мэдээлэл оруулна уу"
+              disabled={mutation.isPending}
+            />
+            {errors.description && (
+              <p className="text-sm text-red-500">{errors.description.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1 block">Үнэ</label>
+            <input
+              type="number"
+              className="w-full rounded border p-2"
+              {...register("price", { valueAsNumber: true })} // <-- clé
+              placeholder="0"
+              disabled={mutation.isPending}
+            />
+            {errors.price && (
+              <p className="text-sm text-red-500">{errors.price.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1 block">Байршил (сонголттой)</label>
+            <input
+              className="w-full rounded border p-2"
+              {...register("location")}
+              placeholder="Улаанбаатар, Дархан…"
+              disabled={mutation.isPending}
+            />
+            {errors.location && (
+              <p className="text-sm text-red-500">{errors.location.message}</p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => (!mutation.isPending ? onClose() : null)}
+              className="rounded border px-4 py-2"
+              disabled={mutation.isPending}
+            >
+              Цуцлах
+            </button>
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+            >
+              {mutation.isPending ? "Илгээж байна…" : "Үүсгэх"}
+            </button>
+          </div>
+
+          {mutation.isError && (
+            <p className="pt-2 text-sm text-red-600">
+              {(mutation.error as Error)?.message || "Erreur lors de l’envoi"}
+            </p>
+          )}
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -2,11 +2,12 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
+import { OAuthLoginDto } from './dto/oauth-login.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService, private userService: UserService) {}
- 
+  constructor(private jwtService: JwtService, private userService: UserService) { }
+
   async getUserById(id: string) {
     return this.userService.findById(id); // Should return a user or null/undefined
   }
@@ -44,7 +45,7 @@ export class AuthService {
     };
   }
 
-  async login(body: { email: string; password: string;}) {
+  async login(body: { email: string; password: string; }) {
     const user = await this.userService.findByEmail(body.email);
     if (!user) throw new UnauthorizedException('Имэйл буруу байна');
 
@@ -60,9 +61,40 @@ export class AuthService {
       accountType: user.accountType,
     });
     return {
-    id: user.id,
-    email: user.email,
-    accessToken,
+      id: user.id,
+      email: user.email,
+      accessToken,
+    };
+  }
+
+  async oauthLogin(dto: OAuthLoginDto) {
+    const { email, firstName, lastName, provider } = dto;
+
+    // 1) chercher user par email
+    let user = await this.userService.findByEmail(email);
+
+    // 2) si pas trouvé -> créer un user "social"
+    if (!user) {
+      user = await this.userService.createUser({
+
+        email,
+        password: 'oauth',          // tu peux mettre un placeholder, pas utilisé
+        firstName: firstName || 'Google',
+        lastName: lastName || 'User',
+        phone: '',
+        accountType: provider || 'google',
+
+      });
+    }
+
+    // 3) signer un JWT classique
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    return {
+      id: user.id,
+      email: user.email,
+      accessToken,
     };
   }
 }

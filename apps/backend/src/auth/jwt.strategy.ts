@@ -1,21 +1,28 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable } from '@nestjs/common';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Request } from 'express';
+
+function cookieExtractor(req: Request): string | null {
+  return req?.cookies?.accessToken ?? null; // <-- le nom de TON cookie
+}
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        // Lecture depuis le cookie 'accessToken'
-        (req) => req?.cookies?.accessToken,
+        cookieExtractor,
+        ExtractJwt.fromAuthHeaderAsBearerToken(), // fallback si besoin
       ]),
+      secretOrKey: process.env.JWT_SECRET!,
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
     });
   }
 
   async validate(payload: any) {
-    return { userId: payload.sub, email: payload.email };
+    // payload attendu: { sub: userId, email }
+    if (!payload?.sub) throw new UnauthorizedException('Invalid token');
+    return { id: payload.sub, email: payload.email }; // devient req.user
   }
 }
