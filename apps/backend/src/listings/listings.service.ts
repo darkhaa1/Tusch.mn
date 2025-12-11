@@ -79,4 +79,11 @@ export class ListingsService {
     await this.prisma.listing.delete({ where: { id } });
     return { ok: true };
   }
+
+  async getListingsByUser(userId: string) {
+    return this.prisma.listing.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

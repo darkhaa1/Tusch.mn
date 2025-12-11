@@ -8,6 +8,12 @@ import { OAuthLoginDto } from './dto/oauth-login.dto';
 export class AuthService {
   constructor(private jwtService: JwtService, private userService: UserService) { }
 
+  sanitizeUser(user: any) {
+    if (!user) return null;
+    const { password, ...safeUser } = user;
+    return safeUser;
+  }
+
   async getUserById(id: string) {
     return this.userService.findById(id); // Should return a user or null/undefined
   }
@@ -19,9 +25,10 @@ export class AuthService {
     lastName: string;
     phone: string;
     accountType: string;
+    avatarUrl?: string | null;
   }) {
     const existing = await this.userService.findByEmail(body.email);
-    if (existing) throw new BadRequestException("Энэ имэйл хаяг аль хэдийн бүртгэгдсэн байна");
+    if (existing) throw new BadRequestException("Энэ и-мэйл аль хэдийн бүртгэлтэй байна.");
 
     const passwordHash = await bcrypt.hash(body.password, 10);
     const user = await this.userService.createUser({
@@ -31,26 +38,8 @@ export class AuthService {
       lastName: body.lastName,
       phone: body.phone,
       accountType: body.accountType,
+      avatarUrl: body.avatarUrl || null,
     });
-
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-    });
-
-    return {
-      id: user.id,
-      email: user.email,
-      accessToken,
-    };
-  }
-
-  async login(body: { email: string; password: string; }) {
-    const user = await this.userService.findByEmail(body.email);
-    if (!user) throw new UnauthorizedException('Имэйл буруу байна');
-
-    const isMatch = await bcrypt.compare(body.password, user.password);
-    if (!isMatch) throw new UnauthorizedException('Нууц үг буруу байна');
 
     const accessToken = this.jwtService.sign({
       sub: user.id,
@@ -59,42 +48,95 @@ export class AuthService {
       lastname: user.lastName,
       phone: user.phone,
       accountType: user.accountType,
+      avatarUrl: user.avatarUrl,
     });
+
     return {
       id: user.id,
       email: user.email,
+      avatarUrl: user.avatarUrl,
       accessToken,
     };
   }
 
-  async oauthLogin(dto: OAuthLoginDto) {
-    const { email, firstName, lastName, provider } = dto;
+  async login(body: { email: string; password: string }) {
+    const user = await this.userService.findByEmail(body.email);
+    if (!user) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна.');
+
+    const isMatch = await bcrypt.compare(body.password, user.password);
+    if (!isMatch) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна.');
+
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      firstname: user.firstName,
+      lastname: user.lastName,
+      phone: user.phone,
+      accountType: user.accountType,
+      avatarUrl: user.avatarUrl,
+    });
+    return {
+      id: user.id,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+      accessToken,
+    };
+  }
+
+  async oauthLogin(dto: OAuthLoginDto & { avatarUrl?: string | null }) {
+    const { email, firstName, lastName, provider, avatarUrl } = dto;
 
     // 1) chercher user par email
     let user = await this.userService.findByEmail(email);
 
-    // 2) si pas trouvé -> créer un user "social"
+    // 2) si pas trouvAc -> crAcer un user "social"
     if (!user) {
       user = await this.userService.createUser({
-
         email,
-        password: 'oauth',          // tu peux mettre un placeholder, pas utilisé
+        password: 'oauth', // placeholder, not used
         firstName: firstName || 'Google',
         lastName: lastName || 'User',
         phone: '',
         accountType: provider || 'google',
-
+        avatarUrl: avatarUrl || null,
       });
+    } else if (avatarUrl && user.avatarUrl !== avatarUrl) {
+      // refresh avatar from provider if it changed
+      user = await this.userService.updateUser(user.id, { avatarUrl });
     }
 
     // 3) signer un JWT classique
-    const payload = { sub: user.id, email: user.email };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      firstname: user.firstName,
+      lastname: user.lastName,
+      phone: user.phone,
+      accountType: user.accountType,
+      avatarUrl: user.avatarUrl,
+    };
     const accessToken = await this.jwtService.signAsync(payload);
 
     return {
       id: user.id,
       email: user.email,
+      avatarUrl: user.avatarUrl,
       accessToken,
     };
+  }
+
+  async updateProfile(
+    userId: string,
+    data: Partial<{ firstName: string; lastName: string; phone: string; avatarUrl: string; accountType: string }>
+  ) {
+    const updated = await this.userService.updateUser(userId, {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone,
+      avatarUrl: data.avatarUrl,
+      accountType: data.accountType,
+    });
+
+    return this.sanitizeUser(updated);
   }
 }

@@ -16,6 +16,7 @@ export class UserService {
     lastName: string;
     phone: string;
     accountType: string;
+    avatarUrl?: string | null;
   }) {
     return this.prisma.user.create({ data });
   }
@@ -28,7 +29,17 @@ export class UserService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async updateUser(id: string, data: Partial<{ email: string; name: string }>) {
+  async updateUser(
+    id: string,
+    data: Partial<{
+      email: string;
+      firstName: string;
+      lastName: string;
+      phone: string;
+      accountType: string;
+      avatarUrl: string | null;
+    }>
+  ) {
     return this.prisma.user.update({
       where: { id },
       data,

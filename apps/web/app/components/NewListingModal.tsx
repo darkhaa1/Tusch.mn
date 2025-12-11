@@ -5,12 +5,12 @@ import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useCreateListing } from "../hooks/useApi";
 
 const ListingSchema = z.object({
   title: z.string().min(3, "Minimum 3 caractères"),
   description: z.string().min(10, "Minimum 10 caractères"),
-  price: z.number().int().nonnegative("Doit être ≥ 0"), // <-- pas de coerce
+  price: z.number().int().nonnegative("Doit être ≥ 0"),
   location: z.string().optional(),
 });
 
@@ -37,39 +37,23 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (payload: ListingForm) => {
-      // Si ton backend lit req.user.id via un guard, on n’envoie pas userId depuis le front
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // utile si JWT en cookie
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Échec de création");
-      }
-      return res.json();
-    },
+  const mutation = useCreateListing();
+
+  const onSubmit = (data: ListingForm) => mutation.mutate(data, {
     onSuccess: () => {
       reset();
       onClose();
     },
   });
 
-  const onSubmit = (data: ListingForm) => mutation.mutate(data);
-
   if (!isOpen) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
         onClick={() => (!mutation.isPending ? onClose() : null)}
       />
-      {/* Dialog */}
       <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-neutral-100">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Шинэ зар нэмэх</h2>
@@ -115,7 +99,7 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
             <input
               type="number"
               className="w-full rounded border p-2"
-              {...register("price", { valueAsNumber: true })} // <-- clé
+              {...register("price", { valueAsNumber: true })}
               placeholder="0"
               disabled={mutation.isPending}
             />

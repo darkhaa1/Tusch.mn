@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useLoginUser } from '../hooks/useApi';
 
 type Props = {
   open: boolean;
@@ -17,6 +18,8 @@ export default function LoginModal({ open, onClose }: Props) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const loginMutation = useLoginUser();
+
   if (!open) return null;
 
   const handleEmailLogin = async () => {
@@ -24,21 +27,11 @@ export default function LoginModal({ open, onClose }: Props) {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:3310/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // pour envoyer le cookie
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Нэвтрэхэд алдаа гарлаа');
-
-      // success
+      await loginMutation.mutateAsync({ email, password });
       onClose();
       router.push('/profile');
     } catch (err: any) {
-      setError(err.message || 'Unknown error');
+      setError(err.message || 'Нэвтрэхэд алдаа гарлаа');
     } finally {
       setLoading(false);
     }
@@ -61,7 +54,7 @@ export default function LoginModal({ open, onClose }: Props) {
             <>
               <button
                 className="w-full border rounded-full flex items-center justify-center py-2 font-medium hover:bg-gray-100"
-                onClick={() => signIn('google', {callbackUrl: '/profile'})}
+                onClick={() => signIn('google', { callbackUrl: '/profile' })}
               >
                 Google-ээр холбогдох
               </button>

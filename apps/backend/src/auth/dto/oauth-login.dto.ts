@@ -12,4 +12,7 @@ export class OAuthLoginDto {
 
   @IsOptional() @IsString()
   provider?: string; // "google" etc.
+
+  @IsOptional() @IsString()
+  avatarUrl?: string;
 }

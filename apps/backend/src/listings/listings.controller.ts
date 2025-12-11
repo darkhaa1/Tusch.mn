@@ -22,7 +22,11 @@ export class ListingsController {
   findAll(@Query() q: QueryListingDto) {
     return this.service.findAll(q);
   }
-
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  getMyListings(@GetUser() user: { id: string }) {
+    return this.service.getListingsByUser(user.id);
+  }
   // Détail : public (ou protège si tu veux)
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -41,4 +45,6 @@ export class ListingsController {
   remove(@Param('id') id: string, @GetUser() user: { id: string }) {
     return this.service.remove(id, user.id);
   }
+
+
 }

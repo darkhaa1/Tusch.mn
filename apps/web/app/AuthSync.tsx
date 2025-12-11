@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
+import { oauthLogin } from "./lib/api";
 
 export function AuthSync() {
   const { data: session, status } = useSession();
@@ -14,10 +15,16 @@ export function AuthSync() {
     }
     if (syncedRef.current) return; // déjà sync
 
-    const email = session?.user?.email;
-    const name = session?.user?.name || "";
-    const [firstName, ...rest] = name.split(" ");
-    const lastName = rest.join(" ");
+    const authUser = session?.user as any;
+    const email = authUser?.email;
+    const provider = authUser?.provider || "google";
+
+    const displayName = authUser?.name || "";
+    const [derivedFirst, ...rest] = displayName.split(" ");
+    const derivedLast = rest.join(" ");
+    const firstName = authUser?.firstname || authUser?.firstName || derivedFirst || "Google";
+    const lastName = authUser?.lastname || authUser?.lastName || derivedLast || "User";
+    const avatarUrl = authUser?.image || undefined;
 
     if (!email) return;
 
@@ -25,16 +32,12 @@ export function AuthSync() {
 
     (async () => {
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/oauth-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include", // ⬅️ important pour recevoir le cookie accessToken
-          body: JSON.stringify({
-            email,
-            firstName: firstName || "Google",
-            lastName: lastName || "User",
-            provider: "google",
-          }),
+        await oauthLogin({
+          email,
+          firstName,
+          lastName,
+          provider,
+          avatarUrl,
         });
       } catch (e) {
         console.error("Auth sync failed", e);
