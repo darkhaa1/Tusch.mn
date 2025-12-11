@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
+import { useListings } from "../hooks/useApi";
 
 type Listing = {
   id: string;
@@ -14,11 +15,8 @@ type Listing = {
 };
 
 export default function NewListings() {
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: listings = [], isLoading, error } = useListings();
 
-  // ⬇️ IMPORTANT : loop: false pour avoir un vrai début/fin
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
     align: "start",
@@ -30,7 +28,6 @@ export default function NewListings() {
   const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
 
-  // ⬇️ Met à jour canScrollPrev / canScrollNext à chaque mouvement
   useEffect(() => {
     if (!emblaApi) return;
 
@@ -40,37 +37,18 @@ export default function NewListings() {
     };
 
     emblaApi.on("select", onSelect);
-    onSelect(); // appel initial
+    onSelect();
 
     return () => {
       emblaApi.off("select", onSelect);
     };
   }, [emblaApi]);
 
-  useEffect(() => {
-    async function loadListings() {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/listings`, {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error("Erreur de chargement des annonces");
-        const data = await res.json();
-        setListings(data.data || data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadListings();
-  }, []);
-
-  if (loading) return <p className="text-center py-10">⏳ Түр хүлээнэ үү...</p>;
+  if (isLoading) return <p className="text-center py-10">⏳ Түр хүлээнэ үү...</p>;
   if (error)
     return (
       <p className="text-center text-red-500 py-10">
-        ⚠️ Алдаа гарлаа: {error}
+        ⚠️ Алдаа гарлаа: {(error as Error).message}
       </p>
     );
 
@@ -79,7 +57,6 @@ export default function NewListings() {
       <h2 className="mb-4 text-2xl font-semibold">Шинэ зарууд</h2>
 
       <div className="relative">
-        {/* ⬅️ Flèche gauche : s’affiche seulement si on PEUT revenir en arrière */}
         {canScrollPrev && (
           <button
             onClick={scrollPrev}
@@ -90,7 +67,6 @@ export default function NewListings() {
           </button>
         )}
 
-        {/* Zone carousel */}
         <div className="overflow-hidden" ref={emblaRef}>
           <div className="flex gap-4">
             {listings.map((listing) => (
@@ -123,7 +99,6 @@ export default function NewListings() {
           </div>
         </div>
 
-        {/* ➡️ Flèche droite : s’affiche seulement s’il reste des cartes à droite */}
         {canScrollNext && (
           <button
             onClick={scrollNext}

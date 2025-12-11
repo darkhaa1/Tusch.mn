@@ -3,13 +3,16 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(bodyParser.json({ limit: '10mb' }));
+  app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
   app.use(cookieParser()); // 🍪 Parse les cookies
   app.enableCors(
     {
-      origin: 'http://localhost:3000', // 🌐 Autorise les requêtes depuis le frontend
+      origin: process.env.CORS_ORIGIN, // 🌐 Autorise les requêtes depuis le frontend
       credentials: true, // ✅ Permet l'envoi de cookies
     }
   ); // 🔓 Active les requêtes cross-origin

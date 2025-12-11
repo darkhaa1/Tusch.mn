@@ -21,6 +21,7 @@ model User {
   lastName    String
   phone       String
   accountType String
+  avatarUrl   String?
   listing     Listing[]
 
   createdAt   DateTime @default(now())

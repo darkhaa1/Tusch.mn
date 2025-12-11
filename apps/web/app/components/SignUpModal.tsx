@@ -1,8 +1,11 @@
 // components/SignupModal.tsx
 "use client";
+
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+import { useRegisterUser } from '../hooks/useApi';
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -19,6 +22,7 @@ export default function SignupModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [accountType, setAccountType] = useState('');
+  const registerMutation = useRegisterUser();
 
   if (!open) return null;
 
@@ -31,15 +35,7 @@ export default function SignupModal({ open, onClose }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:3310/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, accountType, firstName, lastName, phone }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Бүртгэхэд алдаа гарлаа');
-
+      await registerMutation.mutateAsync({ email, password, accountType, firstName, lastName, phone });
       alert('Амжилттай бүртгэгдлээ!');
       onClose();
     } catch (err: any) {
