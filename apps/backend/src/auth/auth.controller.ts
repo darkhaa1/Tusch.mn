@@ -8,7 +8,18 @@ import { OAuthLoginDto } from './dto/oauth-login.dto';
 @Controller('auth')
 export class AuthController {
   jwtService: any;
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
+
+  private get cookieOptions() {
+    return {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+      domain: process.env.COOKIE_DOMAIN || undefined,
+    };
+  }
 
   @Post('register')
   register(@Body() dto: AuthDto) {
@@ -19,13 +30,7 @@ export class AuthController {
   async login(@Body() body, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(body);
 
-    res.cookie('accessToken', result.accessToken, {
-      httpOnly: true,
-      secure: false, // true en production avec HTTPS
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24,
-      path: '/',
-    });
+    res.cookie('accessToken', result.accessToken, this.cookieOptions);
     return {
       user: {
         id: result.id,
@@ -58,18 +63,13 @@ export class AuthController {
       avatarUrl: body.avatarUrl,
       accountType: body.accountType,
     });
-
+    console.log('Updated user:', updatedUser);
     return { user: updatedUser };
   }
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('accessToken', {
-      httpOnly: true,
-      secure: false, // align with login cookie options; set true in production with HTTPS
-      sameSite: 'lax',
-      path: '/',
-    });
+    res.clearCookie('accessToken', { ...this.cookieOptions, maxAge: 0 });
     return { message: 'Logout successful' };
   }
 
@@ -77,15 +77,7 @@ export class AuthController {
   async oauthLogin(@Body() body: OAuthLoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.oauthLogin(body);
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: false, // true en prod (HTTPS)
-      sameSite: 'lax' as const,
-      maxAge: 24 * 60 * 60 * 1000,
-      path: '/',
-    };
-
-    res.cookie('accessToken', result.accessToken, cookieOptions);
+    res.cookie('accessToken', result.accessToken, this.cookieOptions);
 
     return {
       user: {

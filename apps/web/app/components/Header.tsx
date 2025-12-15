@@ -41,7 +41,7 @@ export default function Header() {
         <nav className="hidden items-end gap-10 text-sm text-blue-800 md:flex">
           <Link href="/offreurs" className="flex flex-col items-center transition hover:text-blue-600">
             <div className="text-2xl">👥</div>
-            <span className="mt-1 text-xs font-medium">Үйлчилгээ үзүүлэгч</span>
+            <span className="mt-1 text-xs font-medium">Үйлчилгээ үзүүлэгчид</span>
           </Link>
 
           <button onClick={() => setOpenNewListingModal(true)} className="group flex flex-col items-center">
