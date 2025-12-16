@@ -127,7 +127,7 @@ export default function ProfileInfo() {
           </div>
           <div className="space-y-1 text-sm text-gray-700">
             <div><strong>Имэйл:</strong> {user.email}</div>
-            <div><strong>ID:</strong> {(user as any).sub || (user as any).id}</div>
+
           </div>
         </>
       )}
@@ -194,7 +194,6 @@ export default function ProfileInfo() {
 
           <div className="space-y-1 text-sm text-gray-700">
             <div><strong>Имэйл:</strong> {user.email}</div>
-            <div><strong>ID:</strong> {(user as any).sub || (user as any).id}</div>
           </div>
 
           {saveError && <p className="text-sm text-red-500">{saveError}</p>}

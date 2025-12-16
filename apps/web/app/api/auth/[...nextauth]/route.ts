@@ -1,5 +1,5 @@
 // apps/web/app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth";
+import NextAuth, { type AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 
@@ -12,7 +12,7 @@ declare module "next-auth" {
   }
 }
 
-const handler = NextAuth({
+const authOptions: AuthOptions & { trustHost?: boolean } = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
   trustHost: true,
@@ -73,6 +73,8 @@ const handler = NextAuth({
       return session;
     },
   },
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

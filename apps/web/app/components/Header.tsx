@@ -18,6 +18,11 @@ export default function Header() {
   const [openNewListingModal, setOpenNewListingModal] = useState(false);
 
   const isLoggedIn = !!session?.user || !!backendUser;
+  const user = (backendUser as any) || (session?.user as any);
+
+  const firstName = user?.firstname || user?.firstName || user?.name?.split(' ')?.[0] || '';
+  const avatar = user?.avatarUrl || user?.image || null;
+  const initials = (firstName?.[0] || (user?.lastname || user?.lastName || user?.name?.split(' ')?.[1] || '')?.[0] || '🙂').toUpperCase();
 
   return (
     <header className="border-b px-4 py-3">
@@ -60,11 +65,16 @@ export default function Header() {
         {/* Auth / Profile button */}
         <div className="hidden gap-2 md:flex">
           {isLoggedIn ? (
-            <Link
-              href="/profile"
-              className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition hover:bg-blue-700"
-            >
-              Профайл
+            <Link href="/profile" className="flex items-center gap-2 rounded-full border px-2 py-1 text-sm transition hover:bg-gray-100">
+              <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-xs font-semibold text-gray-700">
+                {avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
+                ) : (
+                  initials
+                )}
+              </div>
+              <span className="font-medium text-gray-800">{firstName || 'Профайл'}</span>
             </Link>
           ) : (
             <>
