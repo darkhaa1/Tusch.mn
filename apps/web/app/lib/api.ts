@@ -6,13 +6,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 async function apiFetch<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL is not defined');
 
+  const isFormData =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+  const headers = new Headers(options.headers || {});
+  if (!isFormData && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
     ...options,
+    headers,
   });
 
   const isJson = (res.headers.get('content-type') || '').includes('application/json');
@@ -78,16 +83,26 @@ export async function logoutUser() {
   });
 }
 
-export async function updateCurrentUser(body: {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  avatarUrl?: string | null;
-  accountType?: string;
-}) {
+export async function updateCurrentUser(
+  body:
+    | {
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        avatarUrl?: string | null;
+        accountType?: string;
+      }
+    | FormData
+) {
   return apiFetch<{ user: any }>('/auth/me', {
     method: 'PATCH',
-    body: JSON.stringify(body),
+    body: body instanceof FormData ? body : JSON.stringify(body),
+  });
+}
+
+export async function deleteCurrentUser() {
+  return apiFetch('/auth/me', {
+    method: 'DELETE',
   });
 }
 
