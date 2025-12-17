@@ -48,7 +48,6 @@ export class AuthService {
       lastname: user.lastName,
       phone: user.phone,
       accountType: user.accountType,
-      avatarUrl: user.avatarUrl,
     });
 
     return {
@@ -73,7 +72,6 @@ export class AuthService {
       lastname: user.lastName,
       phone: user.phone,
       accountType: user.accountType,
-      avatarUrl: user.avatarUrl,
     });
     return {
       id: user.id,
@@ -138,5 +136,9 @@ export class AuthService {
     });
 
     return this.sanitizeUser(updated);
+  }
+
+  async deleteUserById(userId: string) {
+    return this.userService.deleteUser(userId);
   }
 }

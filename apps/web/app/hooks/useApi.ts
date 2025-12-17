@@ -11,6 +11,7 @@ import {
   oauthLogin,
   registerUser,
   updateCurrentUser,
+  deleteCurrentUser,
 } from '../lib/api';
 
 export function useCurrentUser() {
@@ -83,6 +84,16 @@ export function useUpdateCurrentUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateCurrentUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['current-user'] });
+    },
+  });
+}
+
+export function useDeleteCurrentUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteCurrentUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['current-user'] });
     },

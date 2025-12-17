@@ -1,15 +1,18 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.use(bodyParser.json({ limit: '10mb' }));
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
-  app.use(cookieParser()); // 🍪 Parse les cookies
+  app.use(cookieParser());
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   app.enableCors(
     {
       origin: process.env.CORS_ORIGIN, // 🌐 Autorise les requêtes depuis le frontend
@@ -33,3 +36,8 @@ async function bootstrap() {
   console.log(`🚀 Server running on http://localhost:3310`);
 }
 bootstrap();
+
+
+
+
+

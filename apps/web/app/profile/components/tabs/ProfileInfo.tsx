@@ -1,19 +1,23 @@
 'use client';
 
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useCurrentUser, useUpdateCurrentUser } from '../../../hooks/useApi';
-
+import { useSession, signOut } from 'next-auth/react';
+import { useCurrentUser, useUpdateCurrentUser, useDeleteCurrentUser } from '../../../hooks/useApi';
+import resolveAvatarUrl from '../avatarUrl';
 export default function ProfileInfo() {
   const { data: session } = useSession();
   const { data: backendUser, isLoading } = useCurrentUser();
   const updateUser = useUpdateCurrentUser();
+  const deleteUser = useDeleteCurrentUser();
 
   const user = backendUser || session?.user;
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarDirty, setAvatarDirty] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarObjectUrl, setAvatarObjectUrl] = useState<string | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const [firstName, setFirstName] = useState('');
@@ -23,9 +27,13 @@ export default function ProfileInfo() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
+
   const populateFromUser = () => {
     const fallbackAvatar =
-      (user as any)?.avatarUrl || (user as any)?.image || null;
+      resolveAvatarUrl((user as any)?.avatarUrl || (user as any)?.image || null);
+    setAvatarObjectUrl(null);
+    setAvatarFile(null);
+    setRemoveAvatar(false);
     setAvatarPreview(fallbackAvatar);
     setAvatarDirty(false);
     setAvatarError(null);
@@ -41,12 +49,21 @@ export default function ProfileInfo() {
     populateFromUser();
   }, [user]);
 
+  useEffect(() => {
+    return () => {
+      if (avatarObjectUrl) {
+        URL.revokeObjectURL(avatarObjectUrl);
+      }
+    };
+  }, [avatarObjectUrl]);
+
   const initials = useMemo(() => {
     if (!user?.firstname && !user?.lastname) return '';
     const first = (user as any)?.firstname || (user as any)?.firstName || '';
     const last = (user as any)?.lastname || (user as any)?.lastName || '';
     return `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
   }, [user]);
+
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,12 +73,21 @@ export default function ProfileInfo() {
       return;
     }
     setAvatarError(null);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-      setAvatarDirty(true);
-    };
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarObjectUrl(objectUrl);
+    setAvatarPreview(objectUrl);
+    setAvatarFile(file);
+    setRemoveAvatar(false);
+    setAvatarDirty(true);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarObjectUrl(null);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setRemoveAvatar(true);
+    setAvatarDirty(true);
+    setAvatarError(null);
   };
 
   const handleSaveProfile = async () => {
@@ -71,19 +97,41 @@ export default function ProfileInfo() {
     }
     setSaveError(null);
     setSaveSuccess(null);
+    const formData = new FormData();
+    formData.append('firstName', firstName.trim());
+    formData.append('lastName', lastName.trim());
+    formData.append('phone', phone.trim());
+    if (accountType) formData.append('accountType', accountType);
+    if (avatarDirty && avatarFile) {
+      formData.append('avatar', avatarFile);
+    }
+    if (removeAvatar) {
+      formData.append('removeAvatar', 'true');
+    }
     try {
-      await updateUser.mutateAsync({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim(),
-        accountType: accountType || undefined,
-        ...(avatarDirty ? { avatarUrl: avatarPreview } : {}),
-      });
+      await updateUser.mutateAsync(formData);
       setAvatarDirty(false);
+      setRemoveAvatar(false);
       setSaveSuccess('Профайл шинэчлэгдлээ');
       setIsEditing(false);
     } catch (err: any) {
       setSaveError(err?.message || 'Мэдээлэл шинэчлэхэд алдаа гарлаа');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('Бүртгэлээ бүрмөсөн устгах уу?');
+    if (!confirmed) return;
+    setSaveError(null);
+    setSaveSuccess(null);
+    try {
+      await deleteUser.mutateAsync();
+      if (session?.user) {
+        await signOut({ redirect: false });
+      }
+      window.location.href = '/';
+    } catch (err: any) {
+      setSaveError(err?.message || 'Бүртгэл устгах үед алдаа гарлаа');
     }
   };
 
@@ -107,8 +155,7 @@ export default function ProfileInfo() {
                 {avatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarPreview} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  initials || '🙂'
+                ) : (initials || '🙂'
                 )}
               </div>
               <div className="space-y-1 text-sm text-gray-700">
@@ -140,12 +187,32 @@ export default function ProfileInfo() {
                 {avatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarPreview} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  initials || '🙂'
+                ) : (initials || '🙂'
                 )}
               </div>
               <div className="space-y-2">
-                <input type="file" accept="image/*" onChange={handleFileChange} />
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="avatar-upload"
+                  className="inline-flex cursor-pointer items-center justify-center rounded border px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                >
+                  Зураг солих
+                </label>
+                {avatarPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="text-sm text-red-600 underline"
+                  >
+                    Зурагыг устгах
+                  </button>
+                )}
                 {avatarError && <p className="text-sm text-red-500">{avatarError}</p>}
                 {avatarDirty && <p className="text-sm text-blue-600">Шинэ зураг сонгогдсон, хадгалахыг дарна уу</p>}
               </div>
@@ -200,6 +267,14 @@ export default function ProfileInfo() {
           {saveSuccess && <p className="text-sm text-green-600">{saveSuccess}</p>}
 
           <div className="flex justify-end gap-3">
+            <button
+              onClick={handleDeleteAccount}
+              className="mr-auto rounded border border-red-500 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              type="button"
+              disabled={deleteUser.isPending}
+            >
+              Бүртгэл устгах
+            </button>
             <button
               onClick={handleCancel}
               className="rounded border px-4 py-2 text-sm transition hover:bg-gray-100"

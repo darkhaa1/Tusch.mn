@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Menu } from 'lucide-react';
 import SignupModal from './SignUpModal';
 import LoginModal from './LoginModal';
 import NewListingModal from './NewListingModal';
 import { useSession } from 'next-auth/react';
 import { useCurrentUser } from '../hooks/useApi';
+import resolveAvatarUrl from '../profile/components/avatarUrl';
 
 export default function Header() {
   const { data: session } = useSession();
@@ -21,7 +22,7 @@ export default function Header() {
   const user = (backendUser as any) || (session?.user as any);
 
   const firstName = user?.firstname || user?.firstName || user?.name?.split(' ')?.[0] || '';
-  const avatar = user?.avatarUrl || user?.image || null;
+  const avatar = resolveAvatarUrl(user?.avatarUrl || user?.image || null);
   const initials = (firstName?.[0] || (user?.lastname || user?.lastName || user?.name?.split(' ')?.[1] || '')?.[0] || '🙂').toUpperCase();
 
   return (
