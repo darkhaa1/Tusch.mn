@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
 import { useListings } from "../hooks/useApi";
 
@@ -14,8 +15,12 @@ type Listing = {
   updatedAt: string;
 };
 
-export default function NewListings() {
-  const { data: listings = [], isLoading, error } = useListings();
+type NewListingsProps = {
+  category?: string;
+};
+
+export default function NewListings({ category }: NewListingsProps) {
+  const { data: listings = [], isLoading, error } = useListings(category);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
@@ -90,9 +95,12 @@ export default function NewListings() {
                   <p className="mt-1 text-sm text-blue-600">
                     {listing.price.toLocaleString()} ₮
                   </p>
-                  <button className="mt-3 w-full rounded bg-blue-600 py-1.5 text-sm text-white">
+                  <Link
+                    href={`/listings/${listing.id}`}
+                    className="mt-3 block w-full rounded bg-blue-600 py-1.5 text-center text-sm text-white"
+                  >
                     Дэлгэрэнгүй
-                  </button>
+                  </Link>
                 </div>
               </div>
             ))}

@@ -19,4 +19,7 @@ export class QueryListingDto {
 
   @IsOptional() @IsString()
   userId?: string;
+
+  @IsOptional() @IsString()
+  category?: string;
 }

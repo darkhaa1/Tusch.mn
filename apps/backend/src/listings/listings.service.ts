@@ -28,6 +28,7 @@ export class ListingsService {
           }
           : {},
         q.userId ? { userId: q.userId } : {},
+        q.category ? { category: q.category } : {},
       ],
     };
 
@@ -52,7 +53,21 @@ export class ListingsService {
   }
 
   async findOne(id: string) {
-    const item = await this.prisma.listing.findUnique({ where: { id } });
+    const item = await this.prisma.listing.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
     if (!item) throw new NotFoundException('Listing not found');
     return item;
   }

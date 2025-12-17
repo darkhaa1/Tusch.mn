@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Listing,
   createListing,
+  deleteListing,
+  fetchListingById,
   fetchListings,
   fetchMyListings,
   fetchUsers,
@@ -11,6 +13,7 @@ import {
   oauthLogin,
   registerUser,
   updateCurrentUser,
+  updateListing,
   deleteCurrentUser,
 } from '../lib/api';
 
@@ -22,10 +25,18 @@ export function useCurrentUser() {
   });
 }
 
-export function useListings() {
+export function useListings(category?: string) {
   return useQuery<Listing[]>({
-    queryKey: ['listings'],
-    queryFn: fetchListings,
+    queryKey: ['listings', category || 'all'],
+    queryFn: () => fetchListings({ category }),
+  });
+}
+
+export function useListing(id?: string) {
+  return useQuery({
+    queryKey: ['listing', id],
+    queryFn: () => fetchListingById(id as string),
+    enabled: !!id,
   });
 }
 
@@ -40,6 +51,30 @@ export function useCreateListing() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createListing,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+    },
+  });
+}
+
+export function useUpdateListing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateListing>[1] }) =>
+      updateListing(id, data),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['listing', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+    },
+  });
+}
+
+export function useDeleteListing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteListing,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['my-listings'] });

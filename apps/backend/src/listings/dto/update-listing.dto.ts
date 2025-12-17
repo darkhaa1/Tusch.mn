@@ -12,4 +12,7 @@ export class UpdateListingDto {
 
   @IsOptional() @IsString()
   location?: string;
+
+  @IsOptional() @IsString()
+  category?: string;
 }

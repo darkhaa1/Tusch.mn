@@ -12,4 +12,7 @@ export class CreateListingDto {
 
   @IsOptional() @IsString()
   location?: string;
+
+  @IsOptional() @IsString()
+  category?: string;
 }

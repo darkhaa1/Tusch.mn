@@ -34,6 +34,7 @@ model Listing {
   description String
   price       Int
   location    String?
+  category    String?
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
