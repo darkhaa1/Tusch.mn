@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
@@ -139,6 +139,8 @@ export class AuthService {
   }
 
   async deleteUserById(userId: string) {
+    const existing = await this.getUserById(userId);
+    if (!existing) throw new NotFoundException('User not found');
     return this.userService.deleteUser(userId);
   }
 }

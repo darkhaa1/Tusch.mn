@@ -23,9 +23,16 @@ const avatarStorage = diskStorage({
   },
 });
 
+const allowedMimeTypes = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]);
+
 const avatarFileFilter = (_req, file, cb) => {
-  if (!file.mimetype.startsWith('image/')) {
-    return cb(new BadRequestException('Only image files are allowed'), false);
+  if (!allowedMimeTypes.has(file.mimetype)) {
+    return cb(new BadRequestException('Only image files (jpeg/png/webp/gif) are allowed'), false);
   }
   cb(null, true);
 };
@@ -81,7 +88,7 @@ export class AuthController {
     FileInterceptor('avatar', {
       storage: avatarStorage,
       fileFilter: avatarFileFilter,
-      limits: { fileSize: 5 * 1024 * 1024 },
+      limits: { fileSize: 2 * 1024 * 1024 },
     })
   )
   async updateMe(@Req() req, @Body() body, @UploadedFile() file?: Express.Multer.File) {
@@ -129,6 +136,7 @@ export class AuthController {
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
     const currentUser = await this.authService.getUserById(userId);
+    if (!currentUser) throw new UnauthorizedException('Unauthorized');
 
     await this.authService.deleteUserById(userId);
     res.clearCookie('accessToken', { ...this.cookieOptions, maxAge: 0 });

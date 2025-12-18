@@ -3,10 +3,12 @@ import { AuthGuard } from '@nestjs/passport';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import { QueryListingDto } from './dto/query-listing.dto';
+import { GetListingsQueryDto, ListingsSort } from './dto/get-listings-query.dto';
 import { GetUser } from '../auth/get-user.decorator';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @Controller('listings')
+@ApiTags('listings')
 export class ListingsController {
   constructor(private readonly service: ListingsService) { }
 
@@ -19,8 +21,25 @@ export class ListingsController {
 
   // Lister : public (ou protège si tu veux)
   @Get()
-  findAll(@Query() q: QueryListingDto) {
-    return this.service.findAll(q);
+  @ApiQuery({ name: 'category', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: '>= 1' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: '1..50' })
+  @ApiQuery({ name: 'sort', required: false, enum: ListingsSort })
+  @ApiQuery({ name: 'legacy', required: false, type: Number, description: '1 to return legacy format' })
+
+  async findAll(@Query() q: GetListingsQueryDto) {
+    const result = await this.service.findAll(q);
+    if (q.legacy === 1) {
+      return {
+        data: result.items,
+        pagination: {
+          total: result.total,
+          skip: (result.page - 1) * result.limit,
+          take: result.limit,
+        },
+      };
+    }
+    return result;
   }
   @UseGuards(AuthGuard('jwt'))
   @Get('me')

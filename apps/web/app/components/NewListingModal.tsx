@@ -7,8 +7,20 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateListing } from "../hooks/useApi";
 
+const categories = [
+  { value: "network_repair", label: "Шугам сүлжээ засвар угсралт" },
+  { value: "moving", label: "Нүүлгэлт" },
+  { value: "home_cleaning", label: "Гэр цэвэрлэгээ" },
+  { value: "dog_walking", label: "Нохой салхилуулах" },
+  { value: "carpentry", label: "Мужаан, тавилга угсралт" },
+  { value: "auto_repair", label: "Авто засвар" },
+  { value: "babysitting", label: "Хүүхэд асрагч" },
+  { value: "tutoring", label: "Гэрийн багш" },
+];
+
 const ListingSchema = z.object({
   title: z.string().min(3, "Minimum 3 caractères"),
+  category: z.string().min(1, "Категори сонгоно уу"),
   description: z.string().min(10, "Minimum 10 caractères"),
   price: z.number().int().nonnegative("Doit être ≥ 0"),
   location: z.string().optional(),
@@ -31,6 +43,7 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
     resolver: zodResolver(ListingSchema),
     defaultValues: {
       title: "",
+      category: "",
       description: "",
       price: 0,
       location: "",
@@ -77,6 +90,24 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
             />
             {errors.title && (
               <p className="text-sm text-red-500">{errors.title.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1 block">Категори</label>
+            <select
+              className="w-full rounded border p-2"
+              {...register("category")}
+              disabled={mutation.isPending}
+            >
+              <option value="">Сонгох</option>
+              {categories.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+            {errors.category && (
+              <p className="text-sm text-red-500">{errors.category.message}</p>
             )}
           </div>
 

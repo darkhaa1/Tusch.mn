@@ -1,8 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Listing,
+  ListingsPage,
   createListing,
+  deleteListing,
+  fetchListingById,
   fetchListings,
+  fetchListingsPage,
   fetchMyListings,
   fetchUsers,
   getCurrentUser,
@@ -11,6 +15,7 @@ import {
   oauthLogin,
   registerUser,
   updateCurrentUser,
+  updateListing,
   deleteCurrentUser,
 } from '../lib/api';
 
@@ -22,10 +27,36 @@ export function useCurrentUser() {
   });
 }
 
-export function useListings() {
+export function useListings(category?: string) {
   return useQuery<Listing[]>({
-    queryKey: ['listings'],
-    queryFn: fetchListings,
+    queryKey: ['listings', category || 'all'],
+    queryFn: () => fetchListings({ category }),
+  });
+}
+
+export function useListingsPage(params?: {
+  category?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+}) {
+  return useQuery<ListingsPage>({
+    queryKey: [
+      'listings',
+      params?.category || 'all',
+      params?.page || 1,
+      params?.limit || 12,
+      params?.sort || 'newest',
+    ],
+    queryFn: () => fetchListingsPage(params),
+  });
+}
+
+export function useListing(id?: string) {
+  return useQuery({
+    queryKey: ['listing', id],
+    queryFn: () => fetchListingById(id as string),
+    enabled: !!id,
   });
 }
 
@@ -40,6 +71,30 @@ export function useCreateListing() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createListing,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+    },
+  });
+}
+
+export function useUpdateListing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof updateListing>[1] }) =>
+      updateListing(id, data),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['listing', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
+      queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+    },
+  });
+}
+
+export function useDeleteListing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteListing,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['my-listings'] });
