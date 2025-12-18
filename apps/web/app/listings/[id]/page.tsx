@@ -31,6 +31,7 @@ export default function ListingDetailPage() {
   const listingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: listing, isLoading, error } = useListing(listingId);
+  console.log("listing", listing);
   const { data: currentUser } = useCurrentUser();
   const updateListing = useUpdateListing();
   const deleteListing = useDeleteListing();
@@ -63,9 +64,9 @@ export default function ListingDetailPage() {
 
   const handleChange =
     (field: keyof typeof formState) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      setFormState((prev) => ({ ...prev, [field]: event.target.value }));
-    };
+      (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        setFormState((prev) => ({ ...prev, [field]: event.target.value }));
+      };
 
   const handleSave = async () => {
     if (!listingId) return;

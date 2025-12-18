@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Listing,
+  ListingsPage,
   createListing,
   deleteListing,
   fetchListingById,
   fetchListings,
+  fetchListingsPage,
   fetchMyListings,
   fetchUsers,
   getCurrentUser,
@@ -29,6 +31,24 @@ export function useListings(category?: string) {
   return useQuery<Listing[]>({
     queryKey: ['listings', category || 'all'],
     queryFn: () => fetchListings({ category }),
+  });
+}
+
+export function useListingsPage(params?: {
+  category?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+}) {
+  return useQuery<ListingsPage>({
+    queryKey: [
+      'listings',
+      params?.category || 'all',
+      params?.page || 1,
+      params?.limit || 12,
+      params?.sort || 'newest',
+    ],
+    queryFn: () => fetchListingsPage(params),
   });
 }
 

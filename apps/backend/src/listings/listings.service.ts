@@ -3,7 +3,7 @@ import { Prisma, Listing } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import { QueryListingDto } from './dto/query-listing.dto';
+import { GetListingsQueryDto, ListingsSort } from './dto/get-listings-query.dto';
 
 @Injectable()
 export class ListingsService {
@@ -15,40 +15,40 @@ export class ListingsService {
     });
   }
 
-  async findAll(q: QueryListingDto) {
+  async findAll(q: GetListingsQueryDto) {
     const where: Prisma.ListingWhereInput = {
-      AND: [
-        q.search
-          ? {
-            OR: [
-              { title: { contains: q.search, mode: 'insensitive' } },
-              { description: { contains: q.search, mode: 'insensitive' } },
-              { location: { contains: q.search, mode: 'insensitive' } },
-            ],
-          }
-          : {},
-        q.userId ? { userId: q.userId } : {},
-        q.category ? { category: q.category } : {},
-      ],
+      ...(q.category ? { category: q.category } : {}),
     };
+    const orderBy = q.sort === ListingsSort.Oldest ? 'asc' : 'desc';
+    const skip = (q.page - 1) * q.limit;
 
     const [data, total] = await this.prisma.$transaction([
       this.prisma.listing.findMany({
         where,
-        skip: q.skip,
-        take: q.take,
-        orderBy: { [q.orderBy!]: q.order! },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              avatarUrl: true,
+            },
+          },
+        },
+        skip,
+        take: q.limit,
+        orderBy: { createdAt: orderBy },
       }),
       this.prisma.listing.count({ where }),
     ]);
 
     return {
-      data,
-      pagination: {
-        total,
-        skip: q.skip ?? 0,
-        take: q.take ?? 20,
-      },
+      items: data,
+      total,
+      page: q.page,
+      limit: q.limit,
     };
   }
 
