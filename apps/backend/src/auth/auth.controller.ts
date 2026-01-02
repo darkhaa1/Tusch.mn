@@ -1,46 +1,32 @@
 import {
-  Controller, Post, Body, Res, Get, Req, UnauthorizedException, UseGuards, Patch, Delete, UploadedFile, UseInterceptors, BadRequestException,
+  Controller,
+  Post,
+  Body,
+  Res,
+  Get,
+  Req,
+  UnauthorizedException,
+  UseGuards,
+  Patch,
+  Delete,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/register.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { randomUUID } from 'crypto';
+import { avatarMulterOptions } from '../common/multer/image-options';
+import { join } from 'path';
 import * as fs from 'fs';
-
-const avatarUploadDir = join(process.cwd(), 'uploads', 'avatars');
-fs.mkdirSync(avatarUploadDir, { recursive: true });
-
-const avatarStorage = diskStorage({
-  destination: (_req, _file, cb) => cb(null, avatarUploadDir),
-  filename: (_req, file, cb) => {
-    const ext = extname(file.originalname).toLowerCase();
-    cb(null, `${randomUUID()}${ext}`);
-  },
-});
-
-const allowedMimeTypes = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-]);
-
-const avatarFileFilter = (_req, file, cb) => {
-  if (!allowedMimeTypes.has(file.mimetype)) {
-    return cb(new BadRequestException('Only image files (jpeg/png/webp/gif) are allowed'), false);
-  }
-  cb(null, true);
-};
+import { AVATAR_UPLOAD_DIR } from 'src/common/multer/constants';
 
 @Controller('auth')
 export class AuthController {
   jwtService: any;
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   private get cookieOptions() {
     return {
@@ -84,19 +70,22 @@ export class AuthController {
 
   @Patch('me')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(
-    FileInterceptor('avatar', {
-      storage: avatarStorage,
-      fileFilter: avatarFileFilter,
-      limits: { fileSize: 2 * 1024 * 1024 },
-    })
-  )
-  async updateMe(@Req() req, @Body() body, @UploadedFile() file?: Express.Multer.File) {
+  @UseInterceptors(FileInterceptor('avatar', avatarMulterOptions))
+  async updateMe(
+    @Req() req,
+    @Body() body,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
-    const removeAvatar = body?.removeAvatar === 'true' || body?.removeAvatar === true;
-    const avatarUrl = removeAvatar ? null : file ? `/uploads/avatars/${file.filename}` : undefined;
+    const removeAvatar =
+      body?.removeAvatar === 'true' || body?.removeAvatar === true;
+    const avatarUrl = removeAvatar
+      ? null
+      : file
+        ? `/uploads/avatars/${file.filename}`
+        : undefined;
     const shouldCleanOldAvatar = removeAvatar || !!file;
 
     let previousAvatarUrl: string | null = null;
@@ -113,10 +102,13 @@ export class AuthController {
       accountType: body.accountType,
     });
 
-    if (shouldCleanOldAvatar && previousAvatarUrl?.startsWith('/uploads/avatars/')) {
+    if (
+      shouldCleanOldAvatar &&
+      previousAvatarUrl?.startsWith('/uploads/avatars/')
+    ) {
       const previousName = previousAvatarUrl.split('/').pop();
       if (previousName && previousName !== file?.filename) {
-        const previousPath = join(avatarUploadDir, previousName);
+        const previousPath = join(AVATAR_UPLOAD_DIR, previousName);
         fs.promises.unlink(previousPath).catch(() => undefined);
       }
     }
@@ -145,7 +137,7 @@ export class AuthController {
     if (avatarUrl?.startsWith('/uploads/avatars/')) {
       const avatarName = avatarUrl.split('/').pop();
       if (avatarName) {
-        const avatarPath = join(avatarUploadDir, avatarName);
+        const avatarPath = join(AVATAR_UPLOAD_DIR, avatarName);
         fs.promises.unlink(avatarPath).catch(() => undefined);
       }
     }
@@ -154,7 +146,10 @@ export class AuthController {
   }
 
   @Post('oauth-login')
-  async oauthLogin(@Body() body: OAuthLoginDto, @Res({ passthrough: true }) res: Response) {
+  async oauthLogin(
+    @Body() body: OAuthLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.oauthLogin(body);
 
     res.cookie('accessToken', result.accessToken, this.cookieOptions);

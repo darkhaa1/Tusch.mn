@@ -2,21 +2,27 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Listing,
   ListingsPage,
+  Message,
   createListing,
+  deleteCurrentUser,
   deleteListing,
+  fetchConversationWith,
   fetchListingById,
   fetchListings,
   fetchListingsPage,
+  fetchMessageThreads,
   fetchMyListings,
   fetchUsers,
   getCurrentUser,
   loginUser,
+  markMessageRead,
   logoutUser,
   oauthLogin,
   registerUser,
+  sendMessage,
   updateCurrentUser,
   updateListing,
-  deleteCurrentUser,
+  uploadListingImages,
 } from '../lib/api';
 
 export function useCurrentUser() {
@@ -155,9 +161,50 @@ export function useDeleteCurrentUser() {
   });
 }
 
-export function useUsers() {
+export function useUsers(enabled = true) {
   return useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
+    enabled,
+  });
+}
+
+export function useMessageThreads(enabled = true) {
+  return useQuery<Message[]>({
+    queryKey: ['message-threads'],
+    queryFn: fetchMessageThreads,
+    enabled,
+  });
+}
+
+export function useConversation(userId?: string) {
+  return useQuery<Message[]>({
+    queryKey: ['conversation', userId],
+    queryFn: () => fetchConversationWith(userId as string),
+    enabled: !!userId,
+  });
+}
+
+export function useSendMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: sendMessage,
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['conversation', variables.recipientId] });
+      queryClient.invalidateQueries({ queryKey: ['message-threads'] });
+    },
+  });
+}
+
+export function useMarkMessageRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ messageId }: { messageId: string; partnerId?: string }) => markMessageRead(messageId),
+    onSuccess: (_result, variables) => {
+      if (variables.partnerId) {
+        queryClient.invalidateQueries({ queryKey: ['conversation', variables.partnerId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['message-threads'] });
+    },
   });
 }

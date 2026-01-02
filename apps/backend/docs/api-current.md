@@ -189,7 +189,6 @@ Auth: JWT in httpOnly cookie `accessToken` set by login/oauth-login. Endpoints m
 - Body (JSON):
   ```json
   {
-    "title": "Plumber service",
     "description": "Fixing leaks and pipes",
     "price": 50000,
     "location": "Ulaanbaatar",
@@ -200,7 +199,6 @@ Auth: JWT in httpOnly cookie `accessToken` set by login/oauth-login. Endpoints m
   ```json
   {
     "id": "cku9s9m0w0002t8i8v6w8x2b1",
-    "title": "Plumber service",
     "description": "Fixing leaks and pipes",
     "price": 50000,
     "location": "Ulaanbaatar",
@@ -226,7 +224,6 @@ Auth: JWT in httpOnly cookie `accessToken` set by login/oauth-login. Endpoints m
     "items": [
       {
         "id": "cku9s9m0w0002t8i8v6w8x2b1",
-        "title": "Plumber service",
         "description": "Fixing leaks and pipes",
         "price": 50000,
         "location": "Ulaanbaatar",
@@ -247,7 +244,6 @@ Auth: JWT in httpOnly cookie `accessToken` set by login/oauth-login. Endpoints m
     "data": [
       {
         "id": "cku9s9m0w0002t8i8v6w8x2b1",
-        "title": "Plumber service",
         "description": "Fixing leaks and pipes",
         "price": 50000,
         "location": "Ulaanbaatar",
@@ -273,7 +269,6 @@ Auth: JWT in httpOnly cookie `accessToken` set by login/oauth-login. Endpoints m
   ```json
   {
     "id": "cku9s9m0w0002t8i8v6w8x2b1",
-    "title": "Plumber service",
     "description": "Fixing leaks and pipes",
     "price": 50000,
     "location": "Ulaanbaatar",
@@ -298,7 +293,6 @@ Auth: JWT in httpOnly cookie `accessToken` set by login/oauth-login. Endpoints m
 - Body (JSON, all optional):
   ```json
   {
-    "title": "Updated title",
     "description": "Updated description",
     "price": 55000,
     "location": "UB",

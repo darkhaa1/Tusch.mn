@@ -13,12 +13,10 @@ async function bootstrap() {
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
   app.use(cookieParser());
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
-  app.enableCors(
-    {
-      origin: process.env.CORS_ORIGIN, // 🌐 Autorise les requêtes depuis le frontend
-      credentials: true, // ✅ Permet l'envoi de cookies
-    }
-  ); // 🔓 Active les requêtes cross-origin
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN, // 🌐 Autorise les requêtes depuis le frontend
+    credentials: true, // ✅ Permet l'envoi de cookies
+  }); // 🔓 Active les requêtes cross-origin
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // ✅ Swagger config
@@ -36,8 +34,3 @@ async function bootstrap() {
   console.log(`🚀 Server running on http://localhost:3310`);
 }
 bootstrap();
-
-
-
-
-

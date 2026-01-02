@@ -20,7 +20,6 @@ Base URL: `http://localhost:3310`
     "items": [
       {
         "id": "cku9s9m0w0002t8i8v6w8x2b1",
-        "title": "Plumber service",
         "description": "Fixing leaks and pipes",
         "price": 50000,
         "location": "Ulaanbaatar",
