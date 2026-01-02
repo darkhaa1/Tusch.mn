@@ -1,153 +1,207 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { Menu } from 'lucide-react';
-import SignupModal from './SignUpModal';
-import LoginModal from './LoginModal';
-import NewListingModal from './NewListingModal';
-import { useSession } from 'next-auth/react';
-import { useCurrentUser } from '../hooks/useApi';
-import resolveAvatarUrl from '../profile/components/avatarUrl';
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+import { Menu, Users, MessageCircle, Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
+import SignupModal from "./SignUpModal";
+import LoginModal from "./LoginModal";
+import NewListingModal from "../listings/NewListingModal";
+import { useCurrentUser } from "../hooks/useApi";
+import resolveAvatarUrl from "../lib/resolveImageUrl";
+import { Button, buttonVariants } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import {
+  Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
+} from "./ui/sheet";
+import { cn } from "../lib/utils";
+
+const navItems = [
+  { href: "/offreurs", label: "Үйлчилгээ үзүүлэгчид", icon: Users },
+  { href: "/messages", label: "Мессеж", icon: MessageCircle },
+];
+
+const mobileNav = [
+  { href: "/annonces", label: "Зар" },
+  { href: "/categories", label: "Ангилалууд" },
+  { href: "/about", label: "Бидний тухай" },
+  { href: "/offreurs", label: "Үйлчилгээ үзүүлэгчид" },
+  { href: "/messages", label: "Мессеж" },
+];
 
 export default function Header() {
   const { data: session } = useSession();
   const { data: backendUser } = useCurrentUser();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [openSignUpModal, setOpenSignUpModal] = useState(false);
   const [openLoginModal, setOpenLoginModal] = useState(false);
   const [openNewListingModal, setOpenNewListingModal] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isLoggedIn = !!session?.user || !!backendUser;
   const user = (backendUser as any) || (session?.user as any);
 
-  const firstName = user?.firstname || user?.firstName || user?.name?.split(' ')?.[0] || '';
+  const firstName = user?.firstname || user?.firstName || user?.name?.split(" ")?.[0] || "";
   const avatar = resolveAvatarUrl(user?.avatarUrl || user?.image || null);
-  const initials = (firstName?.[0] || (user?.lastname || user?.lastName || user?.name?.split(' ')?.[1] || '')?.[0] || '🙂').toUpperCase();
+  const initials =
+    (firstName?.[0] || (user?.lastname || user?.lastName || user?.name?.split(" ")?.[1] || "")?.[0] || "U")?.toUpperCase() ||
+    "U";
 
   return (
-    <header className="border-b px-4 py-3">
-      <div className="flex items-center justify-between">
-        {/* Logo + Brand */}
-        <div className="flex items-center gap-2">
-          <img src="/favicon.ico" alt="logo" className="h-12 w-10" />
-          <Link href="/" className="text-xl font-bold text-blue-700">
-            Tusch.mn
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/favicon.ico" alt="Tusch.mn" width={32} height={32} className="h-8 w-8" />
+            <span className="text-lg font-semibold text-foreground">Tusch.mn</span>
           </Link>
         </div>
 
-        {/* Burger (mobile) */}
-        <div className="md:hidden">
-          <button aria-label="Оруулах цэс" onClick={() => setMobileOpen((v) => !v)}>
-            <Menu className="h-10 w-10 text-blue-600" />
-          </button>
+        <div className="flex items-center gap-3 md:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setOpenNewListingModal(true)}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Зар нэмэх
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Цэс нээх"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
         </div>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-end gap-10 text-sm text-blue-800 md:flex">
-          <Link href="/offreurs" className="flex flex-col items-center transition hover:text-blue-600">
-            <div className="text-2xl">👥</div>
-            <span className="mt-1 text-xs font-medium">Үйлчилгээ үзүүлэгчид</span>
-          </Link>
-
-          <button onClick={() => setOpenNewListingModal(true)} className="group flex flex-col items-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-400 text-lg font-bold text-white transition group-hover:bg-green-500">
-              +
-            </div>
-            <span className="mt-1 text-xs font-medium text-blue-800">Зар нэмэх</span>
-          </button>
-
-          <Link href="/messages" className="flex flex-col items-center transition hover:text-blue-600">
-            <div className="text-2xl">💬</div>
-            <span className="mt-1 text-xs font-medium">Мессеж</span>
-          </Link>
+        <nav className="hidden items-center gap-6 md:flex">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+          <Button
+            className="gap-2"
+            onClick={() => setOpenNewListingModal(true)}
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Зар нэмэх
+          </Button>
         </nav>
 
-        {/* Auth / Profile button */}
-        <div className="hidden gap-2 md:flex">
+        <div className="hidden items-center gap-2 md:flex">
           {isLoggedIn ? (
-            <Link href="/profile" className="flex items-center gap-2 rounded-full border px-2 py-1 text-sm transition hover:bg-gray-100">
-              <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-xs font-semibold text-gray-700">
+            <Link
+              href="/profile"
+              className={cn(
+                buttonVariants({ variant: "ghost" }),
+                "gap-2 rounded-full px-2"
+              )}
+            >
+              <Avatar className="h-9 w-9">
                 {avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatar} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  initials
-                )}
-              </div>
-              <span className="font-medium text-gray-800">{firstName || 'Профайл'}</span>
+                  <AvatarImage src={avatar} alt={firstName || "Profile"} />
+                ) : null}
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <span className="text-sm font-medium text-foreground">
+                {firstName || "Профайл"}
+              </span>
             </Link>
           ) : (
             <>
-              <button
-                className="rounded border px-3 py-1 text-sm transition hover:bg-gray-100"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setOpenLoginModal(true)}
               >
                 Нэвтрэх
-              </button>
-              <button
-                onClick={() => setOpenSignUpModal(true)}
-                className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition hover:bg-blue-700"
-              >
+              </Button>
+              <Button size="sm" onClick={() => setOpenSignUpModal(true)}>
                 Бүртгүүлэх
-              </button>
+              </Button>
             </>
           )}
         </div>
       </div>
 
-      {/* Mobile nav */}
-      {mobileOpen && (
-        <nav className="mt-3 flex flex-col gap-2 text-sm text-gray-800 md:hidden">
-          <Link href="/annonces" onClick={() => setMobileOpen(false)}>Зар</Link>
-          <Link href="/categories" onClick={() => setMobileOpen(false)}>Ангилалууд</Link>
-          <Link href="/about" onClick={() => setMobileOpen(false)}>Бидний тухай</Link>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="right" className="w-full max-w-xs sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>Цэс</SheetTitle>
+            <SheetDescription>Танд хэрэгтэй зүйл рүү түргэн очно.</SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col gap-2 p-4">
+            {mobileNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  buttonVariants({ variant: "ghost" }),
+                  "justify-start text-base"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
 
-          {isLoggedIn ? (
-            <Link
-              href="/profile"
-              onClick={() => setMobileOpen(false)}
-              className="rounded bg-blue-600 px-3 py-1 text-left text-sm text-white"
+            {isLoggedIn ? (
+              <Link
+                href="/profile"
+                onClick={() => setMobileOpen(false)}
+                className={cn(buttonVariants({ variant: "outline" }), "justify-start text-base")}
+              >
+                Профайл
+              </Link>
+            ) : (
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setOpenLoginModal(true);
+                    setMobileOpen(false);
+                  }}
+                >
+                  Нэвтрэх
+                </Button>
+                <Button
+                  onClick={() => {
+                    setOpenSignUpModal(true);
+                    setMobileOpen(false);
+                  }}
+                >
+                  Бүртгүүлэх
+                </Button>
+              </div>
+            )}
+          </div>
+          <SheetFooter>
+            <Button
+              className="w-full gap-2"
+              onClick={() => {
+                setOpenNewListingModal(true);
+                setMobileOpen(false);
+              }}
             >
-              Профайл
-            </Link>
-          ) : (
-            <>
-              <button
-                className="rounded border px-3 py-1 text-left text-sm"
-                onClick={() => {
-                  setOpenLoginModal(true);
-                  setMobileOpen(false);
-                }}
-              >
-                Нэвтрэх
-              </button>
-              <button
-                onClick={() => {
-                  setOpenSignUpModal(true);
-                  setMobileOpen(false);
-                }}
-                className="rounded bg-blue-600 px-3 py-1 text-left text-sm text-white"
-              >
-                Бүртгүүлэх
-              </button>
-            </>
-          )}
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Зар нэмэх
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
-          {/* Mobile Зар нэмэх */}
-          <button
-            onClick={() => {
-              setOpenNewListingModal(true);
-              setMobileOpen(false);
-            }}
-            className="rounded border px-3 py-1 text-left text-sm"
-          >
-            Зар нэмэх
-          </button>
-        </nav>
-      )}
-
-      {/* Modals */}
       <LoginModal open={openLoginModal} onClose={() => setOpenLoginModal(false)} />
       <SignupModal open={openSignUpModal} onClose={() => setOpenSignUpModal(false)} />
       <NewListingModal isOpen={openNewListingModal} onClose={() => setOpenNewListingModal(false)} />

@@ -2,6 +2,7 @@
 
 import { useCurrentUser, useMyListings } from '../../../hooks/useApi';
 import ListingCard from '../../../listings/ListingCard';
+import { SkeletonGrid, EmptyState, ErrorState } from '../../../../components/common';
 
 export default function MyListings() {
   const { data, isLoading, error } = useMyListings();
@@ -13,25 +14,38 @@ export default function MyListings() {
       listing.user ||
       (currentUser
         ? {
-          id: currentUser.id,
-          firstName: currentUser.firstName || currentUser.firstname || '',
-          lastName: currentUser.lastName || currentUser.lastname || '',
-          email: currentUser.email,
-        }
+            id: currentUser.id,
+            firstName: currentUser.firstName || currentUser.firstname || '',
+            lastName: currentUser.lastName || currentUser.lastname || '',
+            email: currentUser.email,
+          }
         : undefined),
   }));
 
-  if (isLoading) return <p>Түр хүлээнэ үү...</p>;
-  if (error) return <p className="text-red-500">Алдаа гарлаа</p>;
+  if (isLoading) return <SkeletonGrid count={6} />;
+  if (error)
+    return (
+      <ErrorState
+        title="Алдаа гарлаа"
+        message="Алдаа гарлаа"
+      />
+    );
 
   if (!data || data.length === 0) {
-    return <p>Таны зарууд олдсонгүй.</p>;
+    return (
+      <EmptyState
+        title="Одоогоор зар алга."
+        description="Таны нийтэлсэн зар хараахан байхгүй байна."
+      />
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {enriched.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
+        <div key={listing.id} className="h-full">
+          <ListingCard listing={listing} />
+        </div>
       ))}
     </div>
   );

@@ -4,15 +4,19 @@ export class OAuthLoginDto {
   @IsEmail()
   email!: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   firstName?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   lastName?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   provider?: string; // "google" etc.
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   avatarUrl?: string;
 }

@@ -3,15 +3,6 @@ import NextAuth, { type AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 
-// Extend the User type to include firstname and lastname
-declare module "next-auth" {
-  interface User {
-    firstname?: string;
-    lastname?: string;
-    provider?: string;
-  }
-}
-
 const authOptions: AuthOptions & { trustHost?: boolean } = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },

@@ -3,7 +3,7 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useCurrentUser, useUpdateCurrentUser, useDeleteCurrentUser } from '../../../hooks/useApi';
-import resolveAvatarUrl from '../avatarUrl';
+import resolveImageUrl from '../../../lib/resolveImageUrl';
 export default function ProfileInfo() {
   const { data: session } = useSession();
   const { data: backendUser, isLoading } = useCurrentUser();
@@ -27,10 +27,9 @@ export default function ProfileInfo() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
-
   const populateFromUser = () => {
     const fallbackAvatar =
-      resolveAvatarUrl((user as any)?.avatarUrl || (user as any)?.image || null);
+      resolveImageUrl((user as any)?.avatarUrl || (user as any)?.image || null);
     setAvatarObjectUrl(null);
     setAvatarFile(null);
     setRemoveAvatar(false);
@@ -67,6 +66,7 @@ export default function ProfileInfo() {
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
     if (!file.type.startsWith('image/')) {
       setAvatarError('Та зурагаа сонгоно уу');

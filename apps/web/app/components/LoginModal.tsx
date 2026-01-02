@@ -5,6 +5,9 @@ import { signIn } from 'next-auth/react';
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLoginUser } from '../hooks/useApi';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 
 type Props = {
   open: boolean;
@@ -19,8 +22,6 @@ export default function LoginModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const loginMutation = useLoginUser();
-
-  if (!open) return null;
 
   const handleEmailLogin = async () => {
     setLoading(true);
@@ -38,70 +39,77 @@ export default function LoginModal({ open, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-black">
-          <X size={20} />
-        </button>
-
-        <h2 className="text-xl font-bold text-center mb-2">Нэвтрэх</h2>
-        <p className="text-center text-gray-600 mb-4">
-          {showForm ? 'Имэйлээр нэвтрэх' : 'Нэвтрэх аргаа сонгоно уу'}
-        </p>
+    <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Нэвтрэх</DialogTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onClose}
+              aria-label="Хаах"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
+          <DialogDescription>
+            {showForm ? 'Имэйлээр нэвтрэх' : 'Нэвтрэх аргаа сонгоно уу'}
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="space-y-3">
           {!showForm ? (
             <>
-              <button
-                className="w-full border rounded-full flex items-center justify-center py-2 font-medium hover:bg-gray-100"
+              <Button
+                variant="outline"
+                className="w-full justify-center"
                 onClick={() => signIn('google', { callbackUrl: '/profile' })}
               >
                 Google-ээр холбогдох
-              </button>
+              </Button>
               <div className="flex items-center gap-2 text-gray-400 text-sm justify-center">
                 <div className="h-px bg-gray-300 flex-1" /> эсвэл <div className="h-px bg-gray-300 flex-1" />
               </div>
-              <button
-                className="w-full bg-black text-white rounded-full py-2 font-medium hover:bg-gray-800"
-                onClick={() => setShowForm(true)}
-              >
+              <Button className="w-full justify-center" onClick={() => setShowForm(true)}>
                 Имэйлээр нэвтрэх
-              </button>
+              </Button>
             </>
           ) : (
             <>
-              <input
+              <Input
                 type="email"
                 placeholder="Имэйл"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border rounded px-3 py-2"
               />
-              <input
+              <Input
                 type="password"
                 placeholder="Нууц үг"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border rounded px-3 py-2"
               />
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <button
+              <Button
                 onClick={handleEmailLogin}
                 disabled={loading}
-                className="w-full bg-black text-white rounded-full py-2 font-medium hover:bg-gray-800"
+                className="w-full justify-center"
               >
                 {loading ? 'Түр хүлээнэ үү…' : 'Нэвтрэх'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-center text-sm text-muted-foreground"
                 onClick={() => setShowForm(false)}
-                className="w-full text-sm text-gray-500 hover:underline text-center mt-2"
               >
                 ← Буцах
-              </button>
+              </Button>
             </>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

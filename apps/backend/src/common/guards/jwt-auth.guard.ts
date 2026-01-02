@@ -1,5 +1,10 @@
-// auth/jwt-auth.guard.ts
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+// Common JWT guard re-exported for controllers
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -16,7 +21,7 @@ export class JwtAuthGuard implements CanActivate {
       const decoded = this.jwtService.verify(token);
       request.user = decoded;
       return true;
-    } catch (err) {
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
   }

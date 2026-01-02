@@ -1,10 +1,13 @@
 // components/SignupModal.tsx
 "use client";
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-import { useRegisterUser } from '../hooks/useApi';
+import { useState } from "react";
+import { X } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { useRegisterUser } from "../hooks/useApi";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 type Props = {
   open: boolean;
@@ -13,30 +16,28 @@ type Props = {
 
 export default function SignupModal({ open, onClose }: Props) {
   const [step, setStep] = useState(1);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [accountType, setAccountType] = useState('');
+  const [error, setError] = useState("");
+  const [accountType, setAccountType] = useState("");
   const registerMutation = useRegisterUser();
-
-  if (!open) return null;
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      setError('Нууц үг тохирохгүй байна');
+      setError("Нууц үг тохирохгүй байна");
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
     try {
       await registerMutation.mutateAsync({ email, password, accountType, firstName, lastName, phone });
-      alert('Амжилттай бүртгэгдлээ!');
+      alert("Амжилттай бүртгэлээ!");
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -46,42 +47,54 @@ export default function SignupModal({ open, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white w-full max-w-md rounded-xl shadow-lg p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-black">
-          <X size={20} />
-        </button>
+    <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Бүртгүүлээрэй!</DialogTitle>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onClose}
+              aria-label="Хаах"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </div>
+          <DialogDescription>
+            Таны хорооны оршин суугчид, мэргэжилтнүүд таны хэрэгцээнд хариу өгөнө.
+          </DialogDescription>
+        </DialogHeader>
 
-        {step > 1 && (
-          <button onClick={() => setStep(step - 1)} className="absolute top-4 left-4 text-xl text-gray-600 hover:text-black">
-            <span className="inline-block text-2xl font-bold">←</span>
-          </button>
-        )}
-
-        <h2 className="text-xl font-bold text-center mb-2">Бүртгүүлээрэй!</h2>
-        <p className="text-center text-gray-600 mb-4">
-          Таны хорооны оршин суугчид, мэргэжилтнүүд таны хэрэгцээнд хариу өгнө.
-        </p>
+        {step > 1 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-1 inline-flex items-center gap-2 text-sm text-muted-foreground"
+            onClick={() => setStep(step - 1)}
+          >
+            ← Буцах
+          </Button>
+        ) : null}
 
         {step === 1 && (
           <div className="space-y-3">
-            <button onClick={() => signIn('google')} className="w-full border rounded-full py-2 font-medium hover:bg-gray-100">
+            <Button variant="outline" className="w-full justify-center" onClick={() => signIn("google")}>
               Google-ээр холбогдох
-            </button>
-            <button onClick={() => signIn('facebook')} className="w-full bg-blue-600 text-white rounded-full py-2 font-medium hover:bg-blue-700">
+            </Button>
+            <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700" onClick={() => signIn("facebook")}>
               Facebook-ээр үргэлжлүүлэх
-            </button>
+            </Button>
 
             <div className="flex items-center gap-2 text-gray-400 text-sm justify-center">
               <div className="h-px bg-gray-300 flex-1" /> эсвэл <div className="h-px bg-gray-300 flex-1" />
             </div>
 
-            <button
-              onClick={() => setStep(2)}
-              className="w-full border rounded-full py-2 font-medium hover:bg-gray-100"
-            >
+            <Button variant="outline" className="w-full justify-center" onClick={() => setStep(2)}>
               И-мэйл хаягаар бүртгүүлэх
-            </button>
+            </Button>
           </div>
         )}
 
@@ -89,19 +102,19 @@ export default function SignupModal({ open, onClose }: Props) {
           <div className="space-y-3">
             <h3 className="text-center font-semibold">Би бүртгүүлэх төрөл:</h3>
 
-            <button onClick={() => { setAccountType('Хувь хүн'); setStep(3); }} className="w-full border rounded-full py-2 font-medium hover:bg-gray-100">
+            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType("Хувь хүн"); setStep(3); }}>
               Хувь хүн
-            </button>
+            </Button>
 
             <div className="flex items-center justify-center text-gray-400 text-sm">— эсвэл —</div>
 
-            <button onClick={() => { setAccountType('Хувиараа хөдөлмөр эрхлэгч'); setStep(3); }} className="w-full border rounded-full py-2 font-medium hover:bg-gray-100">
+            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType("Хувиараа хөдөлмөр эрхлэгч"); setStep(3); }}>
               Бие даан ажиллагч / Хувиараа хөдөлмөр эрхлэгч
-            </button>
+            </Button>
 
-            <button onClick={() => { setAccountType('Байгууллага'); setStep(3); }} className="w-full border rounded-full py-2 font-medium hover:bg-gray-100">
+            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType("Байгууллага"); setStep(3); }}>
               Байгууллага
-            </button>
+            </Button>
 
             <p className="text-center text-xs text-gray-400 mt-2">2 үе шатны 1-р алхам</p>
           </div>
@@ -109,59 +122,53 @@ export default function SignupModal({ open, onClose }: Props) {
 
         {step === 3 && (
           <div className="flex flex-col gap-2">
-            <input
+            <Input
               type="text"
               placeholder="Овог"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="w-full border rounded px-3 py-2"
             />
-            <input
+            <Input
               type="text"
               placeholder="Нэр"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="w-full border rounded px-3 py-2"
             />
-            <input
+            <Input
               type="tel"
               placeholder="Утасны дугаар"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full border rounded px-3 py-2"
             />
-            <input
+            <Input
               type="email"
               placeholder="Имэйл хаяг"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border rounded px-3 py-2"
             />
-            <input
+            <Input
               type="password"
               placeholder="Нууц үг"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border rounded px-3 py-2"
             />
-            <input
+            <Input
               type="password"
               placeholder="Нууц үг давтах"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full border rounded px-3 py-2"
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <button
+            <Button
               onClick={handleRegister}
               disabled={loading}
-              className="w-full bg-black text-white rounded-full py-2 font-medium hover:bg-gray-800"
+              className="w-full justify-center"
             >
-              {loading ? 'Түр хүлээнэ үү…' : 'Бүртгүүлэх'}
-            </button>
+              {loading ? "Түр хүлээнэ үү…" : "Бүртгүүлэх"}
+            </Button>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

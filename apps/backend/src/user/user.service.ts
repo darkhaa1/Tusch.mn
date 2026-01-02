@@ -38,7 +38,7 @@ export class UserService {
       phone: string;
       accountType: string;
       avatarUrl: string | null;
-    }>
+    }>,
   ) {
     return this.prisma.user.update({
       where: { id },

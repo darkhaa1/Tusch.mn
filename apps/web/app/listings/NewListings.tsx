@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
 import { useListings } from "../hooks/useApi";
-import ListingCard from "../listings/ListingCard";
+import ListingCard from "./ListingCard";
+import { SkeletonGrid, ErrorState } from "../../components/common";
 
 type NewListingsProps = {
   category?: string;
@@ -41,13 +42,21 @@ export default function NewListings({ category }: NewListingsProps) {
     };
   }, [emblaApi]);
 
-  if (isLoading) return <p className="py-10 text-center">Уншиж байна...</p>;
-  if (error)
+  if (isLoading) {
     return (
-      <p className="py-10 text-center text-red-500">
-        Алдаа гарлаа: {(error as Error).message}
-      </p>
+      <section className="mx-auto mt-12 max-w-6xl px-4">
+        <SkeletonGrid count={4} />
+      </section>
     );
+  }
+
+  if (error) {
+    return (
+      <section className="mx-auto mt-12 max-w-6xl px-4">
+        <ErrorState title="Алдаа гарлаа" message={(error as Error).message} />
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto mt-12 max-w-6xl px-4">

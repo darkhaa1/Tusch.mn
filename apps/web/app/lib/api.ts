@@ -1,5 +1,3 @@
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Small wrapper to normalize errors and JSON parsing.
@@ -119,13 +117,24 @@ export type ListingUser = {
 
 export type Listing = {
   id: string;
-  title: string;
   description: string;
   price: number;
   location?: string | null;
   category?: string | null;
   userId: string;
   user?: ListingUser;
+  images?: Array<{ id: string; url: string; position: number }>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Message = {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  listingId: string;
+  content: string;
+  readAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -210,7 +219,6 @@ export async function fetchListingById(id: string): Promise<Listing> {
 }
 
 export async function createListing(body: {
-  title: string;
   description: string;
   price: number;
   location?: string;
@@ -225,7 +233,6 @@ export async function createListing(body: {
 export async function updateListing(
   id: string,
   body: {
-    title?: string;
     description?: string;
     price?: number;
     location?: string;
@@ -244,8 +251,45 @@ export async function deleteListing(id: string) {
   });
 }
 
+export async function uploadListingImages(listingId: string, files: File[]) {
+  if (!files.length) return;
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+  return apiFetch(`/listings/${listingId}/images`, {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+export async function deleteListingImage(listingId: string, imageId: string) {
+  return apiFetch(`/listings/${listingId}/images/${imageId}`, {
+    method: 'DELETE',
+  });
+}
+
 // Users ----------------------------------------------------------------------
 
-export async function fetchUsers() {
+export async function fetchUsers(): Promise<ListingUser[]> {
   return apiFetch('/users', { method: 'GET' });
+}
+
+// Messages -------------------------------------------------------------------
+
+export async function fetchMessageThreads(): Promise<Message[]> {
+  return apiFetch('/messages/threads', { method: 'GET' });
+}
+
+export async function fetchConversationWith(userId: string): Promise<Message[]> {
+  return apiFetch(`/messages/with/${userId}`, { method: 'GET' });
+}
+
+export async function sendMessage(body: { recipientId: string; listingId: string; content: string }) {
+  return apiFetch<Message>('/messages', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export async function markMessageRead(messageId: string) {
+  return apiFetch<Message>(`/messages/${messageId}/read`, { method: 'PATCH' });
 }

@@ -7,18 +7,31 @@ export enum ListingsSort {
 }
 
 export class GetListingsQueryDto {
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   category?: string;
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page: number = 1;
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
   limit: number = 12;
 
-  @IsOptional() @IsEnum(ListingsSort)
+  @IsOptional()
+  @IsEnum(ListingsSort)
   sort: ListingsSort = ListingsSort.Newest;
 
-  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1)
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(1)
   legacy?: number;
 }

@@ -1,146 +1,123 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { UserService } from '../user/user.service';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../../prisma/prisma.service';
+import { AuthDto } from './dto/register.dto';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService, private userService: UserService) { }
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
-  sanitizeUser(user: any) {
-    if (!user) return null;
-    const { password, ...safeUser } = user;
-    return safeUser;
-  }
-
-  async getUserById(id: string) {
-    return this.userService.findById(id); // Should return a user or null/undefined
-  }
-
-  async register(body: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    accountType: string;
-    avatarUrl?: string | null;
-  }) {
-    const existing = await this.userService.findByEmail(body.email);
-    if (existing) throw new BadRequestException("Энэ и-мэйл аль хэдийн бүртгэлтэй байна.");
-
-    const passwordHash = await bcrypt.hash(body.password, 10);
-    const user = await this.userService.createUser({
-      email: body.email,
-      password: passwordHash,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      phone: body.phone,
-      accountType: body.accountType,
-      avatarUrl: body.avatarUrl || null,
+  async register(dto: AuthDto) {
+    const hashed = await bcrypt.hash(dto.password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashed,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        accountType: dto.accountType,
+      },
     });
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      firstname: user.firstName,
-      lastname: user.lastName,
-      phone: user.phone,
-      accountType: user.accountType,
-    });
-
-    return {
-      id: user.id,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
-      accessToken,
-    };
+    return this.sanitizeUser(user);
   }
 
   async login(body: { email: string; password: string }) {
-    const user = await this.userService.findByEmail(body.email);
-    if (!user) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна.');
+    const user = await this.prisma.user.findUnique({
+      where: { email: body.email },
+    });
+    if (!user || !user.password)
+      throw new UnauthorizedException('Invalid credentials');
 
-    const isMatch = await bcrypt.compare(body.password, user.password);
-    if (!isMatch) throw new UnauthorizedException('Имэйл эсвэл нууц үг буруу байна.');
+    const passwordValid = await bcrypt.compare(body.password, user.password);
+    if (!passwordValid) throw new UnauthorizedException('Invalid credentials');
 
-    const accessToken = this.jwtService.sign({
+    const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
-      firstname: user.firstName,
-      lastname: user.lastName,
-      phone: user.phone,
-      accountType: user.accountType,
     });
+
     return {
-      id: user.id,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
+      ...this.sanitizeUser(user),
       accessToken,
     };
   }
 
-  async oauthLogin(dto: OAuthLoginDto & { avatarUrl?: string | null }) {
-    const { email, firstName, lastName, provider, avatarUrl } = dto;
+  async oauthLogin(body: OAuthLoginDto) {
+    const placeholderPassword = await bcrypt.hash(randomUUID(), 10);
 
-    // 1) chercher user par email
-    let user = await this.userService.findByEmail(email);
-
-    // 2) si pas trouvAc -> crAcer un user "social"
-    if (!user) {
-      user = await this.userService.createUser({
-        email,
-        password: 'oauth', // placeholder, not used
-        firstName: firstName || 'Google',
-        lastName: lastName || 'User',
+    const user = await this.prisma.user.upsert({
+      where: { email: body.email },
+      update: {
+        firstName: body.firstName ?? '',
+        lastName: body.lastName ?? '',
+        avatarUrl: body.avatarUrl,
+      },
+      create: {
+        email: body.email,
+        firstName: body.firstName ?? '',
+        lastName: body.lastName ?? '',
+        avatarUrl: body.avatarUrl,
+        password: placeholderPassword,
         phone: '',
-        accountType: provider || 'google',
-        avatarUrl: avatarUrl || null,
-      });
-    } else if (avatarUrl && user.avatarUrl !== avatarUrl) {
-      // refresh avatar from provider if it changed
-      user = await this.userService.updateUser(user.id, { avatarUrl });
-    }
+        accountType: 'client',
+      },
+    });
 
-    // 3) signer un JWT classique
-    const payload = {
+    const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
-      firstname: user.firstName,
-      lastname: user.lastName,
-      phone: user.phone,
-      accountType: user.accountType,
-      avatarUrl: user.avatarUrl,
-    };
-    const accessToken = await this.jwtService.signAsync(payload);
+    });
 
     return {
-      id: user.id,
-      email: user.email,
-      avatarUrl: user.avatarUrl,
+      ...this.sanitizeUser(user),
       accessToken,
     };
+  }
+
+  async getUserById(id: string) {
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
   async updateProfile(
     userId: string,
-    data: Partial<{ firstName: string; lastName: string; phone: string; avatarUrl: string; accountType: string }>
+    data: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      avatarUrl?: string | null;
+      accountType?: string;
+    },
   ) {
-    const updated = await this.userService.updateUser(userId, {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phone: data.phone,
-      avatarUrl: data.avatarUrl,
-      accountType: data.accountType,
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data,
     });
-
     return this.sanitizeUser(updated);
   }
 
-  async deleteUserById(userId: string) {
-    const existing = await this.getUserById(userId);
-    if (!existing) throw new NotFoundException('User not found');
-    return this.userService.deleteUser(userId);
+  async deleteUserById(id: string) {
+    return this.prisma.user.delete({ where: { id } });
+  }
+
+  async deleteProfileAvatar(userId: string) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: null },
+    });
+    return this.sanitizeUser(updated);
+  }
+
+  sanitizeUser(user: any) {
+    const { password: _password, ...rest } = user;
+    void _password;
+    return rest;
   }
 }
