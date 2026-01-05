@@ -25,6 +25,8 @@ model User {
   listing     Listing[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+  reviewsGiven     Review[]  @relation("UserReviewsGiven")
+  reviewsReceived  Review[]  @relation("UserReviewsReceived")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -75,4 +77,19 @@ model ListingImage {
 
   @@unique([listingId, position])
   @@index([listingId])
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  targetUserId String
+  reviewerId   String
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+
+  targetUser User @relation("UserReviewsReceived", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewer   User @relation("UserReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([targetUserId])
+  @@unique([targetUserId, reviewerId])
 }

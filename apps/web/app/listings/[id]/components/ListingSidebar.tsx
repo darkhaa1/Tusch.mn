@@ -1,6 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
+import Link from "next/link";
 import { Avatar, Button } from "@repo/ui";
 import resolveImageUrl from "../../../lib/resolveImageUrl";
 
@@ -12,6 +13,7 @@ type ListingSidebarProps = {
   authorEmail?: string | null;
   authorPhone?: string | null;
   authorAvatar?: string | null;
+  profileHref?: string | null;
   images: Array<{ id: string; url: string }>;
   heading: string;
   isOwner: boolean;
@@ -32,6 +34,7 @@ export function ListingSidebar({
   authorEmail,
   authorPhone,
   authorAvatar,
+  profileHref,
   images,
   heading,
   isOwner,
@@ -61,14 +64,22 @@ export function ListingSidebar({
           <div className="text-sm text-foreground">{categoryLabel || "Ангилалгүй"}</div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-lg border border-border/80 bg-background p-3">
-          <Avatar src={authorAvatar} alt={authorName} />
-          <div className="space-y-1 text-sm text-foreground">
-            <div className="font-medium text-foreground">{authorName || "Хэрэглэгч"}</div>
-            {authorEmail ? <div className="text-muted-foreground">{authorEmail}</div> : null}
-            {authorPhone ? <div className="text-muted-foreground">{authorPhone}</div> : null}
+        {profileHref ? (
+          <Link
+            href={profileHref}
+            prefetch={false}
+            className="flex items-center gap-3 rounded-lg border border-border/80 bg-background p-3 transition hover:border-primary/50"
+          >
+            <Avatar src={authorAvatar} alt={authorName} />
+            <div className="space-y-1 text-sm text-foreground">
+              <div className="font-medium text-foreground">{authorName || "Хэрэглэгч"}</div>
+            </div>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-3 rounded-lg border border-border/80 bg-background p-3">
+            <Avatar src={authorAvatar} alt={authorName} />
           </div>
-        </div>
+        )}
 
         {showMessageCta ? (
           <div className="space-y-2">

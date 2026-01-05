@@ -12,6 +12,7 @@ import {
 } from "../../hooks/useApi";
 import { deleteListingImage, uploadListingImages } from "../../lib/api";
 import resolveImageUrl from "../../lib/resolveImageUrl";
+import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "../../lib/categories";
 import {
   Button,
   Dialog,
@@ -31,19 +32,6 @@ import {
 import { ListingGallery } from "./components/ListingGallery";
 import { ListingDetailsCard } from "./components/ListingDetailsCard";
 import { ListingSidebar } from "./components/ListingSidebar";
-
-const categories = [
-  { value: "network_repair", label: "Дотоод сүлжээ / интернет засвар" },
-  { value: "moving", label: "Нүүлгэлт" },
-  { value: "home_cleaning", label: "Гэр цэвэрлэгээ" },
-  { value: "dog_walking", label: "Нохой салхилуулах" },
-  { value: "carpentry", label: "Модон ажил / мужаан" },
-  { value: "auto_repair", label: "Авто засвар" },
-  { value: "babysitting", label: "Хүүхэд асрах" },
-  { value: "tutoring", label: "Хичээл заах" },
-];
-
-const categoryLabelMap = new Map(categories.map((category) => [category.value, category.label]));
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -213,7 +201,7 @@ export default function ListingDetailPage() {
   const imageUrls = images.map((img) => resolveImageUrl(img.url) || "/placeholder.jpg");
   const displayedMain = imageUrls[selectedIndex] || resolveImageUrl(listing.images?.[0]?.url) || "/placeholder.jpg";
   const categoryValue = isEditing ? formState.category : listing.category;
-  const categoryLabel = categoryValue ? categoryLabelMap.get(categoryValue) || categoryValue : null;
+  const categoryLabel = categoryValue ? CATEGORY_LABEL_MAP.get(categoryValue) || categoryValue : null;
   const heading = categoryLabel || "Зар";
   const priceLabel =
     typeof listing.price === "number" && listing.price > 0 ? `${listing.price.toLocaleString()} ₮` : "Тохиролцоно";
@@ -266,7 +254,7 @@ export default function ListingDetailPage() {
             onSave={handleSave}
             onCancel={handleCancelEdit}
             isSaving={updateListing.isPending}
-            categories={categories}
+            categories={CATEGORY_OPTIONS}
             formError={formError}
           />
         </div>
@@ -279,6 +267,7 @@ export default function ListingDetailPage() {
           authorEmail={author?.email}
           authorPhone={author?.phone}
           authorAvatar={authorAvatar}
+          profileHref={author?.id ? `/u/${author.id}` : null}
           images={images}
           heading={heading}
           isOwner={isOwner}

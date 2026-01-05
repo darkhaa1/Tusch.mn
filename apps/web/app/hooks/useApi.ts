@@ -18,6 +18,7 @@ import {
   markMessageRead,
   logoutUser,
   oauthLogin,
+  fetchPublicUserProfile,
   registerUser,
   sendMessage,
   updateCurrentUser,
@@ -206,5 +207,13 @@ export function useMarkMessageRead() {
       }
       queryClient.invalidateQueries({ queryKey: ['message-threads'] });
     },
+  });
+}
+
+export function usePublicUserProfile(userId?: string) {
+  return useQuery({
+    queryKey: ['public-user-profile', userId],
+    queryFn: () => fetchPublicUserProfile(userId as string),
+    enabled: !!userId,
   });
 }
