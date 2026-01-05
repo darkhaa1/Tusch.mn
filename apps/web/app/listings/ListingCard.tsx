@@ -5,14 +5,13 @@ import { CheckCircle2, MapPin } from "lucide-react";
 import type { Listing, ListingUser } from "../lib/api";
 import { resolveCategoryLabel } from "./categoryLabels";
 import resolveImageUrl from "../lib/resolveImageUrl";
-import { Card, CardContent } from "../components/ui/card";
-import { buttonVariants } from "../components/ui/button";
+import { Card, CardContent, buttonVariants } from "@repo/ui";
 import { cn } from "../lib/utils";
 
 type ListingWithOptionalUser = Listing & {
   user?:
-    | (ListingUser & { firstname?: string; lastname?: string; name?: string } & Record<string, any>)
-    | null;
+  | (ListingUser & { firstname?: string; lastname?: string; name?: string } & Record<string, any>)
+  | null;
 };
 
 type ListingCardProps = {

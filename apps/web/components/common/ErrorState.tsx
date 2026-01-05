@@ -1,6 +1,5 @@
 import { RefreshCcw } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "../../app/components/ui/alert";
-import { buttonVariants } from "../../app/components/ui/button";
+import { Alert, AlertDescription, AlertTitle, buttonVariants } from "@repo/ui";
 import { cn } from "../../app/lib/utils";
 
 type ErrorStateProps = {

@@ -5,9 +5,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRegisterUser } from "../hooks/useApi";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Input } from "@repo/ui";
 
 type Props = {
   open: boolean;

@@ -2,11 +2,13 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { oauthLogin } from "./lib/api";
 
 export function AuthSync() {
   const { data: session, status } = useSession();
   const syncedRef = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (status !== "authenticated") {
@@ -39,6 +41,8 @@ export function AuthSync() {
           provider,
           avatarUrl,
         });
+        // Ensure UI picks up the new backend session set by oauthLogin
+        queryClient.invalidateQueries({ queryKey: ["current-user"] });
       } catch (e) {
         console.error("Auth sync failed", e);
         syncedRef.current = false;

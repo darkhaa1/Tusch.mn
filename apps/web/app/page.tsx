@@ -1,9 +1,9 @@
 "use client";
 
-import Hero from "./components/Hero";
-import CategoryGrid from "./components/CategoryGrid";
+import Hero from "./home page components/Hero";
+import CategoryGrid from "./home page components/CategoryGrid";
 import NewListings from "./listings/NewListings";
-import CallToAction from "./components/CallToAction";
+import CallToAction from "./home page components/CallToAction";
 
 export default function Home() {
 

@@ -10,11 +10,7 @@ import LoginModal from "./LoginModal";
 import NewListingModal from "../listings/NewListingModal";
 import { useCurrentUser } from "../hooks/useApi";
 import resolveAvatarUrl from "../lib/resolveImageUrl";
-import { Button, buttonVariants } from "./ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import {
-  Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle,
-} from "./ui/sheet";
+import { Button, buttonVariants, Avatar, AvatarFallback, AvatarImage, Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@repo/ui";
 import { cn } from "../lib/utils";
 
 const navItems = [

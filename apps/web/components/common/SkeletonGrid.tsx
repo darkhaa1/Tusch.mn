@@ -1,5 +1,4 @@
-import { Card, CardContent } from "../../app/components/ui/card";
-import { Skeleton } from "../../app/components/ui/skeleton";
+import { Card, CardContent, Skeleton } from "@repo/ui";
 
 type SkeletonGridProps = {
   count: number;

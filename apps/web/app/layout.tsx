@@ -1,8 +1,8 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { Providers } from './Providers';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import Header from './home page components/Header';
+import Footer from './home page components/Footer';
 import BottomNav from '../components/nav/BottomNav';
 
 const inter = Inter({

@@ -3,10 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCheck, Loader2, Paperclip } from "lucide-react";
 import AppShell from "../../components/layout/AppShell";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import Avatar from "../components/ui/avatar";
-import { Input } from "../components/ui/input";
+import { Badge, Button, Input, Avatar } from "@repo/ui";
 import { PageHeader } from "../../components/common";
 import {
   useConversation,
@@ -18,12 +15,13 @@ import {
 } from "../hooks/useApi";
 import type { ListingUser, Message } from "../lib/api";
 import { cn } from "../lib/utils";
+import resolveImageUrl from "../lib/resolveImageUrl";
 
 const quickReplies = [
-  "Bonjour !",
-  "Merci pour votre retour.",
-  "Je reviens vers vous rapidement.",
-  "Pouvez-vous partager plus de détails ?",
+  "Сайн байна уу!",
+  "Хариу өгсөнд баярлалаа.",
+  "Би удахгүй дахин холбогдоно.",
+  "Дэлгэрэнгүй мэдээлэл хуваалцаарай.",
 ];
 
 function formatTime(value?: string) {
@@ -40,7 +38,7 @@ function truncate(text: string, max = 80) {
 }
 
 function buildDisplayName(user?: ListingUser) {
-  if (!user) return "Utilisateur";
+  if (!user) return "Хэрэглэгч";
   return `${user.firstName} ${user.lastName}`.trim();
 }
 
@@ -75,14 +73,16 @@ export default function MessagesPage() {
   } = useMarkMessageRead();
 
   useEffect(() => {
-    if (!threads || !threads.length || !currentUser) {
-      if (!threads?.length) {
-        setActivePartnerId(null);
-      }
+    if (!currentUser) return;
+
+    const firstThread = threads?.[0];
+    if (!firstThread) {
+      setActivePartnerId(null);
       return;
     }
+
     if (!activePartnerId) {
-      const firstPartner = getPartnerId(threads[0], currentUser.id);
+      const firstPartner = getPartnerId(firstThread, currentUser.id);
       if (firstPartner) setActivePartnerId(firstPartner);
     }
   }, [threads, currentUser, activePartnerId]);
@@ -91,13 +91,17 @@ export default function MessagesPage() {
     if (!threads || !currentUser) return [];
     return threads.map((threadMessage) => {
       const partnerId = getPartnerId(threadMessage, currentUser.id) || threadMessage.recipientId;
-      const partner = users?.find((user) => user.id === partnerId);
+      const partnerFromMessage =
+        threadMessage.senderId === currentUser.id ? threadMessage.recipient : threadMessage.sender;
+      const partner = users?.find((user) => user.id === partnerId) || partnerFromMessage || undefined;
       const unread = threadMessage.recipientId === currentUser.id && !threadMessage.readAt ? 1 : 0;
 
       return { partnerId, partner, lastMessage: threadMessage, unread };
     });
   }, [threads, users, currentUser]);
 
+  const partnerAvatar = resolveImageUrl(threadItems[0]?.partner?.avatarUrl);
+  console.log("threadItems", threadItems);
   const activeThread = threadItems.find((thread) => thread.partnerId === activePartnerId);
   const activeListingId =
     activeThread?.lastMessage.listingId || conversation?.[conversation.length - 1]?.listingId || null;
@@ -141,13 +145,13 @@ export default function MessagesPage() {
   return (
     <AppShell>
       <PageHeader
-        title="Messages"
-        description="Discutez avec les autres utilisateurs sans quitter la plateforme."
+        title="Мессежүүд"
+        description="Платформаас гаралгүйгээр бусад хэрэглэгчидтэй ярилцаарай."
         actions={
           !mobileShowList ? (
             <Badge variant="secondary" className="gap-1">
               <CheckCheck className="h-4 w-4" aria-hidden="true" />
-              Conversation
+              Яриа
             </Badge>
           ) : null
         }
@@ -156,23 +160,23 @@ export default function MessagesPage() {
 
       {showAuthRequired ? (
         <div className="rounded-xl border border-border/80 bg-background p-6 shadow-sm">
-          <p className="text-sm text-muted-foreground">Connectez-vous pour consulter et envoyer vos messages.</p>
+          <p className="text-sm text-muted-foreground">Мессежээ харах, илгээхийн тулд нэвтэрнэ үү.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-[320px_1fr] sm:gap-6">
           <div className="hidden rounded-xl border border-border/80 bg-background shadow-sm sm:block">
             <div className="border-b px-4 py-3">
-              <p className="text-sm font-medium text-foreground">Conversations</p>
-              <p className="text-xs text-muted-foreground">Le dernier message de chaque fil apparaît ici.</p>
+              <p className="text-sm font-medium text-foreground">Харилцаанууд</p>
+              <p className="text-xs text-muted-foreground">Яриа бүрийн сүүлийн мессеж энд харагдана.</p>
             </div>
             <div className="divide-y">
               {isLoadingThreads ? (
                 <div className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Chargement des conversations...
+                  Харилцаануудыг ачааллаж байна...
                 </div>
               ) : threadsError ? (
-                <div className="px-4 py-4 text-sm text-red-600">Impossible de charger les conversations.</div>
+                <div className="px-4 py-4 text-sm text-red-600">Харилцаануудыг уншиж чадсангүй.</div>
               ) : threadItems.length ? (
                 threadItems.map((thread) => {
                   const isActive = thread.partnerId === activePartnerId;
@@ -187,7 +191,7 @@ export default function MessagesPage() {
                         isActive ? "bg-primary/5" : "hover:bg-muted"
                       )}
                     >
-                      <Avatar src={thread.partner?.avatarUrl} alt={name} />
+                      <Avatar src={partnerAvatar || undefined} alt={name} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between text-sm">
                           <span className="font-medium text-foreground line-clamp-1">{name}</span>
@@ -204,7 +208,7 @@ export default function MessagesPage() {
                   );
                 })
               ) : (
-                <div className="px-4 py-6 text-sm text-muted-foreground">Aucune conversation pour l'instant.</div>
+                <div className="px-4 py-6 text-sm text-muted-foreground">Одоогоор яриа алга.</div>
               )}
             </div>
           </div>
@@ -212,14 +216,14 @@ export default function MessagesPage() {
           {mobileShowList ? (
             <div className="rounded-xl border border-border/80 bg-background shadow-sm sm:hidden">
               <div className="border-b px-4 py-3">
-                <p className="text-sm font-medium text-foreground">Conversations</p>
-                <p className="text-xs text-muted-foreground">Le dernier message de chaque fil apparaît ici.</p>
+                <p className="text-sm font-medium text-foreground">Харилцаанууд</p>
+                <p className="text-xs text-muted-foreground">Яриа бүрийн сүүлийн мессеж энд харагдана.</p>
               </div>
               <div className="divide-y">
                 {isLoadingThreads ? (
                   <div className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Chargement des conversations...
+                    Харилцаануудыг ачааллаж байна...
                   </div>
                 ) : threadItems.length ? (
                   threadItems.map((thread) => {
@@ -231,7 +235,7 @@ export default function MessagesPage() {
                         onClick={() => handleSelectConversation(thread.partnerId)}
                         className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-muted"
                       >
-                        <Avatar src={thread.partner?.avatarUrl} alt={name} />
+                        <Avatar src={thread.partnerAvatar || undefined} alt={name} />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between text-sm">
                             <span className="font-medium text-foreground line-clamp-1">{name}</span>
@@ -250,7 +254,7 @@ export default function MessagesPage() {
                     );
                   })
                 ) : (
-                  <div className="px-4 py-6 text-sm text-muted-foreground">Aucune conversation pour l'instant.</div>
+                  <div className="px-4 py-6 text-sm text-muted-foreground">Одоогоор яриа алга.</div>
                 )}
               </div>
             </div>
@@ -264,14 +268,14 @@ export default function MessagesPage() {
                   size="icon"
                   className="sm:hidden"
                   onClick={() => setActivePartnerId(null)}
-                  aria-label="Retour à la liste"
+                  aria-label="Жагсаалт руу буцах"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                <Avatar src={activeThread?.partner?.avatarUrl} alt={buildDisplayName(activeThread?.partner)} />
+                <Avatar src={activeThread?.partnerAvatar || undefined} alt={buildDisplayName(activeThread?.partner)} />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">{buildDisplayName(activeThread?.partner)}</p>
-                  <p className="text-xs text-muted-foreground">{activeThread?.partner?.email || "Fil de discussion"}</p>
+                  <p className="text-xs text-muted-foreground">{activeThread?.partner?.email || "Харилцаа"}</p>
                 </div>
               </div>
 
@@ -279,7 +283,7 @@ export default function MessagesPage() {
                 {isLoadingConversation ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Chargement de la conversation...
+                    Яриаг ачааллаж байна...
                   </div>
                 ) : conversationMessages.length ? (
                   conversationMessages.map((message) => (
@@ -302,7 +306,7 @@ export default function MessagesPage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">Aucun message pour cette conversation.</p>
+                  <p className="text-sm text-muted-foreground">Энэ ярианд мессеж алга.</p>
                 )}
               </div>
 
@@ -322,7 +326,7 @@ export default function MessagesPage() {
                 {sendError ? <p className="mb-2 text-xs text-red-600">{(sendError as Error).message}</p> : null}
                 {!activeListingId ? (
                   <p className="mb-2 text-xs text-amber-600">
-                    Impossible d'envoyer un message sans annonce liée à ce fil.
+                    Энэ ярианд зар холбоогүй бол мессеж илгээх боломжгүй.
                   </p>
                 ) : null}
                 <div className="flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-2">
@@ -338,18 +342,18 @@ export default function MessagesPage() {
                         handleSend();
                       }
                     }}
-                    placeholder="Ecrivez votre message..."
+                    placeholder="Мессежээ бичнэ үү..."
                     className="h-10 flex-1 border-none bg-transparent focus-visible:ring-0"
                   />
                   <Button size="sm" onClick={handleSend} className="shrink-0" disabled={isSending || !activeListingId}>
-                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Envoyer"}
+                    {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Илгээх"}
                   </Button>
                 </div>
               </div>
             </div>
           ) : (
             <div className="rounded-xl border border-border/80 bg-background p-6 text-sm text-muted-foreground shadow-sm">
-              Sélectionnez une conversation pour commencer.
+              Эхлэхийн тулд нэг яриа сонгоно уу.
             </div>
           )}
         </div>

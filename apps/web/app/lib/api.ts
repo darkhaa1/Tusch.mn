@@ -137,6 +137,8 @@ export type Message = {
   readAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  sender?: ListingUser;
+  recipient?: ListingUser;
 };
 
 export type ListingsPage = {

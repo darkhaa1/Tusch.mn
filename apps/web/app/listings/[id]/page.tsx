@@ -2,27 +2,18 @@
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { MapPin, EllipsisVertical } from "lucide-react";
+import { EllipsisVertical } from "lucide-react";
 import {
-  useCurrentUser, useDeleteListing, useListing, useUpdateListing,
+  useCurrentUser,
+  useDeleteListing,
+  useListing,
+  useSendMessage,
+  useUpdateListing,
 } from "../../hooks/useApi";
 import { deleteListingImage, uploadListingImages } from "../../lib/api";
 import resolveImageUrl from "../../lib/resolveImageUrl";
-import { Card, CardContent } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Textarea } from "../../components/ui/textarea";
-import Select from "../../components/ui/select";
-import Avatar from "../../components/ui/avatar";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -30,8 +21,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../../components/ui/dialog";
-import { cn } from "../../lib/utils";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Textarea,
+} from "@repo/ui";
+import { ListingGallery } from "./components/ListingGallery";
+import { ListingDetailsCard } from "./components/ListingDetailsCard";
+import { ListingSidebar } from "./components/ListingSidebar";
 
 const categories = [
   { value: "network_repair", label: "Дотоод сүлжээ / интернет засвар" },
@@ -55,12 +54,16 @@ export default function ListingDetailPage() {
   const { data: currentUser } = useCurrentUser();
   const updateListing = useUpdateListing();
   const deleteListing = useDeleteListing();
+  const sendMessage = useSendMessage();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [messageContent, setMessageContent] = useState("");
+  const [messageFeedback, setMessageFeedback] = useState<string | null>(null);
   const [formState, setFormState] = useState({
     description: "",
     price: "",
@@ -84,12 +87,6 @@ export default function ListingDetailPage() {
     });
     setSelectedIndex(0);
   }, [listing]);
-
-  const handleChange =
-    (field: keyof typeof formState) =>
-      (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setFormState((prev) => ({ ...prev, [field]: event.target.value }));
-      };
 
   const handleSave = async () => {
     if (!listingId) return;
@@ -179,6 +176,32 @@ export default function ListingDetailPage() {
     }
   };
 
+  const handleSendMessage = async () => {
+    if (!listing || !listingId || !listing.userId) return;
+    if (!currentUser) {
+      setMessageFeedback("Мессеж илгээхийн тулд нэвтэрнэ үү.");
+      return;
+    }
+    const content = messageContent.trim();
+    if (!content) {
+      setMessageFeedback("Мессеж хоосон байна.");
+      return;
+    }
+    setMessageFeedback(null);
+    try {
+      await sendMessage.mutateAsync({
+        recipientId: listing.userId,
+        listingId,
+        content,
+      });
+      setMessageContent("");
+      setMessageDialogOpen(false);
+      setMessageFeedback("Мессеж илгээлээ.");
+    } catch (err: any) {
+      setMessageFeedback(err?.message || "Мессеж илгээхэд алдаа гарлаа.");
+    }
+  };
+
   if (isLoading) return <p className="py-10 text-center text-muted-foreground">Уншиж байна...</p>;
   if (error) return <p className="py-10 text-center text-destructive">Алдаа гарлаа.</p>;
   if (!listing) return <p className="py-10 text-center text-muted-foreground">Зар олдсонгүй</p>;
@@ -195,6 +218,7 @@ export default function ListingDetailPage() {
   const priceLabel =
     typeof listing.price === "number" && listing.price > 0 ? `${listing.price.toLocaleString()} ₮` : "Тохиролцоно";
   const contactHref = author?.phone ? `tel:${author.phone}` : author?.email ? `mailto:${author.email}` : null;
+  const locationLabel = listing.location || "Байршил оруулаагүй";
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6">
@@ -223,172 +247,52 @@ export default function ListingDetailPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="space-y-4 md:col-span-2">
-          <Card className="overflow-hidden">
-            <div className="relative">
-              <div className="aspect-[4/3] w-full bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={displayedMain} alt={heading} className="h-full w-full object-cover" />
-              </div>
-              <div className="absolute bottom-3 left-3 flex gap-2 rounded-full bg-black/50 px-3 py-1 text-xs text-white backdrop-blur">
-                <span>{categoryLabel || "Ангилалгүй"}</span>
-              </div>
-            </div>
-            <div className="flex gap-3 overflow-x-auto p-4">
-              {[displayedMain, ...imageUrls.filter((_, idx) => idx !== selectedIndex)].slice(0, 4).map((url, idx) => {
-                const originalIndex = imageUrls.indexOf(url);
-                const active = originalIndex === selectedIndex;
-                return (
-                  <button
-                    key={`${url}-${idx}`}
-                    type="button"
-                    onClick={() => setSelectedIndex(originalIndex >= 0 ? originalIndex : 0)}
-                    className={cn(
-                      "relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-lg border transition",
-                      active ? "ring-2 ring-primary" : "hover:border-primary/60"
-                    )}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt={heading} className="h-full w-full object-cover" />
-                  </button>
-                );
-              })}
-              {!imageUrls.length && (
-                <div className="h-20 w-28 flex-shrink-0 overflow-hidden rounded-lg border bg-muted" />
-              )}
-            </div>
-          </Card>
+          <ListingGallery
+            heading={heading}
+            categoryLabel={categoryLabel}
+            imageUrls={imageUrls}
+            displayedMain={displayedMain}
+            selectedIndex={selectedIndex}
+            onSelect={setSelectedIndex}
+          />
 
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-semibold leading-tight text-foreground">{heading}</h1>
-                {categoryLabel ? <Badge variant="secondary">{categoryLabel}</Badge> : null}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" aria-hidden="true" />
-                <span>{listing.location || "Байршил оруулаагүй"}</span>
-              </div>
-
-              {isEditing ? (
-                <div className="space-y-3">
-                  <Textarea
-                    rows={6}
-                    value={formState.description}
-                    onChange={handleChange("description")}
-                    disabled={updateListing.isPending}
-                    placeholder="Тайлбараа оруулна уу..."
-                  />
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Input
-                      type="number"
-                      value={formState.price}
-                      onChange={handleChange("price")}
-                      disabled={updateListing.isPending}
-                      placeholder="Үнэ"
-                    />
-                    <Input
-                      value={formState.location}
-                      onChange={handleChange("location")}
-                      disabled={updateListing.isPending}
-                      placeholder="Байршил"
-                    />
-                  </div>
-                  <Select value={formState.category} onChange={handleChange("category")} disabled={updateListing.isPending}>
-                    <option value="">Ангилал сонгох</option>
-                    {categories.map((category) => (
-                      <option key={category.value} value={category.value}>
-                        {category.label}
-                      </option>
-                    ))}
-                  </Select>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <Button onClick={handleSave} disabled={updateListing.isPending}>
-                      Хадгалах
-                    </Button>
-                    <Button variant="outline" onClick={handleCancelEdit} disabled={updateListing.isPending}>
-                      Цуцлах
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-base leading-relaxed text-foreground">{listing.description}</p>
-              )}
-
-              {formError && <p className="text-sm text-destructive">{formError}</p>}
-            </CardContent>
-          </Card>
+          <ListingDetailsCard
+            heading={heading}
+            categoryLabel={categoryLabel}
+            listingDescription={listing.description}
+            isEditing={isEditing}
+            formState={formState}
+            onFieldChange={(field, value) => setFormState((prev) => ({ ...prev, [field]: value }))}
+            onSave={handleSave}
+            onCancel={handleCancelEdit}
+            isSaving={updateListing.isPending}
+            categories={categories}
+            formError={formError}
+          />
         </div>
 
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="space-y-4 p-6">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <div className="text-xs uppercase text-muted-foreground">Үнэ</div>
-                  <div className="text-3xl font-semibold text-primary">{priceLabel}</div>
-                </div>
-              </div>
-
-              <div className="space-y-2 rounded-lg border border-border/80 bg-background p-3">
-                <div className="text-xs uppercase text-muted-foreground">Байршил</div>
-                <div className="text-sm text-foreground">{listing.location || "Байршил оруулаагүй"}</div>
-              </div>
-
-              <div className="space-y-2 rounded-lg border border-border/80 bg-background p-3">
-                <div className="text-xs uppercase text-muted-foreground">Ангилал</div>
-                <div className="text-sm text-foreground">
-                  {listing.category ? categoryLabelMap.get(listing.category) || listing.category : "Ангилалгүй"}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-lg border border-border/80 bg-background p-3">
-                <Avatar src={authorAvatar} alt={authorName} />
-                <div className="space-y-1 text-sm text-foreground">
-                  <div className="font-medium text-foreground">{authorName || "Хэрэглэгч"}</div>
-                  {author?.email && <div className="text-muted-foreground">{author.email}</div>}
-                  {author?.phone && <div className="text-muted-foreground">{author.phone}</div>}
-                </div>
-              </div>
-
-              {isOwner ? (
-                <div className="space-y-2">
-                  <div className="text-xs uppercase text-muted-foreground">Зураг</div>
-                  <div className="flex flex-wrap gap-2">
-                    {images.map((image) => (
-                      <div key={image.id} className="relative h-24 w-24 overflow-hidden rounded-lg border">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={resolveImageUrl(image.url) || "/placeholder.jpg"} alt={heading} className="h-full w-full object-cover" />
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteImage(image.id)}
-                          disabled={deletingImageId === image.id}
-                          className="absolute right-1 top-1 h-6 px-2 text-xs"
-                        >
-                          Устгах
-                        </Button>
-                      </div>
-                    ))}
-                    {images.length < 3 && (
-                      <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-xs text-muted-foreground">
-                        Зураг нэмэх
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="hidden"
-                          onChange={handleImagesUpload}
-                          disabled={isUploadingImages}
-                        />
-                      </label>
-                    )}
-                  </div>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </div>
+        <ListingSidebar
+          priceLabel={priceLabel}
+          locationLabel={locationLabel}
+          categoryLabel={categoryLabel}
+          authorName={authorName || "Хэрэглэгч"}
+          authorEmail={author?.email}
+          authorPhone={author?.phone}
+          authorAvatar={authorAvatar}
+          images={images}
+          heading={heading}
+          isOwner={isOwner}
+          deletingImageId={deletingImageId}
+          isUploadingImages={isUploadingImages}
+          onDeleteImage={handleDeleteImage}
+          onUploadImages={handleImagesUpload}
+          onOpenMessage={() => {
+            setMessageDialogOpen(true);
+            setMessageFeedback(null);
+          }}
+          messageFeedback={messageFeedback}
+          showMessageCta={!isOwner}
+        />
       </div>
 
       {contactHref ? (
@@ -421,6 +325,33 @@ export default function ListingDetailPage() {
               Устгах
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Мессеж илгээх</DialogTitle>
+            <DialogDescription>Энэ зарын эзэмшигч рүү шууд мессеж илгээнэ.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Textarea
+              rows={5}
+              value={messageContent}
+              onChange={(event) => setMessageContent(event.target.value)}
+              placeholder="Мессежээ бичнэ үү..."
+              disabled={sendMessage.isPending}
+            />
+            {messageFeedback ? <p className="text-sm text-muted-foreground">{messageFeedback}</p> : null}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setMessageDialogOpen(false)} disabled={sendMessage.isPending}>
+                Цуцлах
+              </Button>
+              <Button onClick={handleSendMessage} disabled={sendMessage.isPending}>
+                {sendMessage.isPending ? "Илгээж байна..." : "Илгээх"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
