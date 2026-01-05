@@ -8,35 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateListing } from "../hooks/useApi";
 import { uploadListingImages } from "../lib/api";
 import type { Listing } from "../lib/api";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
-import { Badge } from "../components/ui/badge";
+import { Badge, Button, Input, Textarea } from "@repo/ui";
 import { cn } from "../lib/utils";
 import {
-  Wrench,
-  Home,
-  Truck,
-  PawPrint,
-  Car,
-  Baby,
-  BookOpen,
-  Sparkles,
   X,
   ArrowLeft,
   ImageUp,
 } from "lucide-react";
-
-const categories = [
-  { value: "network_repair", label: "Сүлжээ / интернет", icon: Wrench },
-  { value: "moving", label: "Нүүлгэлт", icon: Truck },
-  { value: "home_cleaning", label: "Цэвэрлэгээ", icon: Home },
-  { value: "dog_walking", label: "Нохой салхилуулах", icon: PawPrint },
-  { value: "carpentry", label: "Модон ажил", icon: Sparkles },
-  { value: "auto_repair", label: "Авто засвар", icon: Car },
-  { value: "babysitting", label: "Хүүхэд асрах", icon: Baby },
-  { value: "tutoring", label: "Хичээл заах", icon: BookOpen },
-];
+import { CATEGORY_OPTIONS } from "../lib/categories";
 
 const ListingSchema = z.object({
   category: z.string().min(1, "Ангилал сонгоно уу"),
@@ -167,7 +146,7 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
                 <p className="text-xs text-muted-foreground">Таны хэрэгцээнд хамгийн ойр ангиллыг сонгоно уу.</p>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {categories.map((category) => {
+                {CATEGORY_OPTIONS.map((category) => {
                   const Icon = category.icon;
                   const active = categoryValue === category.value;
                   return (

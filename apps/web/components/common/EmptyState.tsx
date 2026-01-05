@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Card, CardContent } from "../../app/components/ui/card";
-import { buttonVariants } from "../../app/components/ui/button";
+import { Card, CardContent, buttonVariants } from "@repo/ui";
 import { cn } from "../../app/lib/utils";
 
 type EmptyStateProps = {

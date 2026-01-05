@@ -137,6 +137,51 @@ export type Message = {
   readAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  sender?: ListingUser;
+  recipient?: ListingUser;
+};
+
+export type PublicUserProfile = {
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    createdAt: string;
+    verification: {
+      emailVerified: boolean;
+      phoneVerified: boolean;
+      idVerified: boolean;
+    };
+  };
+  stats: {
+    listingsCount: number;
+    completedCount: number | null;
+    responseRate: number | null;
+    ratingAvg: number | null;
+    reviewsCount: number;
+  };
+  recentListings: Array<{
+    id: string;
+    category: string | null;
+    price: number;
+    location: string | null;
+    description: string;
+    createdAt: string;
+    imageUrl: string | null;
+  }>;
+  reviews: Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+    reviewer: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      avatarUrl: string | null;
+    };
+  }>;
 };
 
 export type ListingsPage = {
@@ -292,4 +337,13 @@ export async function sendMessage(body: { recipientId: string; listingId: string
 
 export async function markMessageRead(messageId: string) {
   return apiFetch<Message>(`/messages/${messageId}/read`, { method: 'PATCH' });
+}
+
+export async function fetchPublicUserProfile(userId: string, params?: { page?: number; limit?: number }) {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', String(params.page));
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  const query = searchParams.toString();
+  const path = query ? `/users/${userId}/public?${query}` : `/users/${userId}/public`;
+  return apiFetch<PublicUserProfile>(path, { method: 'GET' });
 }

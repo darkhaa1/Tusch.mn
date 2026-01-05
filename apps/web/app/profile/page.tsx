@@ -7,11 +7,8 @@ import { ShieldCheck, Phone, Mail } from "lucide-react";
 import ProfileTabs from "./components/ProfileTabs";
 import { logout } from "../lib/logout";
 import AppShell from "../../components/layout/AppShell";
-import { buttonVariants, Button } from "../components/ui/button";
-import { Card, CardContent } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
+import { Avatar, Badge, Button, Card, CardContent, buttonVariants } from "@repo/ui";
 import { cn } from "../lib/utils";
-import Avatar from "../components/ui/avatar";
 import { useCurrentUser } from "../hooks/useApi";
 import { PageHeader } from "../../components/common";
 

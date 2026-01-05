@@ -2,7 +2,7 @@
 
 import MyListings from "./tabs/MyListings";
 import ProfileInfo from "./tabs/ProfileInfo";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@repo/ui";
 
 export default function ProfileTabs() {
   return (

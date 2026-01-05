@@ -11,6 +11,15 @@ import { CreateMessageDto } from './dto/create-message.dto';
 export class MessagesService {
   constructor(private prisma: PrismaService) {}
 
+  private userSelect = {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    phone: true,
+    avatarUrl: true,
+  };
+
   async create(dto: CreateMessageDto, senderId: string) {
     if (dto.recipientId === senderId) {
       throw new BadRequestException('Cannot send message to yourself');
@@ -55,6 +64,10 @@ export class MessagesService {
     return this.prisma.message.findMany({
       where: { OR: conversationFilter },
       orderBy: { createdAt: 'asc' },
+      include: {
+        sender: { select: this.userSelect },
+        recipient: { select: this.userSelect },
+      },
     });
   }
 
@@ -62,6 +75,10 @@ export class MessagesService {
     const messages = await this.prisma.message.findMany({
       where: { OR: [{ senderId: userId }, { recipientId: userId }] },
       orderBy: { createdAt: 'desc' },
+      include: {
+        sender: { select: this.userSelect },
+        recipient: { select: this.userSelect },
+      },
     });
 
     const lastByPartner = new Map<string, (typeof messages)[number]>();
