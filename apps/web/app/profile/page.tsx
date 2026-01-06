@@ -27,7 +27,7 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <PageHeader
-        title="Миний профиль"
+        title="Миний профайл"
         actions={
           <button onClick={handleLogout} className={cn(buttonVariants({ variant: "destructive" }))}>
             Гарах
@@ -41,7 +41,6 @@ export default function ProfilePage() {
             <Avatar src={currentUser?.avatarUrl || (currentUser as any)?.image} alt={name} className="h-20 w-20" />
             <div className="space-y-2">
               <div>
-                <p className="text-sm text-muted-foreground">Профайл</p>
                 <h2 className="text-2xl font-semibold text-foreground">{name}</h2>
               </div>
               <div className="flex flex-wrap items-center gap-2">
