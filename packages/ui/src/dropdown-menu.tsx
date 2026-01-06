@@ -86,7 +86,7 @@ export function DropdownMenuItem({ className, children, ...props }: ItemProps) {
       type="button"
       className={cn(
         "flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm text-foreground",
-        "hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring",
+        "hover:bg-muted/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}

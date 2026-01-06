@@ -24,6 +24,8 @@ import {
   updateCurrentUser,
   updateListing,
   uploadListingImages,
+  updateMyRole,
+  changePassword,
 } from '../lib/api';
 
 export function useCurrentUser() {
@@ -146,6 +148,23 @@ export function useUpdateCurrentUser() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateCurrentUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['current-user'] });
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
+      changePassword(currentPassword, newPassword),
+  });
+}
+
+export function useUpdateMyRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (role: Parameters<typeof updateMyRole>[0]) => updateMyRole(role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['current-user'] });
     },

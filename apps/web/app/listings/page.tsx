@@ -141,13 +141,13 @@ export default function ListingsPage() {
           <button
             type="button"
             onClick={resetFilters}
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2")}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2 ui-interactive")}
           >
             <FilterX className="h-4 w-4" aria-hidden="true" />
             Цэвэрлэх
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-2 pb-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7">
+        <div className="grid grid-cols-2 gap-2 pb-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
           {CATEGORY_OPTIONS.map((item) => {
             const active = category === item.value;
             return (
@@ -164,7 +164,7 @@ export default function ListingsPage() {
                   router.push(`/listings${query}`);
                 }}
                 className={cn(
-                  "rounded-full border px-3 py-2 text-xs font-medium transition text-center leading-tight sm:text-sm",
+                  "rounded-full border px-3 py-2 text-xs font-medium transition text-center leading-tight sm:text-sm ui-interactive",
                   active
                     ? "border-primary bg-primary text-primary-foreground shadow-sm"
                     : "border-border bg-muted text-foreground hover:border-primary/60 hover:bg-muted/80"
@@ -275,7 +275,7 @@ export default function ListingsPage() {
             size="sm"
             onClick={() => updatePage(resolvedPage - 1)}
             disabled={!hasPrevious || isFetching}
-            className="min-w-[120px]"
+            className="min-w-[120px] ui-interactive"
           >
             Өмнөх
           </Button>
@@ -291,7 +291,7 @@ export default function ListingsPage() {
             size="sm"
             onClick={() => updatePage(resolvedPage + 1)}
             disabled={!hasNext || isFetching}
-            className="min-w-[120px]"
+            className="min-w-[120px] ui-interactive"
           >
             Дараах
           </Button>

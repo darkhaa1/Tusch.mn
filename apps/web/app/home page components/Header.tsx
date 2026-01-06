@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Menu, Users, MessageCircle, Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import SignupModal from "./SignUpModal";
@@ -10,8 +12,10 @@ import LoginModal from "./LoginModal";
 import NewListingModal from "../listings/NewListingModal";
 import { useCurrentUser } from "../hooks/useApi";
 import resolveAvatarUrl from "../lib/resolveImageUrl";
-import { Button, buttonVariants, Avatar, AvatarFallback, AvatarImage, Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@repo/ui";
+import { Button, buttonVariants, Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@repo/ui";
 import { cn } from "../lib/utils";
+import { logout } from "../lib/logout";
+import { UserMenu } from "../../components/header/UserMenu";
 
 const navItems = [
   { href: "/offreurs", label: "Үйлчилгээ үзүүлэгчид", icon: Users },
@@ -29,6 +33,8 @@ const mobileNav = [
 export default function Header() {
   const { data: session } = useSession();
   const { data: backendUser } = useCurrentUser();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [openSignUpModal, setOpenSignUpModal] = useState(false);
   const [openLoginModal, setOpenLoginModal] = useState(false);
   const [openNewListingModal, setOpenNewListingModal] = useState(false);
@@ -58,7 +64,7 @@ export default function Header() {
             variant="outline"
             size="sm"
             onClick={() => setOpenNewListingModal(true)}
-            className="gap-2"
+            className="gap-2 ui-interactive"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Зар нэмэх
@@ -68,6 +74,7 @@ export default function Header() {
             size="icon"
             aria-label="Цэс нээх"
             onClick={() => setMobileOpen(true)}
+            className="ui-interactive"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -80,7 +87,7 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />
                 <span>{item.label}</span>
@@ -88,7 +95,7 @@ export default function Header() {
             );
           })}
           <Button
-            className="gap-2"
+            className="gap-2 ui-interactive"
             onClick={() => setOpenNewListingModal(true)}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -98,33 +105,25 @@ export default function Header() {
 
         <div className="hidden items-center gap-2 md:flex">
           {isLoggedIn ? (
-            <Link
-              href="/profile"
-              className={cn(
-                buttonVariants({ variant: "ghost" }),
-                "gap-2 rounded-full px-2"
-              )}
-            >
-              <Avatar className="h-9 w-9">
-                {avatar ? (
-                  <AvatarImage src={avatar} alt={firstName || "Profile"} />
-                ) : null}
-                <AvatarFallback>{initials}</AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium text-foreground">
-                {firstName || "Профайл"}
-              </span>
-            </Link>
+            <UserMenu
+              firstName={firstName}
+              avatarUrl={avatar}
+              initials={initials}
+              onLogout={() => {
+                void logout(router, queryClient);
+              }}
+            />
           ) : (
             <>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setOpenLoginModal(true)}
+                className="ui-interactive"
               >
                 Нэвтрэх
               </Button>
-              <Button size="sm" onClick={() => setOpenSignUpModal(true)}>
+              <Button size="sm" onClick={() => setOpenSignUpModal(true)} className="ui-interactive">
                 Бүртгүүлэх
               </Button>
             </>
@@ -146,7 +145,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   buttonVariants({ variant: "ghost" }),
-                  "justify-start text-base"
+                  "justify-start text-base ui-interactive"
                 )}
               >
                 {item.label}
@@ -157,7 +156,7 @@ export default function Header() {
               <Link
                 href="/profile"
                 onClick={() => setMobileOpen(false)}
-                className={cn(buttonVariants({ variant: "outline" }), "justify-start text-base")}
+                className={cn(buttonVariants({ variant: "outline" }), "justify-start text-base ui-interactive")}
               >
                 Профайл
               </Link>
@@ -169,6 +168,7 @@ export default function Header() {
                     setOpenLoginModal(true);
                     setMobileOpen(false);
                   }}
+                  className="ui-interactive"
                 >
                   Нэвтрэх
                 </Button>
@@ -177,6 +177,7 @@ export default function Header() {
                     setOpenSignUpModal(true);
                     setMobileOpen(false);
                   }}
+                  className="ui-interactive"
                 >
                   Бүртгүүлэх
                 </Button>
@@ -185,7 +186,7 @@ export default function Header() {
           </div>
           <SheetFooter>
             <Button
-              className="w-full gap-2"
+              className="w-full gap-2 ui-interactive"
               onClick={() => {
                 setOpenNewListingModal(true);
                 setMobileOpen(false);

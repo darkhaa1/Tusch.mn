@@ -1,5 +1,18 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export type UserRole = 'CLIENT' | 'PROVIDER' | 'BOTH';
+
+export type CurrentUser = {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  accountType?: string;
+  avatarUrl?: string | null;
+  role?: UserRole;
+};
+
 // Small wrapper to normalize errors and JSON parsing.
 async function apiFetch<TResponse>(path: string, options: RequestInit = {}): Promise<TResponse> {
   if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL is not defined');
@@ -31,9 +44,9 @@ async function apiFetch<TResponse>(path: string, options: RequestInit = {}): Pro
 
 // Auth -----------------------------------------------------------------------
 
-export async function getCurrentUser(): Promise<any | null> {
+export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
-    const data = await apiFetch<{ user: any }>('/auth/me', { method: 'GET' });
+    const data = await apiFetch<{ user: CurrentUser }>('/auth/me', { method: 'GET' });
     return data.user;
   } catch {
     return null;
@@ -89,12 +102,27 @@ export async function updateCurrentUser(
         phone?: string;
         avatarUrl?: string | null;
         accountType?: string;
+        email?: string;
       }
     | FormData
 ) {
-  return apiFetch<{ user: any }>('/auth/me', {
+  return apiFetch<{ user: CurrentUser }>('/auth/me', {
     method: 'PATCH',
     body: body instanceof FormData ? body : JSON.stringify(body),
+  });
+}
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  return apiFetch<{ success: boolean }>('/auth/password', {
+    method: 'PATCH',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+export async function updateMyRole(role: UserRole) {
+  return apiFetch<{ user: CurrentUser }>('/users/me/role', {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
   });
 }
 

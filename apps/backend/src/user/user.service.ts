@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
 export type PublicUserProfile = {
@@ -65,11 +66,13 @@ export class UserService {
   }
 
   async findAll() {
-    return this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => this.sanitizeUser(user));
   }
 
   async findById(id: string) {
-    return this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    return this.sanitizeUser(user);
   }
 
   async updateUser(
@@ -81,16 +84,33 @@ export class UserService {
       phone: string;
       accountType: string;
       avatarUrl: string | null;
+      role?: UserRole;
     }>,
   ) {
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
       data,
     });
+    return this.sanitizeUser(updated);
   }
 
   async deleteUser(id: string) {
     return this.prisma.user.delete({ where: { id } });
+  }
+
+  async updateMyRole(userId: string, role: UserRole) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+    return this.sanitizeUser(updated);
+  }
+
+  sanitizeUser(user: any) {
+    if (!user) return null;
+    const { password: _password, ...rest } = user;
+    void _password;
+    return rest;
   }
 
   async getPublicProfile(

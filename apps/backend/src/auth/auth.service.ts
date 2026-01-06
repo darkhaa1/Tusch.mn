@@ -94,11 +94,35 @@ export class AuthService {
       phone?: string;
       avatarUrl?: string | null;
       accountType?: string;
+      email?: string;
     },
   ) {
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data,
+    });
+    return this.sanitizeUser(updated);
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid current password');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashed },
     });
     return this.sanitizeUser(updated);
   }
