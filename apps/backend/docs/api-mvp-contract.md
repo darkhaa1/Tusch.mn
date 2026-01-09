@@ -50,6 +50,40 @@ Base URL: `http://localhost:3310`
 
 ---
 
+## Users (public)
+
+### GET `/users/providers`
+- Auth: no
+- Query params:
+  - `q` (string, optional) recherche sur `firstName`/`lastName`, case-insensitive
+  - `category` (string, optional) users avec au moins un listing dans cette category
+  - `page` (number >= 1, default 1)
+  - `limit` (number 1..50, default 12)
+- Response:
+  ```json
+  {
+    "items": [
+      {
+        "id": "user_id",
+        "firstName": "Naraa",
+        "lastName": "Bat",
+        "avatarUrl": "/uploads/avatars/abc.jpg",
+        "location": null,
+        "topCategory": "moving",
+        "listingsCount": 3,
+        "ratingAvg": 4.8,
+        "reviewsCount": 12
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 12
+  }
+  ```
+- Privacy: jamais email/phone.
+
+---
+
 ## Avatar Upload
 - Endpoint: `PATCH /auth/me`
 - Auth: oui

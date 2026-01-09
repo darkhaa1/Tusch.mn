@@ -3,6 +3,7 @@ import {
   Listing,
   ListingsPage,
   Message,
+  ProvidersPage,
   createListing,
   deleteCurrentUser,
   deleteListing,
@@ -12,6 +13,7 @@ import {
   fetchListingsPage,
   fetchMessageThreads,
   fetchMyListings,
+  fetchProviders,
   fetchUsers,
   getCurrentUser,
   loginUser,
@@ -186,6 +188,24 @@ export function useUsers(enabled = true) {
     queryKey: ['users'],
     queryFn: fetchUsers,
     enabled,
+  });
+}
+
+export function useProviders(params?: {
+  q?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery<ProvidersPage>({
+    queryKey: [
+      'providers',
+      params?.q || '',
+      params?.category || 'all',
+      params?.page || 1,
+      params?.limit || 12,
+    ],
+    queryFn: () => fetchProviders(params),
   });
 }
 

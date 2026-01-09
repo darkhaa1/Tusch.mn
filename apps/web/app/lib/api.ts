@@ -212,6 +212,25 @@ export type PublicUserProfile = {
   }>;
 };
 
+export type ProviderCard = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string | null;
+  location?: string | null;
+  topCategory?: string | null;
+  listingsCount: number;
+  ratingAvg?: number | null;
+  reviewsCount: number;
+};
+
+export type ProvidersPage = {
+  items: ProviderCard[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
 export type ListingsPage = {
   items: Listing[];
   total: number;
@@ -344,6 +363,22 @@ export async function deleteListingImage(listingId: string, imageId: string) {
 
 export async function fetchUsers(): Promise<ListingUser[]> {
   return apiFetch('/users', { method: 'GET' });
+}
+
+export async function fetchProviders(params?: {
+  q?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}): Promise<ProvidersPage> {
+  const searchParams = new URLSearchParams();
+  if (params?.q) searchParams.set('q', params.q);
+  if (params?.category) searchParams.set('category', params.category);
+  if (params?.page) searchParams.set('page', String(params.page));
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  const query = searchParams.toString();
+  const path = query ? `/users/providers?${query}` : '/users/providers';
+  return apiFetch<ProvidersPage>(path, { method: 'GET' });
 }
 
 // Messages -------------------------------------------------------------------

@@ -59,3 +59,39 @@
 
 ### Privacy
 - **Never exposed**: email, phone, passwords, tokens, OAuth ids. Only the fields shown above are returned.
+
+---
+
+## Providers (public)
+
+### GET `/users/providers`
+- Query params:
+  - `q` (string, optional) search on firstName/lastName, case-insensitive
+  - `category` (string, optional) users with at least one listing in category
+  - `page` (number >= 1, default 1)
+  - `limit` (number 1..50, default 12)
+
+### Response
+```json
+{
+  "items": [
+    {
+      "id": "user_id",
+      "firstName": "Naraa",
+      "lastName": "Bat",
+      "avatarUrl": "/uploads/avatars/abc.jpg",
+      "location": null,
+      "topCategory": "moving",
+      "listingsCount": 3,
+      "ratingAvg": 4.8,
+      "reviewsCount": 12
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 12
+}
+```
+
+### Privacy
+- **Never exposed**: email, phone, passwords, tokens, OAuth ids. Only the fields shown above are returned.

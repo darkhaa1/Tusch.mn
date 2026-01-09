@@ -18,7 +18,7 @@ import { logout } from "../lib/logout";
 import { UserMenu } from "../../components/header/UserMenu";
 
 const navItems = [
-  { href: "/offreurs", label: "Үйлчилгээ үзүүлэгчид", icon: Users },
+  { href: "/offerers", label: "Үйлчилгээ үзүүлэгчид", icon: Users },
   { href: "/messages", label: "Мессеж", icon: MessageCircle },
 ];
 
