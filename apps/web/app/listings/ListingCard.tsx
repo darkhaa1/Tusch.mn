@@ -30,7 +30,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
   const isVerified = Boolean((listing.user as any)?.isVerified || (listing.user as any)?.verified);
 
   return (
-    <Card className="group flex h-full flex-col overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="group flex h-full flex-col overflow-hidden ui-card">
       <div className="relative">
         <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
           <img

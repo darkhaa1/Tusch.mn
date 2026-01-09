@@ -14,7 +14,7 @@ function buttonVariants({
   size?: ButtonSize;
 } = {}) {
   const base =
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors";
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors transition-shadow transition-transform hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0.5";
   const focus =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background";
   const disabled = "disabled:pointer-events-none disabled:opacity-50";
@@ -23,8 +23,8 @@ function buttonVariants({
     default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
     secondary: "bg-secondary text-secondary-foreground shadow hover:bg-secondary/90",
     outline:
-      "border border-input bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
-    ghost: "bg-transparent hover:bg-accent hover:text-accent-foreground",
+      "border border-input bg-background text-foreground hover:bg-muted/60 hover:text-foreground",
+    ghost: "bg-transparent hover:bg-muted/60 hover:text-foreground",
     destructive: "bg-destructive text-destructive-foreground shadow hover:bg-destructive/90",
   };
 

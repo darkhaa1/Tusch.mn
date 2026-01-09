@@ -119,5 +119,62 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  a {
+    @apply transition-colors underline-offset-4;
+  }
+
+  a:hover {
+    @apply text-primary underline decoration-muted-foreground/50;
+  }
+
+  a:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  button,
+  [role="button"] {
+    @apply transition-colors transition-shadow;
+  }
+
+  button:not(:disabled):hover,
+  [role="button"]:not(:disabled):hover {
+    @apply shadow-sm;
+  }
+
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .ui-interactive {
+    @apply transition hover:shadow-sm hover:-translate-y-0.5 active:scale-[0.99];
+  }
+
+  .ui-link {
+    @apply text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-muted-foreground/40 transition-colors;
+  }
+
+  .ui-card {
+    @apply border bg-card shadow-sm transition hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  .ui-icon-btn {
+    @apply rounded-full hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ui-interactive,
+    .ui-card,
+    button,
+    [role="button"] {
+      @apply transform-none;
+    }
+  }
 }
 

@@ -1,26 +1,42 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useCurrentUser } from "../hooks/useApi";
 
 export default function Hero() {
+  const router = useRouter();
+  const { data: currentUser } = useCurrentUser();
+
+  const role = (currentUser?.role || "CLIENT") as "CLIENT" | "PROVIDER" | "BOTH";
+  const showBothCtas = role === "BOTH";
+  const primaryCta =
+    role === "PROVIDER"
+      ? { label: "Зарууд үзэх", href: "/listings" }
+      : { label: "Зар нэмэх", href: "/listings?create=1" };
+  const secondaryCta = showBothCtas ? { label: "Зар нэмэх", href: "/listings?create=1" } : null;
+
+  const handleCtaClick = (href: string) => router.push(href);
+
   return (
-    <section className="bg-blue-50 p-6 md:p-8 flex flex-col  items-center justify-between rounded-lg mt-6 md:my-8 mx-2 md:mx-4">
-        <div className="md:flex flex-row justity-between">
-          <div className="sm:w-1/2" >
-            <h1 className="text-2xl md:text-4xl font-bold text-gray-900 mb-2">
+    <section className="bg-blue-50 p-6 md:p-8 flex flex-col items-center justify-between rounded-lg mt-6 md:my-8 mx-2 md:mx-4">
+      <div className="md:flex flex-row w-full items-center gap-4 justify-center">
+        <div className="md:w-1/2 space-y-2">
+          <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
             Танд тусламж хэрэгтэй байна уу?
-            </h1>
-            <p className="text-base md:text-lg text-gray-700">Ойр байгаа үйлчилгээг олж эсвэл өөрийн үйлчилгээг санал болгоорой.</p>
-          </div>
-          <Image src="/hero.png" alt="hero" width={360} height={320} className="w-60 md:w-90 h-auto mt-2 md:mt-0" />
+          </h1>
+          <p className="text-base md:text-lg text-gray-700">
+            Ойр байгаа үйлчилгээг олж эсвэл өөрийн үйлчилгээг санал болгоорой.
+          </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 mt-6 sm:w-2/3">
-          <select className="border p-2 rounded w-full sm:w-full">
-            <option>Үйлчилгээний төрөл</option>
-          </select>
-          <select className="border p-2 rounded w-full sm:w-full">
-            <option>Байршил</option>
-          </select>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-full hover:bg-blue-700">Хайх</button>
-        </div>
+        <Image
+          src="/hero.png"
+          alt="hero"
+          width={360}
+          height={320}
+          className="w-80 md:w-80 lg:w-100 h-auto mt-4 md:mt-0"
+        />
+      </div>
     </section>
   );
 }

@@ -22,6 +22,7 @@ import { avatarMulterOptions } from '../common/multer/image-options';
 import { join } from 'path';
 import * as fs from 'fs';
 import { AVATAR_UPLOAD_DIR } from 'src/common/multer/constants';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -100,6 +101,7 @@ export class AuthController {
       phone: body.phone,
       avatarUrl,
       accountType: body.accountType,
+      email: body.email,
     });
 
     if (
@@ -119,6 +121,22 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('accessToken', { ...this.cookieOptions, maxAge: 0 });
     return { message: 'Logout successful' };
+  }
+
+  @Patch('password')
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Req() req,
+    @Body() body: ChangePasswordDto,
+  ) {
+    const userId = req.user?.sub;
+    if (!userId) throw new UnauthorizedException('Unauthorized');
+    await this.authService.changePassword(
+      userId,
+      body.currentPassword,
+      body.newPassword,
+    );
+    return { success: true };
   }
 
   @Delete('me')

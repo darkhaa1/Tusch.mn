@@ -13,6 +13,13 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum UserRole {
+  CLIENT
+  PROVIDER
+  BOTH
+}
+
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
@@ -21,6 +28,7 @@ model User {
   lastName    String
   phone       String
   accountType String
+  role        UserRole @default(CLIENT)
   avatarUrl   String?
   listing     Listing[]
   sentMessages     Message[] @relation("SentMessages")

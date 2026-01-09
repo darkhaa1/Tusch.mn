@@ -14,21 +14,11 @@ import AppShell from "../../components/layout/AppShell";
 import { EmptyState } from "../../components/common/EmptyState";
 import { ErrorState } from "../../components/common/ErrorState";
 import { SkeletonGrid } from "../../components/common/SkeletonGrid";
-
+import { CATEGORY_OPTIONS } from "../lib/categories";
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const DEFAULT_SORT = "newest";
 
-const FEATURED_CATEGORIES = [
-  { value: "cleaning", label: "Цэвэрлэгээ" },
-  { value: "repair", label: "Засвар" },
-  { value: "delivery", label: "Хүргэлт" },
-  { value: "moving", label: "Нүүлгэлт" },
-  { value: "tutoring", label: "Хичээл" },
-  { value: "pets", label: "Тэжээвэр амьтан" },
-  { value: "beauty", label: "Гоо сайхан" },
-  { value: "other", label: "Бусад" },
-];
 
 const normalizeCategory = (value: string | null) => {
   if (!value) return undefined;
@@ -151,14 +141,14 @@ export default function ListingsPage() {
           <button
             type="button"
             onClick={resetFilters}
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2")}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2 ui-interactive")}
           >
             <FilterX className="h-4 w-4" aria-hidden="true" />
             Цэвэрлэх
           </button>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {FEATURED_CATEGORIES.map((item) => {
+        <div className="grid grid-cols-2 gap-2 pb-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
+          {CATEGORY_OPTIONS.map((item) => {
             const active = category === item.value;
             return (
               <button
@@ -174,10 +164,10 @@ export default function ListingsPage() {
                   router.push(`/listings${query}`);
                 }}
                 className={cn(
-                  "flex-shrink-0 rounded-full px-4 py-2 text-sm font-medium transition",
+                  "rounded-full border px-3 py-2 text-xs font-medium transition text-center leading-tight sm:text-sm ui-interactive",
                   active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-foreground hover:bg-muted/80"
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-muted text-foreground hover:border-primary/60 hover:bg-muted/80"
                 )}
               >
                 {item.label}
@@ -285,7 +275,7 @@ export default function ListingsPage() {
             size="sm"
             onClick={() => updatePage(resolvedPage - 1)}
             disabled={!hasPrevious || isFetching}
-            className="min-w-[120px]"
+            className="min-w-[120px] ui-interactive"
           >
             Өмнөх
           </Button>
@@ -301,7 +291,7 @@ export default function ListingsPage() {
             size="sm"
             onClick={() => updatePage(resolvedPage + 1)}
             disabled={!hasNext || isFetching}
-            className="min-w-[120px]"
+            className="min-w-[120px] ui-interactive"
           >
             Дараах
           </Button>

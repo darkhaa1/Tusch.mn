@@ -1,6 +1,17 @@
-import { Controller, Get, UseGuards, Req, Param, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { UpdateMyRoleDto } from './dto/update-my-role.dto';
+import { UserRole } from '@prisma/client';
 
 @Controller('users')
 export class UserController {
@@ -14,8 +25,20 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(@Req() req) {
-    return req.user; // { id, email }
+  async getProfile(@Req() req) {
+    const userId = req.user?.sub;
+    return this.userService.findById(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/role')
+  async updateMyRole(@Req() req, @Body() body: UpdateMyRoleDto) {
+    const userId = req.user?.sub;
+    const updated = await this.userService.updateMyRole(
+      userId,
+      body.role as UserRole,
+    );
+    return { user: updated };
   }
 
   @Get(':id/public')

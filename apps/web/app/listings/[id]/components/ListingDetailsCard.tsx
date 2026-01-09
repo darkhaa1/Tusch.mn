@@ -2,6 +2,8 @@
 
 import { Badge, Button, Card, CardContent, Input, Select, Textarea } from "@repo/ui";
 import type { ChangeEvent } from "react";
+import type { CategoryOption } from "../../../lib/categories";
+import { cn } from "../../../lib/utils";
 
 type FormState = {
   description: string;
@@ -20,7 +22,7 @@ type ListingDetailsCardProps = {
   onSave: () => void;
   onCancel: () => void;
   isSaving: boolean;
-  categories: Array<{ value: string; label: string }>;
+  categories: CategoryOption[];
   formError?: string | null;
 };
 
@@ -78,14 +80,25 @@ export function ListingDetailsCard({
                 placeholder="Байршил"
               />
             </div>
-            <Select value={formState.category} onChange={handleChange("category")} disabled={isSaving}>
-              <option value="">Ангилал сонгох</option>
-              {categories.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
-                </option>
-              ))}
-            </Select>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {categories.map((category) => {
+                const isSelected = formState.category === category.value;
+                return (
+                  <button
+                    key={category.value}
+                    type="button"
+                    onClick={() => onFieldChange("category", category.value)}
+                    className={cn(
+                      "flex items-center justify-center rounded-md border px-3 py-2 text-center text-xs font-medium transition",
+                      isSelected ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/60"
+                    )}
+                    disabled={isSaving}
+                  >
+                    {category.label}
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex flex-wrap gap-2 pt-2">
               <Button onClick={onSave} disabled={isSaving}>
                 Хадгалах

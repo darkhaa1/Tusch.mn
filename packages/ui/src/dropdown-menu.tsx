@@ -18,13 +18,44 @@ type DropdownMenuProps = {
 
 export function DropdownMenu({ children, defaultOpen }: DropdownMenuProps) {
   const [open, setOpen] = React.useState(Boolean(defaultOpen));
+  const rootRef = React.useRef<HTMLDivElement>(null);
 
   const toggle = React.useCallback(() => setOpen((prev) => !prev), []);
   const close = React.useCallback(() => setOpen(false), []);
 
+  React.useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (!target || !rootRef.current) return;
+      if (!rootRef.current.contains(target)) {
+        close();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        close();
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, close]);
+
   return (
     <DropdownContext.Provider value={{ open, toggle, close }}>
-      <div className="relative inline-block text-left">{children}</div>
+      <div ref={rootRef} className="relative inline-block text-left">
+        {children}
+      </div>
     </DropdownContext.Provider>
   );
 }
@@ -86,13 +117,13 @@ export function DropdownMenuItem({ className, children, ...props }: ItemProps) {
       type="button"
       className={cn(
         "flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm text-foreground",
-        "hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring",
+        "hover:bg-muted/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className
       )}
       onClick={(event) => {
-        props.onClick?.(event);
         ctx?.close();
+        props.onClick?.(event);
       }}
       {...props}
     >

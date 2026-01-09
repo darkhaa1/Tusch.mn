@@ -12,7 +12,6 @@ import {
 } from "../../hooks/useApi";
 import { deleteListingImage, uploadListingImages } from "../../lib/api";
 import resolveImageUrl from "../../lib/resolveImageUrl";
-import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "../../lib/categories";
 import {
   Button,
   Dialog,
@@ -32,6 +31,7 @@ import {
 import { ListingGallery } from "./components/ListingGallery";
 import { ListingDetailsCard } from "./components/ListingDetailsCard";
 import { ListingSidebar } from "./components/ListingSidebar";
+import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "../../lib/categories";
 
 export default function ListingDetailPage() {
   const params = useParams();
