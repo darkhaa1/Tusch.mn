@@ -44,7 +44,8 @@ export default function Header() {
   const user = (backendUser as any) || (session?.user as any);
 
   const firstName = user?.firstname || user?.firstName || user?.name?.split(" ")?.[0] || "";
-  const avatar = resolveAvatarUrl(user?.avatarUrl || user?.image || null);
+  const sessionAvatar = (session?.user as any)?.image || (session?.user as any)?.avatarUrl || null;
+  const avatar = resolveAvatarUrl(backendUser?.avatarUrl || sessionAvatar || user?.image || null);
   const initials =
     (firstName?.[0] || (user?.lastname || user?.lastName || user?.name?.split(" ")?.[1] || "")?.[0] || "U")?.toUpperCase() ||
     "U";

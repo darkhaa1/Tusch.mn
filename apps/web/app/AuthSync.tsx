@@ -26,7 +26,7 @@ export function AuthSync() {
     const derivedLast = rest.join(" ");
     const firstName = authUser?.firstname || authUser?.firstName || derivedFirst || "Google";
     const lastName = authUser?.lastname || authUser?.lastName || derivedLast || "User";
-    const avatarUrl = authUser?.image || undefined;
+    const avatarUrl = authUser?.image || authUser?.picture || authUser?.avatarUrl || undefined;
 
     if (!email) return;
 

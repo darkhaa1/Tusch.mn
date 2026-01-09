@@ -37,25 +37,6 @@ export default function Hero() {
           className="w-80 md:w-80 lg:w-100 h-auto mt-4 md:mt-0"
         />
       </div>
-
-      <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
-        <button
-          type="button"
-          onClick={() => handleCtaClick(primaryCta.href)}
-          className="w-full rounded-lg bg-blue-700 px-5 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:w-auto"
-        >
-          {primaryCta.label}
-        </button>
-        {secondaryCta ? (
-          <button
-            type="button"
-            onClick={() => handleCtaClick(secondaryCta.href)}
-            className="w-full rounded-lg border border-blue-700 bg-white px-5 py-3 text-base font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:w-auto"
-          >
-            {secondaryCta.label}
-          </button>
-        ) : null}
-      </div>
     </section>
   );
 }
