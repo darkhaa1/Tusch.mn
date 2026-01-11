@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { getSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { logoutUser } from './api';
+import { logoutUser } from './api/auth';
 
 export async function logout(
   router: ReturnType<typeof useRouter>,

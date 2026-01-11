@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, Listing } from '@prisma/client';
+import { Listing, ListingStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -15,7 +15,21 @@ import {
 import { unlink } from 'fs/promises';
 import { join } from 'path';
 
-const listingInclude = {
+const listingPublicInclude = {
+  user: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      avatarUrl: true,
+    },
+  },
+  images: {
+    orderBy: { position: 'asc' as const },
+  },
+} as const;
+
+const listingPrivateInclude = {
   user: {
     select: {
       id: true,
@@ -43,6 +57,7 @@ export class ListingsService {
 
   async findAll(q: GetListingsQueryDto) {
     const where: Prisma.ListingWhereInput = {
+      status: ListingStatus.ACTIVE,
       ...(q.category ? { category: q.category } : {}),
     };
     const orderBy = q.sort === ListingsSort.Oldest ? 'asc' : 'desc';
@@ -51,7 +66,7 @@ export class ListingsService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.listing.findMany({
         where,
-        include: listingInclude as any,
+        include: listingPublicInclude as any,
         skip,
         take: q.limit,
         orderBy: { createdAt: orderBy },
@@ -67,10 +82,19 @@ export class ListingsService {
     };
   }
 
+  async findPublicById(id: string) {
+    const item = await this.prisma.listing.findFirst({
+      where: { id, status: ListingStatus.ACTIVE },
+      include: listingPublicInclude as any,
+    });
+    if (!item) throw new NotFoundException('Listing not found');
+    return item;
+  }
+
   async findOne(id: string) {
     const item = await this.prisma.listing.findUnique({
       where: { id },
-      include: listingInclude as any,
+      include: listingPrivateInclude as any,
     });
     if (!item) throw new NotFoundException('Listing not found');
     return item;
@@ -168,7 +192,7 @@ export class ListingsService {
     return this.prisma.listing.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      include: listingInclude as any,
+      include: listingPrivateInclude as any,
     });
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronDown, Info, KeyRound, List, User as UserIcon } from "lucide-react";
+import { ChevronDown, Info, KeyRound, List, Shield, User as UserIcon } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -19,9 +19,10 @@ type UserMenuProps = {
   avatarUrl?: string | null;
   initials: string;
   onLogout: () => void;
+  isAdmin?: boolean;
 };
 
-export function UserMenu({ firstName, avatarUrl, initials, onLogout }: UserMenuProps) {
+export function UserMenu({ firstName, avatarUrl, initials, onLogout, isAdmin }: UserMenuProps) {
   const router = useRouter();
 
   const navigate = (href: string) => {
@@ -77,6 +78,15 @@ export function UserMenu({ firstName, avatarUrl, initials, onLogout }: UserMenuP
           <KeyRound className="h-4 w-4" aria-hidden="true" />
           <span>Нэвтрэх мэдээлэл</span>
         </DropdownMenuItem>
+        {isAdmin ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/admin")} className="gap-2">
+              <Shield className="h-4 w-4" aria-hidden="true" />
+              <span>Админ</span>
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-red-600 hover:bg-red-50 hover:text-red-700 focus-visible:outline-red-500"

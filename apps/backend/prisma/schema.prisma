@@ -20,6 +20,16 @@ enum UserRole {
   BOTH
 }
 
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ListingStatus {
+  ACTIVE
+  HIDDEN
+}
+
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
@@ -29,12 +39,15 @@ model User {
   phone       String
   accountType String
   role        UserRole @default(CLIENT)
+  isAdmin     Boolean  @default(false)
+  status      UserStatus @default(ACTIVE)
   avatarUrl   String?
   listing     Listing[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   reviewsGiven     Review[]  @relation("UserReviewsGiven")
   reviewsReceived  Review[]  @relation("UserReviewsReceived")
+  adminActionLogs  AdminActionLog[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -46,6 +59,7 @@ model Listing {
   price       Int
   location    String?
   category    String?
+  status      ListingStatus @default(ACTIVE)
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   images      ListingImage[]
@@ -55,6 +69,20 @@ model Listing {
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
+}
+
+model AdminActionLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id])
+  action     String
+  targetType String
+  targetId   String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([targetType, targetId])
 }
 
 model Message {

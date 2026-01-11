@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
 import { ListingsModule } from './listings/listings.module';
 import { MessagesModule } from './messages/messages.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   providers: [PrismaService, UserService, JwtService],
@@ -19,7 +20,8 @@ import { MessagesModule } from './messages/messages.module';
     }),
     AuthModule,
     ListingsModule,
-    MessagesModule
+    MessagesModule,
+    AdminModule
   ],
 })
 export class AppModule { }

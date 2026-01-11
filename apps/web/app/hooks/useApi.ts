@@ -1,32 +1,53 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type {
+  AdminListingsPage,
+  AdminStats,
+  AdminUsersPage,
   Listing,
+  ListingStatus,
   ListingsPage,
   Message,
-  createListing,
+  ProvidersPage,
+  UserStatus,
+} from "../lib/api/types";
+import {
+  changePassword,
   deleteCurrentUser,
+  getCurrentUser,
+  loginUser,
+  logoutUser,
+  oauthLogin,
+  registerUser,
+  updateCurrentUser,
+  updateMyRole,
+} from "../lib/api/auth";
+import {
+  createListing,
   deleteListing,
-  fetchConversationWith,
   fetchListingById,
   fetchListings,
   fetchListingsPage,
-  fetchMessageThreads,
   fetchMyListings,
-  fetchUsers,
-  getCurrentUser,
-  loginUser,
-  markMessageRead,
-  logoutUser,
-  oauthLogin,
-  fetchPublicUserProfile,
-  registerUser,
-  sendMessage,
-  updateCurrentUser,
   updateListing,
-  uploadListingImages,
-  updateMyRole,
-  changePassword,
-} from '../lib/api';
+} from "../lib/api/listings";
+import {
+  fetchProviders,
+  fetchPublicUserProfile,
+  fetchUsers,
+} from "../lib/api/users";
+import {
+  fetchConversationWith,
+  fetchMessageThreads,
+  markMessageRead,
+  sendMessage,
+} from "../lib/api/messages";
+import {
+  fetchAdminListings,
+  fetchAdminStats,
+  fetchAdminUsers,
+  updateAdminListingStatus,
+  updateAdminUserStatus,
+} from "../lib/api/admin";
 
 export function useCurrentUser() {
   return useQuery({
@@ -189,6 +210,24 @@ export function useUsers(enabled = true) {
   });
 }
 
+export function useProviders(params?: {
+  q?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery<ProvidersPage>({
+    queryKey: [
+      'providers',
+      params?.q || '',
+      params?.category || 'all',
+      params?.page || 1,
+      params?.limit || 12,
+    ],
+    queryFn: () => fetchProviders(params),
+  });
+}
+
 export function useMessageThreads(enabled = true) {
   return useQuery<Message[]>({
     queryKey: ['message-threads'],
@@ -234,5 +273,79 @@ export function usePublicUserProfile(userId?: string) {
     queryKey: ['public-user-profile', userId],
     queryFn: () => fetchPublicUserProfile(userId as string),
     enabled: !!userId,
+  });
+}
+
+export function useAdminStats() {
+  return useQuery<AdminStats>({
+    queryKey: ['admin-stats'],
+    queryFn: fetchAdminStats,
+  });
+}
+
+export function useAdminUsers(params?: {
+  q?: string;
+  status?: UserStatus;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery<AdminUsersPage>({
+    queryKey: [
+      'admin-users',
+      params?.q || '',
+      params?.status || 'all',
+      params?.page || 1,
+      params?.limit || 20,
+    ],
+    queryFn: () => fetchAdminUsers(params),
+  });
+}
+
+export function useUpdateAdminUserStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, status }: { userId: string; status: UserStatus }) =>
+      updateAdminUserStatus(userId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    },
+  });
+}
+
+export function useAdminListings(params?: {
+  q?: string;
+  status?: ListingStatus;
+  category?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery<AdminListingsPage>({
+    queryKey: [
+      'admin-listings',
+      params?.q || '',
+      params?.status || 'all',
+      params?.category || 'all',
+      params?.page || 1,
+      params?.limit || 20,
+    ],
+    queryFn: () => fetchAdminListings(params),
+  });
+}
+
+export function useUpdateAdminListingStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      listingId,
+      status,
+    }: {
+      listingId: string;
+      status: ListingStatus;
+    }) => updateAdminListingStatus(listingId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    },
   });
 }

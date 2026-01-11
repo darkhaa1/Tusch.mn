@@ -12,6 +12,7 @@ import { UserService } from './user.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UpdateMyRoleDto } from './dto/update-my-role.dto';
 import { UserRole } from '@prisma/client';
+import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
 
 @Controller('users')
 export class UserController {
@@ -39,6 +40,11 @@ export class UserController {
       body.role as UserRole,
     );
     return { user: updated };
+  }
+
+  @Get('providers')
+  async getProviders(@Query() query: GetProvidersQueryDto) {
+    return this.userService.getProviders(query);
   }
 
   @Get(':id/public')

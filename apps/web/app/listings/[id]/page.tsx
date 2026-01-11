@@ -10,7 +10,7 @@ import {
   useSendMessage,
   useUpdateListing,
 } from "../../hooks/useApi";
-import { deleteListingImage, uploadListingImages } from "../../lib/api";
+import { deleteListingImage, uploadListingImages } from "../../lib/api/listings";
 import resolveImageUrl from "../../lib/resolveImageUrl";
 import {
   Button,

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { ListingStatus, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ProviderCardDto, ProvidersResponseDto } from './dto/provider-card.dto';
 
 export type PublicUserProfile = {
   user: {
@@ -113,6 +114,129 @@ export class UserService {
     return rest;
   }
 
+  private getTopCategory(
+    listings: Array<{ category: string | null }>,
+  ): string | null {
+    const counts = new Map<string, number>();
+    for (const listing of listings) {
+      if (!listing.category) continue;
+      counts.set(listing.category, (counts.get(listing.category) || 0) + 1);
+    }
+
+    let topCategory: string | null = null;
+    let topCount = 0;
+    for (const [category, count] of counts) {
+      if (count > topCount) {
+        topCategory = category;
+        topCount = count;
+      }
+    }
+
+    return topCategory;
+  }
+
+  async getProviders(params?: {
+    q?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ProvidersResponseDto> {
+    const page = Math.max(1, params?.page ?? 1);
+    const limit = Math.min(50, Math.max(1, params?.limit ?? 12));
+    const skip = (page - 1) * limit;
+    const category = params?.category?.trim();
+    const q = params?.q?.trim();
+
+    const activeListingFilter = { status: ListingStatus.ACTIVE };
+    const andFilters: Prisma.UserWhereInput[] = [
+      { listing: { some: activeListingFilter } },
+    ];
+
+    if (category) {
+      andFilters.push({
+        listing: { some: { ...activeListingFilter, category } },
+      });
+    }
+
+    if (q) {
+      andFilters.push({
+        OR: [
+          { firstName: { contains: q, mode: 'insensitive' } },
+          { lastName: { contains: q, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    const where: Prisma.UserWhereInput = { AND: andFilters };
+
+    const [total, users] = await Promise.all([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+          listing: {
+            select: { category: true },
+            where: category
+              ? { category, status: ListingStatus.ACTIVE }
+              : activeListingFilter,
+          },
+          _count: { select: { listing: true } },
+        },
+      }),
+    ]);
+
+    const userIds = users.map((user) => user.id);
+    const reviewStats = new Map<
+      string,
+      { reviewsCount: number; ratingAvg: number | null }
+    >();
+
+    if (userIds.length > 0) {
+      const reviewAgg = await this.prisma.review.groupBy({
+        by: ['targetUserId'],
+        where: { targetUserId: { in: userIds } },
+        _count: { _all: true },
+        _avg: { rating: true },
+      });
+
+      for (const row of reviewAgg) {
+        reviewStats.set(row.targetUserId, {
+          reviewsCount: row._count._all,
+          ratingAvg: row._avg.rating ?? null,
+        });
+      }
+    }
+
+    const items: ProviderCardDto[] = users.map((user) => {
+      const stats = reviewStats.get(user.id);
+      return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl || null,
+        location: null,
+        topCategory: this.getTopCategory(user.listing),
+        listingsCount: user._count.listing,
+        ratingAvg: stats?.ratingAvg ?? null,
+        reviewsCount: stats?.reviewsCount ?? 0,
+      };
+    });
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+    };
+  }
+
   async getPublicProfile(
     userId: string,
     params?: { page?: number; limit?: number },
@@ -138,9 +262,11 @@ export class UserService {
 
     const [listingsCount, recentListings, reviewAgg, reviews] =
       await Promise.all([
-        this.prisma.listing.count({ where: { userId } }),
+        this.prisma.listing.count({
+          where: { userId, status: ListingStatus.ACTIVE },
+        }),
         this.prisma.listing.findMany({
-          where: { userId },
+          where: { userId, status: ListingStatus.ACTIVE },
           orderBy: { createdAt: 'desc' },
           take: 6,
           select: {

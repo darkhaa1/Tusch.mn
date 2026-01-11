@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger, Card, CardContent } from "@repo/ui";
-import type { CurrentUser } from "../../app/lib/api";
+import type { CurrentUser } from "../../app/lib/api/types";
 
 type ProfileTabsProps = {
   user: CurrentUser | null | undefined;
