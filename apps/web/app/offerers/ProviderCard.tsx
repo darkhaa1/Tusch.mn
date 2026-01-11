@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Heart, MapPin, Star, Layers } from "lucide-react";
@@ -11,6 +11,7 @@ type ProviderCardProps = {
   provider: ProviderCardType;
   topCategoryLabel?: string | null;
   isFavorite: boolean;
+  // eslint-disable-next-line no-unused-vars
   onToggleFavorite: (id: string) => void;
 };
 
@@ -86,3 +87,4 @@ export function ProviderCard({
 }
 
 export default ProviderCard;
+

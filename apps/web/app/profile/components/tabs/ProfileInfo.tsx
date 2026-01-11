@@ -57,9 +57,9 @@ export default function ProfileInfo() {
   }, [avatarObjectUrl]);
 
   const initials = useMemo(() => {
-    if (!user?.firstname && !user?.lastname) return '';
     const first = (user as any)?.firstname || (user as any)?.firstName || '';
     const last = (user as any)?.lastname || (user as any)?.lastName || '';
+    if (!first && !last) return '';
     return `${first?.[0] || ''}${last?.[0] || ''}`.toUpperCase();
   }, [user]);
 

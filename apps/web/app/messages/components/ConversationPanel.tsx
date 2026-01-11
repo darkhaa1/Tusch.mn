@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { ArrowLeft, CheckCheck, Loader2, Paperclip } from "lucide-react";
-import { Avatar, Badge, Button, Input } from "@repo/ui";
+import { Avatar, Button, Input } from "@repo/ui";
 import type { ConversationMessage, ThreadItem } from "../types";
 import { cn } from "../../lib/utils";
 import { buildDisplayName } from "./utils";
@@ -12,12 +12,14 @@ type ConversationPanelProps = {
   activeListingId: string | null;
   conversationMessages: ConversationMessage[];
   draft: string;
+  // eslint-disable-next-line no-unused-vars
   onDraftChange: (value: string) => void;
   onSend: () => void;
   isSending: boolean;
   isLoading: boolean;
   sendError?: unknown;
   quickReplies: string[];
+  // eslint-disable-next-line no-unused-vars
   onSelectReply: (reply: string) => void;
   onBackMobile: () => void;
 };
@@ -39,7 +41,7 @@ export function ConversationPanel({
   return (
     <div className="relative flex h-[70vh] flex-col rounded-xl border border-border/80 bg-background shadow-sm">
       <div className="flex items-center gap-3 border-b px-4 py-3">
-        <Button variant="ghost" size="icon" className="sm:hidden" onClick={onBackMobile} aria-label="Жагсаалт руу буцах">
+        <Button variant="ghost" size="icon" className="sm:hidden" onClick={onBackMobile} aria-label="Ð–Ð°Ð³ÑÐ°Ð°Ð»Ñ‚ Ñ€ÑƒÑƒ Ð±ÑƒÑ†Ð°Ñ…">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <Link
@@ -51,7 +53,7 @@ export function ConversationPanel({
           <Avatar src={activeThread?.partnerAvatar || undefined} alt={buildDisplayName(activeThread?.partner)} />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground line-clamp-1">{buildDisplayName(activeThread?.partner)}</p>
-            <p className="text-xs text-muted-foreground">Профайл руу очих</p>
+            <p className="text-xs text-muted-foreground">ÐŸÑ€Ð¾Ñ„Ð°Ð¹Ð» Ñ€ÑƒÑƒ Ð¾Ñ‡Ð¸Ñ…</p>
           </div>
         </Link>
       </div>
@@ -60,7 +62,7 @@ export function ConversationPanel({
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Яриаг ачааллаж байна...
+            Ð¯Ñ€Ð¸Ð°Ð³ Ð°Ñ‡Ð°Ð°Ð»Ð»Ð°Ð¶ Ð±Ð°Ð¹Ð½Ð°...
           </div>
         ) : conversationMessages.length ? (
           conversationMessages.map((message) => (
@@ -80,7 +82,7 @@ export function ConversationPanel({
             </div>
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">Энэ ярианд мессеж алга.</p>
+          <p className="text-sm text-muted-foreground">Ð­Ð½Ñ ÑÑ€Ð¸Ð°Ð½Ð´ Ð¼ÐµÑÑÐµÐ¶ Ð°Ð»Ð³Ð°.</p>
         )}
       </div>
 
@@ -99,7 +101,7 @@ export function ConversationPanel({
         </div>
         {sendError ? <p className="mb-2 text-xs text-red-600">{(sendError as Error).message}</p> : null}
         {!activeListingId ? (
-          <p className="mb-2 text-xs text-amber-600">Энэ ярианд зар холбоогүй бол мессеж илгээх боломжгүй.</p>
+          <p className="mb-2 text-xs text-amber-600">Ð­Ð½Ñ ÑÑ€Ð¸Ð°Ð½Ð´ Ð·Ð°Ñ€ Ñ…Ð¾Ð»Ð±Ð¾Ð¾Ð³Ò¯Ð¹ Ð±Ð¾Ð» Ð¼ÐµÑÑÐµÐ¶ Ð¸Ð»Ð³ÑÑÑ… Ð±Ð¾Ð»Ð¾Ð¼Ð¶Ð³Ò¯Ð¹.</p>
         ) : null}
         <div className="flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-2">
           <Button variant="ghost" size="icon" className="shrink-0" disabled>
@@ -114,14 +116,15 @@ export function ConversationPanel({
                 onSend();
               }
             }}
-            placeholder="Мессежээ бичнэ үү..."
+            placeholder="ÐœÐµÑÑÐµÐ¶ÑÑ Ð±Ð¸Ñ‡Ð½Ñ Ò¯Ò¯..."
             className="h-10 flex-1 border-none bg-transparent focus-visible:ring-0"
           />
           <Button size="sm" onClick={onSend} className="shrink-0" disabled={isSending || !activeListingId}>
-            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Илгээх"}
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ð˜Ð»Ð³ÑÑÑ…"}
           </Button>
         </div>
       </div>
     </div>
   );
 }
+

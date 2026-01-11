@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button, Card, CardContent, Input, Select, Textarea } from "@repo/ui";
+import { Badge, Button, Card, CardContent, Input, Textarea } from "@repo/ui";
 import type { ChangeEvent } from "react";
 import type { CategoryOption } from "../../../lib/categories";
 import { cn } from "../../../lib/utils";
@@ -18,6 +18,7 @@ type ListingDetailsCardProps = {
   listingDescription: string;
   isEditing: boolean;
   formState: FormState;
+  // eslint-disable-next-line no-unused-vars
   onFieldChange: (field: keyof FormState, value: string) => void;
   onSave: () => void;
   onCancel: () => void;

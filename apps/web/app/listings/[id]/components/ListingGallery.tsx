@@ -8,6 +8,7 @@ type ListingGalleryProps = {
   imageUrls: string[];
   displayedMain: string;
   selectedIndex: number;
+  // eslint-disable-next-line no-unused-vars
   onSelect: (index: number) => void;
 };
 

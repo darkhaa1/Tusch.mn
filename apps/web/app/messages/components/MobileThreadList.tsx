@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Avatar, Badge } from "@repo/ui";
@@ -8,6 +8,7 @@ import { formatTime, truncate, buildDisplayName } from "./utils";
 type MobileThreadListProps = {
   items: ThreadItem[];
   isLoading: boolean;
+  // eslint-disable-next-line no-unused-vars
   onSelect: (partnerId: string) => void;
 };
 
@@ -15,13 +16,13 @@ export function MobileThreadList({ items, isLoading, onSelect }: MobileThreadLis
   return (
     <div className="rounded-xl border border-border/80 bg-background shadow-sm sm:hidden">
       <div className="border-b px-4 py-3">
-        <p className="text-sm font-medium text-foreground">Харилцаанууд</p>
+        <p className="text-sm font-medium text-foreground">Ð¥Ð°Ñ€Ð¸Ð»Ñ†Ð°Ð°Ð½ÑƒÑƒÐ´</p>
       </div>
       <div className="divide-y">
         {isLoading ? (
           <div className="flex items-center gap-2 px-4 py-4 text-sm text-muted-foreground">
             <span className="h-4 w-4 animate-spin rounded-full border border-border border-t-transparent" />
-            Харилцаануудыг ачааллаж байна...
+            Ð¥Ð°Ñ€Ð¸Ð»Ñ†Ð°Ð°Ð½ÑƒÑƒÐ´Ñ‹Ð³ Ð°Ñ‡Ð°Ð°Ð»Ð»Ð°Ð¶ Ð±Ð°Ð¹Ð½Ð°...
           </div>
         ) : items.length ? (
           items.map((thread) => {
@@ -41,7 +42,7 @@ export function MobileThreadList({ items, isLoading, onSelect }: MobileThreadLis
                   <Avatar src={thread.partnerAvatar || undefined} alt={name} />
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-foreground line-clamp-1">{name}</div>
-                    <p className="text-xs text-muted-foreground">Профайл</p>
+                    <p className="text-xs text-muted-foreground">ÐŸÑ€Ð¾Ñ„Ð°Ð¹Ð»</p>
                   </div>
                 </Link>
                 <div className="min-w-0 flex-1">
@@ -61,9 +62,10 @@ export function MobileThreadList({ items, isLoading, onSelect }: MobileThreadLis
             );
           })
         ) : (
-          <div className="px-4 py-6 text-sm text-muted-foreground">Одоогоор яриа алга.</div>
+          <div className="px-4 py-6 text-sm text-muted-foreground">ÐžÐ´Ð¾Ð¾Ð³Ð¾Ð¾Ñ€ ÑÑ€Ð¸Ð° Ð°Ð»Ð³Ð°.</div>
         )}
       </div>
     </div>
   );
 }
+

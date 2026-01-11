@@ -91,6 +91,8 @@ describe('Public profile (e2e)', () => {
   });
 
   it('returns 404 for missing user', async () => {
-    await request(app.getHttpServer()).get('/users/non-existent/public').expect(404);
+    await request(app.getHttpServer())
+      .get('/users/non-existent/public')
+      .expect(404);
   });
 });
