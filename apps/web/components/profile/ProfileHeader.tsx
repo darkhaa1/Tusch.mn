@@ -4,7 +4,7 @@ import { Heart, MapPin, Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage, Badge, Button, Card } from "@repo/ui";
 import { cn } from "../../app/lib/utils";
 import resolveAvatarUrl from "../../app/lib/resolveImageUrl";
-import type { CurrentUser } from "../../app/lib/api";
+import type { CurrentUser } from "../../app/lib/api/types";
 
 type ProfileHeaderProps = {
   user: CurrentUser | null | undefined;

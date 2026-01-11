@@ -14,7 +14,7 @@ import {
   useSendMessage,
   useUsers,
 } from "../hooks/useApi";
-import type { Message } from "../lib/api";
+import type { Message } from "../lib/api/types";
 import resolveImageUrl from "../lib/resolveImageUrl";
 import { ThreadList } from "./components/ThreadList";
 import { MobileThreadList } from "./components/MobileThreadList";

@@ -1,4 +1,4 @@
-import type { ListingUser } from "../../lib/api";
+import type { ListingUser } from "../../lib/api/types";
 
 export function formatTime(value?: string) {
   if (!value) return "";

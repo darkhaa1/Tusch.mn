@@ -26,7 +26,7 @@ const mobileNav = [
   { href: "/annonces", label: "Зар" },
   { href: "/categories", label: "Ангилалууд" },
   { href: "/about", label: "Бидний тухай" },
-  { href: "/offreurs", label: "Үйлчилгээ үзүүлэгчид" },
+  { href: "/offerers", label: "Үйлчилгээ үзүүлэгчид" },
   { href: "/messages", label: "Мессеж" },
 ];
 
@@ -110,6 +110,7 @@ export default function Header() {
               firstName={firstName}
               avatarUrl={avatar}
               initials={initials}
+              isAdmin={Boolean(backendUser?.isAdmin)}
               onLogout={() => {
                 void logout(router, queryClient);
               }}

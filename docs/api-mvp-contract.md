@@ -95,3 +95,104 @@
 
 ### Privacy
 - **Never exposed**: email, phone, passwords, tokens, OAuth ids. Only the fields shown above are returned.
+
+---
+
+# Admin API (MVP)
+
+> All endpoints below require admin auth. Backend enforces `isAdmin === true` and `status === ACTIVE`.
+
+## GET `/admin/stats`
+
+### Response
+```json
+{
+  "usersTotal": 120,
+  "usersSuspended": 3,
+  "listingsTotal": 45,
+  "listingsHidden": 2,
+  "messagesTotal": 980,
+  "reviewsTotal": 12
+}
+```
+
+## GET `/admin/users`
+
+### Query params
+- `page` (default 1)
+- `limit` (default 20, max 50)
+- `q` (search in firstName/lastName/email, case-insensitive)
+- `status` (`ACTIVE` | `SUSPENDED`)
+
+### Response
+```json
+{
+  "items": [
+    {
+      "id": "user_id",
+      "firstName": "Naraa",
+      "lastName": "Bat",
+      "email": "user@email.com",
+      "phone": "+976...",
+      "status": "ACTIVE",
+      "isAdmin": false,
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+## PATCH `/admin/users/:id/status`
+
+### Body
+```json
+{
+  "status": "SUSPENDED"
+}
+```
+
+## GET `/admin/listings`
+
+### Query params
+- `page` (default 1)
+- `limit` (default 20, max 50)
+- `q` (search in description/location/category/owner name, case-insensitive)
+- `status` (`ACTIVE` | `HIDDEN`)
+- `category` (string)
+
+### Response
+```json
+{
+  "items": [
+    {
+      "id": "listing_id",
+      "category": "moving",
+      "price": 20000,
+      "location": "Ulaanbaatar",
+      "description": "...",
+      "status": "ACTIVE",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "user": {
+        "id": "user_id",
+        "firstName": "Naraa",
+        "lastName": "Bat"
+      }
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+## PATCH `/admin/listings/:id/status`
+
+### Body
+```json
+{
+  "status": "HIDDEN"
+}
+```

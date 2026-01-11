@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Heart, MapPin, Star, Layers } from "lucide-react";
 import { Avatar, Badge, Card, CardContent } from "@repo/ui";
 import resolveImageUrl from "../lib/resolveImageUrl";
-import { ProviderCard as ProviderCardType } from "../lib/api";
+import { ProviderCard as ProviderCardType } from "../lib/api/types";
 import { cn } from "../lib/utils";
 
 type ProviderCardProps = {
@@ -20,7 +20,7 @@ export function ProviderCard({
   isFavorite,
   onToggleFavorite,
 }: ProviderCardProps) {
-  const name = [provider.firstName, provider.lastName].filter(Boolean).join(" ") || "Offreur";
+  const name = [provider.firstName, provider.lastName].filter(Boolean).join(" ") || "Offerers";
   const avatarUrl = resolveImageUrl(provider.avatarUrl || undefined) || undefined;
   const hasReviews = provider.reviewsCount > 0 && typeof provider.ratingAvg === "number";
   const ratingLabel = hasReviews ? provider.ratingAvg!.toFixed(1) : "Nouveau";

@@ -1,0 +1,40 @@
+import { apiFetch } from "./base";
+import type {
+  ListingUser,
+  ProvidersPage,
+  PublicUserProfile,
+} from "./types";
+
+export async function fetchUsers(): Promise<ListingUser[]> {
+  return apiFetch("/users", { method: "GET" });
+}
+
+export async function fetchProviders(params?: {
+  q?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}): Promise<ProvidersPage> {
+  const searchParams = new URLSearchParams();
+  if (params?.q) searchParams.set("q", params.q);
+  if (params?.category) searchParams.set("category", params.category);
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.limit) searchParams.set("limit", String(params.limit));
+  const query = searchParams.toString();
+  const path = query ? `/users/providers?${query}` : "/users/providers";
+  return apiFetch<ProvidersPage>(path, { method: "GET" });
+}
+
+export async function fetchPublicUserProfile(
+  userId: string,
+  params?: { page?: number; limit?: number }
+) {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.limit) searchParams.set("limit", String(params.limit));
+  const query = searchParams.toString();
+  const path = query
+    ? `/users/${userId}/public?${query}`
+    : `/users/${userId}/public`;
+  return apiFetch<PublicUserProfile>(path, { method: "GET" });
+}

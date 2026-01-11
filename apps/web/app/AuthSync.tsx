@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { oauthLogin } from "./lib/api";
+import { oauthLogin } from "./lib/api/auth";
 
 export function AuthSync() {
   const { data: session, status } = useSession();

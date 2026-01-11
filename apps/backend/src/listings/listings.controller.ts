@@ -81,7 +81,7 @@ export class ListingsController {
   // Détail : public (ou protège si tu veux)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+    return this.service.findPublicById(id);
   }
 
   // Update/Delete : protégé + ownership en service

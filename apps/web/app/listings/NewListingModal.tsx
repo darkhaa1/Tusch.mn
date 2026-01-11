@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateListing } from "../hooks/useApi";
-import { uploadListingImages } from "../lib/api";
-import type { Listing } from "../lib/api";
+import { uploadListingImages } from "../lib/api/listings";
+import type { Listing } from "../lib/api/types";
 import { Badge, Button, Input, Textarea } from "@repo/ui";
 import { cn } from "../lib/utils";
 import {

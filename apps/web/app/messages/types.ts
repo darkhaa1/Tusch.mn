@@ -1,4 +1,4 @@
-import type { ListingUser, Message } from "../lib/api";
+import type { ListingUser, Message } from "../lib/api/types";
 
 export type ThreadItem = {
   partnerId: string;

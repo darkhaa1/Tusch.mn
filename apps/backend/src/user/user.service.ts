@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, UserRole } from '@prisma/client';
+import { ListingStatus, Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProviderCardDto, ProvidersResponseDto } from './dto/provider-card.dto';
 
@@ -147,12 +147,15 @@ export class UserService {
     const category = params?.category?.trim();
     const q = params?.q?.trim();
 
+    const activeListingFilter = { status: ListingStatus.ACTIVE };
     const andFilters: Prisma.UserWhereInput[] = [
-      { listing: { some: {} } },
+      { listing: { some: activeListingFilter } },
     ];
 
     if (category) {
-      andFilters.push({ listing: { some: { category } } });
+      andFilters.push({
+        listing: { some: { ...activeListingFilter, category } },
+      });
     }
 
     if (q) {
@@ -180,7 +183,9 @@ export class UserService {
           avatarUrl: true,
           listing: {
             select: { category: true },
-            ...(category ? { where: { category } } : {}),
+            where: category
+              ? { category, status: ListingStatus.ACTIVE }
+              : activeListingFilter,
           },
           _count: { select: { listing: true } },
         },
@@ -257,9 +262,11 @@ export class UserService {
 
     const [listingsCount, recentListings, reviewAgg, reviews] =
       await Promise.all([
-        this.prisma.listing.count({ where: { userId } }),
+        this.prisma.listing.count({
+          where: { userId, status: ListingStatus.ACTIVE },
+        }),
         this.prisma.listing.findMany({
-          where: { userId },
+          where: { userId, status: ListingStatus.ACTIVE },
           orderBy: { createdAt: 'desc' },
           take: 6,
           select: {

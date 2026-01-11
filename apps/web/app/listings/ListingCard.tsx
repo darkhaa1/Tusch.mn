@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2, MapPin } from "lucide-react";
-import type { Listing, ListingUser } from "../lib/api";
+import type { Listing, ListingUser } from "../lib/api/types";
 import { resolveCategoryLabel } from "./categoryLabels";
 import resolveImageUrl from "../lib/resolveImageUrl";
 import { Card, CardContent, buttonVariants } from "@repo/ui";

@@ -1,16 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Search,
-  MapPin,
-  Share2,
-  Heart,
-  FilterX,
-  Star,
-} from "lucide-react";
+import { Search, MapPin, Share2, Heart, FilterX, Star } from "lucide-react";
 import {
   Badge,
   Button,
@@ -56,7 +49,7 @@ const normalizeText = (value: string | null) => {
   return trimmed.length > 0 ? trimmed : "";
 };
 
-export default function OffreursPage() {
+export default function OfferersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [favoritesOpen, setFavoritesOpen] = useState(false);
@@ -98,15 +91,13 @@ export default function OffreursPage() {
   const hasPrevious = resolvedPage > 1;
   const hasNext = resolvedPage < totalPages;
 
-  const categoryLabel = category
-    ? CATEGORY_LABEL_MAP.get(category) || category
-    : null;
+  const categoryLabel = category ? CATEGORY_LABEL_MAP.get(category) || category : null;
 
   const totalLabel = error
-    ? "Impossible de charger"
+    ? "Ачааллах боломжгүй"
     : isLoading
-      ? "Chargement..."
-      : `${total} offreurs`;
+      ? "Ачааллаж байна..."
+      : `${total} үйлчилгээ үзүүлэгч`;
   const titleLabel = categoryLabel || "Үйлчилгээ үзүүлэгчид";
 
   const { ids: favoriteIds, add, remove, has } = useFavProviders();
@@ -133,7 +124,7 @@ export default function OffreursPage() {
       q: qParam || null,
       category: category || null,
     });
-    router.push(`/offreurs${query}`);
+    router.push(`/offerers${query}`);
   };
 
   const updateCategory = (nextCategory?: string | null) => {
@@ -143,7 +134,7 @@ export default function OffreursPage() {
       q: qParam || null,
       category: nextCategory || null,
     });
-    router.push(`/offreurs${query}`);
+    router.push(`/offerers${query}`);
   };
 
   const resetFilters = () => {
@@ -153,13 +144,11 @@ export default function OffreursPage() {
       q: null,
       category: null,
     });
-    router.push(`/offreurs${query}`);
+    router.push(`/offerers${query}`);
   };
 
   const errorMessage =
-    error instanceof Error
-      ? error.message
-      : "Une erreur est survenue pendant le chargement.";
+    error instanceof Error ? error.message : "Ачааллах үед алдаа гарлаа.";
 
   return (
     <AppShell>
@@ -170,10 +159,10 @@ export default function OffreursPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    Mes favoris
+                    Миний дуртай
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {favoriteIds.length} enregistres
+                    {favoriteIds.length} хадгалсан
                   </p>
                 </div>
                 <Badge variant="outline" className="rounded-full px-3 text-xs">
@@ -188,10 +177,10 @@ export default function OffreursPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-foreground">
-                      Aucun favori
+                      Дуртай зүйл алга
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Enregistrez des offreurs pour les retrouver ici.
+                      Үйлчилгээ үзүүлэгчдийг дуртайд нэмээд эндээс олно уу.
                     </p>
                   </div>
                 </div>
@@ -199,36 +188,47 @@ export default function OffreursPage() {
                 <div className="space-y-3">
                   {favoriteItems.map((provider) => {
                     const ratingLabel =
-                      provider.reviewsCount > 0 && typeof provider.ratingAvg === "number"
+                      provider.reviewsCount > 0 &&
+                        typeof provider.ratingAvg === "number"
                         ? provider.ratingAvg.toFixed(1)
-                        : "Nouveau";
+                        : "Шинэ";
                     const avatarUrl =
-                      resolveImageUrl(provider.avatarUrl || undefined) || undefined;
+                      resolveImageUrl(provider.avatarUrl || undefined) ||
+                      undefined;
                     return (
                       <Link
                         key={provider.id}
                         href={`/u/${provider.id}`}
                         className="group flex items-center gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 transition hover:bg-muted/70"
                       >
-                        <Avatar src={avatarUrl} alt={provider.firstName} className="h-9 w-9" />
+                        <Avatar
+                          src={avatarUrl}
+                          alt={provider.firstName}
+                          className="h-9 w-9"
+                        />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-foreground transition group-hover:underline">
                             {[provider.firstName, provider.lastName]
                               .filter(Boolean)
-                              .join(" ") || "Offreur"}
+                              .join(" ") || "Үйлчилгээ үзүүлэгч"}
                           </p>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Star className="h-3 w-3 fill-amber-400 stroke-amber-400" aria-hidden="true" />
+                            <Star
+                              className="h-3 w-3 fill-amber-400 stroke-amber-400"
+                              aria-hidden="true"
+                            />
                             {ratingLabel}
                           </div>
                         </div>
-                        <span className="text-xs text-muted-foreground">Voir</span>
+                        <span className="text-xs text-muted-foreground">
+                          Үзэх
+                        </span>
                       </Link>
                     );
                   })}
                   {favoriteIds.length > favoriteItems.length ? (
                     <p className="text-xs text-muted-foreground">
-                      Certains favoris sont hors de cette page.
+                      Зарим дуртай нь энэ хуудсанд харагдахгүй байна.
                     </p>
                   ) : null}
                 </div>
@@ -255,25 +255,28 @@ export default function OffreursPage() {
                     className="gap-2 lg:hidden"
                   >
                     <Heart className="h-4 w-4" aria-hidden="true" />
-                    Favoris
+                    Дуртай
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[320px]">
                   <SheetHeader>
-                    <SheetTitle>Mes favoris</SheetTitle>
+                    <SheetTitle>Миний дуртай</SheetTitle>
                   </SheetHeader>
                   <div className="px-4 pb-6 pt-2">
                     {favoriteItems.length === 0 ? (
                       <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 bg-muted/30 p-6 text-center">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-background shadow-sm">
-                          <Heart className="h-5 w-5 text-rose-500" aria-hidden="true" />
+                          <Heart
+                            className="h-5 w-5 text-rose-500"
+                            aria-hidden="true"
+                          />
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">
-                            Aucun favori
+                            Дуртай зүйл алга
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Enregistrez des offreurs pour les retrouver ici.
+                            Үйлчилгээ үзүүлэгчдийг дуртайд нэмээд эндээс олно уу.
                           </p>
                         </div>
                       </div>
@@ -281,23 +284,29 @@ export default function OffreursPage() {
                       <div className="space-y-3">
                         {favoriteItems.map((provider) => {
                           const ratingLabel =
-                            provider.reviewsCount > 0 && typeof provider.ratingAvg === "number"
+                            provider.reviewsCount > 0 &&
+                              typeof provider.ratingAvg === "number"
                               ? provider.ratingAvg.toFixed(1)
-                              : "Nouveau";
+                              : "Шинэ";
                           const avatarUrl =
-                            resolveImageUrl(provider.avatarUrl || undefined) || undefined;
+                            resolveImageUrl(provider.avatarUrl || undefined) ||
+                            undefined;
                           return (
                             <Link
                               key={provider.id}
                               href={`/u/${provider.id}`}
                               className="group flex items-center gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 transition hover:bg-muted/70"
                             >
-                              <Avatar src={avatarUrl} alt={provider.firstName} className="h-9 w-9" />
+                              <Avatar
+                                src={avatarUrl}
+                                alt={provider.firstName}
+                                className="h-9 w-9"
+                              />
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium text-foreground transition group-hover:underline">
                                   {[provider.firstName, provider.lastName]
                                     .filter(Boolean)
-                                    .join(" ") || "Offreur"}
+                                    .join(" ") || "Үйлчилгээ үзүүлэгч"}
                                 </p>
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                   <Star
@@ -308,14 +317,14 @@ export default function OffreursPage() {
                                 </div>
                               </div>
                               <span className="text-xs text-muted-foreground">
-                                Voir
+                                Үзэх
                               </span>
                             </Link>
                           );
                         })}
                         {favoriteIds.length > favoriteItems.length ? (
                           <p className="text-xs text-muted-foreground">
-                            Certains favoris sont hors de cette page.
+                            Зарим дуртай нь энэ хуудсанд харагдахгүй байна.
                           </p>
                         ) : null}
                       </div>
@@ -324,7 +333,12 @@ export default function OffreursPage() {
                 </SheetContent>
               </Sheet>
 
-              <Button type="button" variant="secondary" size="sm" className="gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="gap-2"
+              >
                 <Share2 className="h-4 w-4" aria-hidden="true" />
                 Хуваалцах
               </Button>
@@ -341,7 +355,7 @@ export default function OffreursPage() {
                     onChange={(event) => setSearchValue(event.target.value)}
                     placeholder="Үйлчилгээ эсвэл нэрээр хайх"
                     className="pl-10"
-                    aria-label="Rechercher"
+                    aria-label="Хайх"
                   />
                 </div>
                 <div className="relative hidden md:block">
@@ -349,13 +363,15 @@ export default function OffreursPage() {
                   <Input
                     placeholder="Байршил"
                     className="pl-10"
-                    aria-label="Localisation"
+                    aria-label="Байршил"
                     disabled
                   />
                 </div>
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>Илүү нарийвчилсан үр дүн авахын тулд үйлчилгээний төрөлөөр шүүлтүүрдээрэй.</span>
+              <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Хайлтаар нэр, овгоор шүүнэ. Ангиллаар нарийвчилж болно.
+                </span>
                 {(qParam || category) && (
                   <button
                     type="button"
@@ -366,7 +382,7 @@ export default function OffreursPage() {
                     )}
                   >
                     <FilterX className="h-3 w-3" aria-hidden="true" />
-                    Reinitialiser
+                    Шүүлтийг цэвэрлэх
                   </button>
                 )}
               </div>
@@ -374,23 +390,21 @@ export default function OffreursPage() {
           </Card>
 
           <div className="mt-5 flex items-center justify-between">
-            <p className="text-sm font-medium text-muted-foreground">
-              Categories
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Ангилал</p>
           </div>
 
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-6 xl:grid-cols-6">
             <button
               type="button"
               onClick={() => updateCategory(null)}
               className={cn(
-                "flex min-w-[120px] items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition",
+                "flex min-h-[88px] w-full flex-col items-center justify-center rounded-2xl border px-3 py-3 text-xs font-medium transition",
                 !category
                   ? "border-primary bg-primary text-primary-foreground shadow-sm"
                   : "border-border bg-muted text-foreground hover:bg-muted/70"
               )}
             >
-              <span>Tous</span>
+              <span className="text-xs font-semibold text-center">Бүгд</span>
             </button>
             {CATEGORY_OPTIONS.map((item) => {
               const Icon = item.icon;
@@ -401,30 +415,33 @@ export default function OffreursPage() {
                   type="button"
                   onClick={() => updateCategory(item.value)}
                   className={cn(
-                    "flex min-w-[160px] items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition",
+                    "flex min-h-[8px] w-full flex-col items-center justify-center gap-2 rounded-2xl border px-1 py-1 text-xs font-medium transition",
                     active
                       ? "border-primary bg-primary text-primary-foreground shadow-sm"
                       : "border-border bg-muted text-foreground hover:bg-muted/70"
                   )}
                 >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span className="truncate">{item.label}</span>
+                  <Icon className="h-6 w-6 md:h-7 md:w-7" aria-hidden="true" />
+                  <span className="text-xs font-semibold text-center leading-tight">
+                    {item.label}
+                  </span>
                 </button>
               );
             })}
           </div>
 
           <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
-              {titleLabel}
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground">{titleLabel}</h2>
             <span className="text-sm text-muted-foreground">{totalLabel}</span>
           </div>
 
           {isLoading ? (
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: limit }).map((_, index) => (
-                <Card key={`provider-skeleton-${index}`} className="border-border/60">
+                <Card
+                  key={`provider-skeleton-${index}`}
+                  className="border-border/60"
+                >
                   <CardContent className="space-y-3 p-5">
                     <div className="flex items-center gap-3">
                       <Skeleton className="h-12 w-12 rounded-full" />
@@ -442,18 +459,18 @@ export default function OffreursPage() {
           ) : error ? (
             <div className="mt-4">
               <ErrorState
-                title="Erreur de chargement"
+                title="Ачааллахад алдаа гарлаа"
                 message={errorMessage}
                 onRetry={() => refetch()}
                 isRetrying={isFetching}
-                retryLabel="Reessayer"
+                retryLabel="Дахин оролдох"
               />
             </div>
           ) : items.length === 0 ? (
             <div className="mt-4">
               <EmptyState
-                title="Aucun offreur trouve"
-                description="Essayez de changer la categorie ou la recherche."
+                title="Үйлчилгээ үзүүлэгч олдсонгүй"
+                description="Ангилал эсвэл хайлтаа өөрчилж үзнэ үү."
               />
             </div>
           ) : (
@@ -464,7 +481,8 @@ export default function OffreursPage() {
                   provider={provider}
                   topCategoryLabel={
                     provider.topCategory
-                      ? CATEGORY_LABEL_MAP.get(provider.topCategory) || provider.topCategory
+                      ? CATEGORY_LABEL_MAP.get(provider.topCategory) ||
+                      provider.topCategory
                       : null
                   }
                   isFavorite={has(provider.id)}
@@ -484,11 +502,14 @@ export default function OffreursPage() {
                 disabled={!hasPrevious || isFetching}
                 className="min-w-[120px]"
               >
-                Precedent
+                Өмнөх
               </Button>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Badge variant="outline" className="rounded-full border-border/80 px-3 py-1 text-xs font-medium">
-                  Page {resolvedPage}
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-border/80 px-3 py-1 text-xs font-medium"
+                >
+                  Хуудас {resolvedPage}
                 </Badge>
                 <span>{totalPages ? `/ ${totalPages}` : ""}</span>
               </div>
@@ -500,7 +521,7 @@ export default function OffreursPage() {
                 disabled={!hasNext || isFetching}
                 className="min-w-[120px]"
               >
-                Suivant
+                Дараах
               </Button>
             </div>
           ) : null}
