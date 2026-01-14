@@ -6,7 +6,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "test": "echo \"No tests configured\"",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "smoke": "pnpm -w build && pnpm --filter backend test:e2e"
   },
   "devDependencies": {
     "prettier": "^3.2.5",
