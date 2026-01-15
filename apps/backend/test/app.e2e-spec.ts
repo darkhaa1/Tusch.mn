@@ -15,7 +15,9 @@ describe('App (e2e)', () => {
 
     app = moduleFixture.createNestApplication();
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
   });
 
@@ -52,8 +54,7 @@ describe('App (e2e)', () => {
     path: string,
     cookie: string,
     body: Record<string, unknown> | string,
-  ) =>
-    request(app.getHttpServer()).post(path).set('Cookie', cookie).send(body);
+  ) => request(app.getHttpServer()).post(path).set('Cookie', cookie).send(body);
 
   const authedPatch = (
     path: string,
@@ -150,7 +151,9 @@ describe('App (e2e)', () => {
       .get('/listings')
       .expect(200);
     expect(
-      listAfter.body.items.some((item: { id: string }) => item.id === listingId),
+      listAfter.body.items.some(
+        (item: { id: string }) => item.id === listingId,
+      ),
     ).toBe(false);
 
     await request(app.getHttpServer())
@@ -206,7 +209,9 @@ describe('App (e2e)', () => {
     const messageId = messageRes.body.id as string;
     expect(messageId).toBeTruthy();
 
-    const threadsRes = await authedGet('/messages/threads', cookieB).expect(200);
+    const threadsRes = await authedGet('/messages/threads', cookieB).expect(
+      200,
+    );
     const thread = threadsRes.body.find(
       (item: { senderId: string; recipientId: string }) =>
         item.senderId === userAId || item.recipientId === userAId,
@@ -302,7 +307,9 @@ describe('App (e2e)', () => {
     expect(json).not.toMatch(/\"email\":/);
     expect(json).not.toMatch(/\"phone\":/);
 
-    const recentListings = profileRes.body.recentListings as Array<{ id: string }>;
+    const recentListings = profileRes.body.recentListings as Array<{
+      id: string;
+    }>;
     expect(recentListings.some((item) => item.id === listing1Id)).toBe(true);
     expect(recentListings.some((item) => item.id === listing2Id)).toBe(false);
   });
