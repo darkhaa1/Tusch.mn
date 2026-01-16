@@ -4,15 +4,22 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useCurrentUser, useUpdateCurrentUser, useDeleteCurrentUser } from '../../../hooks/useApi';
 import resolveImageUrl from '../../../lib/resolveImageUrl';
-export default function ProfileInfo() {
-  const { data: session } = useSession();
-  const { data: backendUser, isLoading } = useCurrentUser();
-  const updateUser = useUpdateCurrentUser();
-  const deleteUser = useDeleteCurrentUser();
+type ProfileInfoFormProps = {
+  user: any;
+  session: any;
+  updateUser: ReturnType<typeof useUpdateCurrentUser>;
+  deleteUser: ReturnType<typeof useDeleteCurrentUser>;
+};
 
-  const user = backendUser || session?.user;
+function ProfileInfoForm({ user, session, updateUser, deleteUser }: ProfileInfoFormProps) {
+  const initialAvatar =
+    resolveImageUrl((user as any)?.avatarUrl || (user as any)?.image || null);
+  const initialFirstName = (user as any)?.firstname || (user as any)?.firstName || '';
+  const initialLastName = (user as any)?.lastname || (user as any)?.lastName || '';
+  const initialPhone = (user as any)?.phone || '';
+  const initialAccountType = (user as any)?.accountType || '';
 
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(initialAvatar);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarDirty, setAvatarDirty] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -20,33 +27,27 @@ export default function ProfileInfo() {
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [accountType, setAccountType] = useState('');
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [lastName, setLastName] = useState(initialLastName);
+  const [phone, setPhone] = useState(initialPhone);
+  const [accountType, setAccountType] = useState(initialAccountType);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
-  const populateFromUser = () => {
-    const fallbackAvatar =
-      resolveImageUrl((user as any)?.avatarUrl || (user as any)?.image || null);
+  const resetFromUser = () => {
     setAvatarObjectUrl(null);
     setAvatarFile(null);
     setRemoveAvatar(false);
-    setAvatarPreview(fallbackAvatar);
+    setAvatarPreview(initialAvatar);
     setAvatarDirty(false);
     setAvatarError(null);
     setSaveError(null);
 
-    setFirstName((user as any)?.firstname || (user as any)?.firstName || '');
-    setLastName((user as any)?.lastname || (user as any)?.lastName || '');
-    setPhone((user as any)?.phone || '');
-    setAccountType((user as any)?.accountType || '');
+    setFirstName(initialFirstName);
+    setLastName(initialLastName);
+    setPhone(initialPhone);
+    setAccountType(initialAccountType);
   };
-
-  useEffect(() => {
-    populateFromUser();
-  }, [user]);
 
   useEffect(() => {
     return () => {
@@ -136,13 +137,11 @@ export default function ProfileInfo() {
   };
 
   const handleCancel = () => {
-    populateFromUser();
+    resetFromUser();
     setIsEditing(false);
     setSaveSuccess(null);
   };
 
-  if (isLoading) return <p>Түр хүлээнэ үү...</p>;
-  if (!user) return <p>Хэрэглэгчийн мэдээлэл олдсонгүй</p>;
 
   return (
     <div className="space-y-6">
@@ -294,5 +293,39 @@ export default function ProfileInfo() {
         </>
       )}
     </div>
+  );
+}
+
+export default function ProfileInfo() {
+  const { data: session } = useSession();
+  const { data: backendUser, isLoading } = useCurrentUser();
+  const updateUser = useUpdateCurrentUser();
+  const deleteUser = useDeleteCurrentUser();
+
+  const user = backendUser || session?.user;
+  if (isLoading) return <p>D›O_¥? ¥.O_D¯¥?¥?D«¥? O_O_...</p>;
+  if (!user) return <p>D¥?¥?¥?D3D¯¥?D3¥ØD,D1D« D¬¥?D&apos;¥?¥?D¯¥?D¯ D_D¯D&apos;¥?D_D«D3O_D1</p>;
+
+  const userKey = [
+    (user as any)?.id ?? (user as any)?.email ?? 'user',
+    (user as any)?.email,
+    (user as any)?.firstname ?? (user as any)?.firstName,
+    (user as any)?.lastname ?? (user as any)?.lastName,
+    (user as any)?.phone,
+    (user as any)?.accountType,
+    (user as any)?.avatarUrl ?? (user as any)?.image,
+  ]
+    .filter((value) => value !== undefined && value !== null)
+    .map((value) => String(value))
+    .join('|');
+
+  return (
+    <ProfileInfoForm
+      key={userKey}
+      user={user}
+      session={session}
+      updateUser={updateUser}
+      deleteUser={deleteUser}
+    />
   );
 }

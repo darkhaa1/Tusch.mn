@@ -83,7 +83,7 @@ export default function OfferersClient() {
     limit,
   });
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data?.items]);
   const total = data?.total ?? 0;
   const resolvedPage = data?.page ?? page;
   const resolvedLimit = data?.limit ?? limit;

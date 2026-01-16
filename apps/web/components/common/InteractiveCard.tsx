@@ -1,12 +1,12 @@
 "use client";
 
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ComponentPropsWithoutRef } from "react";
 import { Card, CardContent } from "@repo/ui";
 import { cn } from "../../app/lib/utils";
 
 type InteractiveCardProps = ComponentPropsWithoutRef<typeof Card> & {
   contentProps?: ComponentPropsWithoutRef<typeof CardContent>;
-  children: ReactNode;
+  children: ComponentPropsWithoutRef<typeof CardContent>["children"];
 };
 
 export function InteractiveCard({

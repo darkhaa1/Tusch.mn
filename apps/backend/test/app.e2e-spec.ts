@@ -304,8 +304,8 @@ describe('App (e2e)', () => {
       .expect(200);
 
     const json = JSON.stringify(profileRes.body);
-    expect(json).not.toMatch(/\"email\":/);
-    expect(json).not.toMatch(/\"phone\":/);
+    expect(json).not.toMatch(/"email":/);
+    expect(json).not.toMatch(/"phone":/);
 
     const recentListings = profileRes.body.recentListings as Array<{
       id: string;

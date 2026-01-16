@@ -2,7 +2,7 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateListing } from "../hooks/useApi";
@@ -38,11 +38,11 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
   const [step, setStep] = React.useState(1);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const {
+    control,
     register,
     handleSubmit,
     setValue,
     trigger,
-    watch,
     formState: { errors },
     reset,
   } = useForm<ListingForm>({
@@ -56,8 +56,8 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
   });
 
   const mutation = useCreateListing();
-  const categoryValue = watch("category");
-  const priceValue = watch("price");
+  const categoryValue = useWatch({ control, name: "category" });
+  const priceValue = useWatch({ control, name: "price" });
 
   const onSubmit = async (data: ListingForm) => {
     try {

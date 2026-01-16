@@ -11,7 +11,6 @@ type ProviderCardProps = {
   provider: ProviderCardType;
   topCategoryLabel?: string | null;
   isFavorite: boolean;
-  // eslint-disable-next-line no-unused-vars
   onToggleFavorite: (id: string) => void;
 };
 

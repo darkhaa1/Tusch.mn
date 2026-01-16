@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FilterX, Plus, Search, ArrowLeft } from "lucide-react";
 import NewListingModal from "./NewListingModal";
@@ -53,7 +53,7 @@ export default function ListingsClient() {
   const hasPrevious = resolvedPage > 1;
   const hasNext = totalKnown ? resolvedPage < totalPages : items.length === resolvedLimit;
 
-  const categoryLabel = useMemo(() => resolveCategoryLabel(category), [category]);
+  const categoryLabel = resolveCategoryLabel(category);
   const labelFinal = category ? categoryLabel || category : "";
   const showTotal = !isLoading && !error && totalKnown;
   const totalLabel = showTotal ? `${total} зар` : "";

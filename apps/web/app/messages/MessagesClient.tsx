@@ -22,7 +22,12 @@ import { ConversationPanel } from "./components/ConversationPanel";
 import { formatTime } from "./components/utils";
 import type { ConversationMessage, ThreadItem } from "./types";
 
-const quickReplies = ["Сайн байна уу!", "Хариу өгсөнд баярлалаа.", "Би удахгүй дахин холбогдоно.", "Дэлгэрэнгүй мэдээлэл хуваалцаарай."];
+const quickReplies = [
+  "Сайн байна уу!",
+  "Танд тусламж хэрэгтэй юу?",
+  "Үнийн талаар тохиролцож болох уу?",
+  "Баярлалаа, удахгүй холбоо барья.",
+];
 
 function getPartnerId(message: Message, currentUserId?: string) {
   if (!currentUserId) return null;
@@ -31,7 +36,7 @@ function getPartnerId(message: Message, currentUserId?: string) {
 
 export default function MessagesClient() {
   const searchParams = useSearchParams();
-  const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
+  const [activePartnerId, setActivePartnerId] = useState<string | null | undefined>(undefined);
   const [draft, setDraft] = useState("");
 
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
@@ -41,10 +46,20 @@ export default function MessagesClient() {
     isLoading: isLoadingThreads,
     error: threadsError,
   } = useMessageThreads(Boolean(currentUser));
+  const partnerFromQuery = searchParams.get("partnerId");
+  const autoPartnerId = useMemo(() => {
+    if (!currentUser) return null;
+    const firstThread = threads?.[0];
+    if (!firstThread) return null;
+    return getPartnerId(firstThread, currentUser.id);
+  }, [threads, currentUser]);
+  const resolvedActivePartnerId =
+    activePartnerId === undefined ? partnerFromQuery ?? autoPartnerId : activePartnerId;
+
   const {
     data: conversation,
     isLoading: isLoadingConversation,
-  } = useConversation(activePartnerId || undefined);
+  } = useConversation(resolvedActivePartnerId || undefined);
   const {
     mutate: sendMessageMutate,
     isPending: isSending,
@@ -54,21 +69,6 @@ export default function MessagesClient() {
     mutate: markMessageReadMutate,
     isPending: isMarkingRead,
   } = useMarkMessageRead();
-
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const firstThread = threads?.[0];
-    if (!firstThread) {
-      setActivePartnerId(null);
-      return;
-    }
-
-    if (!activePartnerId) {
-      const firstPartner = getPartnerId(firstThread, currentUser.id);
-      if (firstPartner) setActivePartnerId(firstPartner);
-    }
-  }, [threads, currentUser, activePartnerId]);
 
   const threadItems = useMemo(() => {
     if (!threads || !currentUser) return [];
@@ -84,7 +84,7 @@ export default function MessagesClient() {
     });
   }, [threads, users, currentUser]);
 
-  const activeThread = threadItems.find((thread) => thread.partnerId === activePartnerId);
+  const activeThread = threadItems.find((thread) => thread.partnerId === resolvedActivePartnerId);
   const activeListingId =
     activeThread?.lastMessage.listingId || conversation?.[conversation.length - 1]?.listingId || null;
 
@@ -98,21 +98,14 @@ export default function MessagesClient() {
   }, [conversation, currentUser]);
 
   useEffect(() => {
-    if (!conversation || !currentUser || !activePartnerId) return;
+    if (!conversation || !currentUser || !resolvedActivePartnerId) return;
     const lastIncoming = [...conversation]
       .reverse()
       .find((message) => message.recipientId === currentUser.id && !message.readAt);
     if (lastIncoming && !isMarkingRead) {
-      markMessageReadMutate({ messageId: lastIncoming.id, partnerId: activePartnerId });
+      markMessageReadMutate({ messageId: lastIncoming.id, partnerId: resolvedActivePartnerId });
     }
-  }, [conversation, currentUser, activePartnerId, markMessageReadMutate, isMarkingRead]);
-
-  useEffect(() => {
-    const partnerFromQuery = searchParams.get("partnerId");
-    if (partnerFromQuery) {
-      setActivePartnerId(partnerFromQuery);
-    }
-  }, [searchParams]);
+  }, [conversation, currentUser, resolvedActivePartnerId, markMessageReadMutate, isMarkingRead]);
 
   const handleSelectConversation = (partnerId: string) => {
     setActivePartnerId(partnerId);
@@ -120,27 +113,27 @@ export default function MessagesClient() {
   };
 
   const handleSend = () => {
-    if (!draft.trim() || !activePartnerId || !activeListingId) return;
+    if (!draft.trim() || !resolvedActivePartnerId || !activeListingId) return;
     const content = draft.trim();
     sendMessageMutate(
-      { recipientId: activePartnerId, listingId: activeListingId, content },
+      { recipientId: resolvedActivePartnerId, listingId: activeListingId, content },
       { onSuccess: () => setDraft("") }
     );
   };
 
-  const mobileShowList = !activePartnerId;
+  const mobileShowList = !resolvedActivePartnerId;
   const showAuthRequired = !isUserLoading && !currentUser;
 
   return (
     <AppShell>
       <PageHeader
         title="Мессежүүд"
-        description="Платформаас гаралгүйгээр бусад хэрэглэгчидтэй ярилцаарай."
+        description="Мессежүүдээ нэг дороос хянаж, хариулаарай."
         actions={
           !mobileShowList ? (
             <Badge variant="secondary" className="gap-1">
               <CheckCheck className="h-4 w-4" aria-hidden="true" />
-              Яриа
+              Уншсан
             </Badge>
           ) : null
         }
@@ -157,7 +150,7 @@ export default function MessagesClient() {
             items={threadItems}
             isLoading={isLoadingThreads}
             error={threadsError}
-            activePartnerId={activePartnerId}
+            activePartnerId={resolvedActivePartnerId}
             onSelect={handleSelectConversation}
           />
 
@@ -165,7 +158,7 @@ export default function MessagesClient() {
             <MobileThreadList items={threadItems} isLoading={isLoadingThreads} onSelect={handleSelectConversation} />
           ) : null}
 
-          {activePartnerId ? (
+          {resolvedActivePartnerId ? (
             <ConversationPanel
               activeThread={activeThread}
               activeListingId={activeListingId}
@@ -182,7 +175,7 @@ export default function MessagesClient() {
             />
           ) : (
             <div className="rounded-xl border border-border/80 bg-background p-6 text-sm text-muted-foreground shadow-sm">
-              Эхлэхийн тулд нэг яриа сонгоно уу.
+              Яриа эхлүүлэхийн тулд хэрэглэгч сонгоно уу.
             </div>
           )}
         </div>

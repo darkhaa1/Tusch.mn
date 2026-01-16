@@ -1,5 +1,4 @@
 ﻿type SearchParamsLike = {
-  // eslint-disable-next-line no-unused-vars
   get: (key: string) => string | null;
   toString: () => string;
 };

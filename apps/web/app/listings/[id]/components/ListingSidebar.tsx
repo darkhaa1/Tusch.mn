@@ -19,9 +19,7 @@ type ListingSidebarProps = {
   isOwner: boolean;
   deletingImageId: string | null;
   isUploadingImages: boolean;
-  // eslint-disable-next-line no-unused-vars
   onDeleteImage: (id: string) => void;
-  // eslint-disable-next-line no-unused-vars
   onUploadImages: (event: ChangeEvent<HTMLInputElement>) => void;
   onOpenMessage: () => void;
   messageFeedback: string | null;

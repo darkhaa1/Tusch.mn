@@ -18,7 +18,6 @@ type ListingDetailsCardProps = {
   listingDescription: string;
   isEditing: boolean;
   formState: FormState;
-  // eslint-disable-next-line no-unused-vars
   onFieldChange: (field: keyof FormState, value: string) => void;
   onSave: () => void;
   onCancel: () => void;

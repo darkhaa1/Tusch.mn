@@ -8,10 +8,10 @@ export default function Hero() {
       <div className="md:flex flex-row w-full items-center gap-4 justify-center">
         <div className="md:w-1/2 space-y-2">
           <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
-            D›DøD«D' ¥,¥Ÿ¥?D¯DøD¬D ¥.¥?¥?¥?D3¥,¥?D1 DñDøD1D«Dø ¥Ÿ¥Ÿ?
+            Танд тусламж хэрэгтэй байна уу?
           </h1>
           <p className="text-base md:text-lg text-gray-700">
-            DzD1¥? DñDøD1D3DøDø O_D1D¯¥ØD,D¯D3¥?¥?D3 D_D¯D ¥?¥?Dý¥?D¯ OcOc¥?D,D1D« O_D1D¯¥ØD,D¯D3¥?¥?D3 ¥?DøD«DøD¯ DñD_D¯D3D_D_¥?D_D1.
+            Ойр байгаа үйлчилгээг олж эсвэл өөрийн үйлчилгээг санал болгоорой.
           </p>
         </div>
         <Image
@@ -25,3 +25,4 @@ export default function Hero() {
     </section>
   );
 }
+

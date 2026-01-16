@@ -99,7 +99,7 @@ export function DropdownMenuContent({ className, children, ...props }: DropdownM
   return (
     <div
       className={cn(
-        "absolute right-0 z-50 mt-2 min-w-[180px] rounded-md border border-border bg-background p-1 shadow-lg",
+        "absolute right-0 z-50 mt-2 min-w-45 rounded-md border border-border bg-background p-1 shadow-lg",
         className
       )}
       {...props}
