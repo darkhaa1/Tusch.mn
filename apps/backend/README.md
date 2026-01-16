@@ -58,6 +58,16 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+## E2E tests (backend)
+
+1. Create a dedicated Postgres database (example: `tusch_test`).
+2. Set `apps/backend/.env.test` with `DATABASE_URL_TEST`.
+3. Run:
+
+```bash
+pnpm --filter backend test:e2e
+```
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).

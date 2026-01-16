@@ -33,6 +33,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
     <Card className="group flex h-full flex-col overflow-hidden ui-card">
       <div className="relative">
         <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={coverUrl}
             alt={heading}

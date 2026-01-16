@@ -31,8 +31,6 @@ export function ListingSidebar({
   locationLabel,
   categoryLabel,
   authorName,
-  authorEmail,
-  authorPhone,
   authorAvatar,
   profileHref,
   images,

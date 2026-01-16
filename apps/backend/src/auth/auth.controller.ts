@@ -125,10 +125,7 @@ export class AuthController {
 
   @Patch('password')
   @UseGuards(JwtAuthGuard)
-  async changePassword(
-    @Req() req,
-    @Body() body: ChangePasswordDto,
-  ) {
+  async changePassword(@Req() req, @Body() body: ChangePasswordDto) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
     await this.authService.changePassword(

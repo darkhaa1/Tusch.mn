@@ -48,7 +48,7 @@ export function AuthSync() {
         syncedRef.current = false;
       }
     })();
-  }, [status, session]);
+  }, [status, session, queryClient]);
 
   return null;
 }

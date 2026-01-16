@@ -1,23 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useCurrentUser } from "../hooks/useApi";
 
 export default function Hero() {
-  const router = useRouter();
-  const { data: currentUser } = useCurrentUser();
-
-  const role = (currentUser?.role || "CLIENT") as "CLIENT" | "PROVIDER" | "BOTH";
-  const showBothCtas = role === "BOTH";
-  const primaryCta =
-    role === "PROVIDER"
-      ? { label: "Зарууд үзэх", href: "/listings" }
-      : { label: "Зар нэмэх", href: "/listings?create=1" };
-  const secondaryCta = showBothCtas ? { label: "Зар нэмэх", href: "/listings?create=1" } : null;
-
-  const handleCtaClick = (href: string) => router.push(href);
-
   return (
     <section className="bg-blue-50 p-6 md:p-8 flex flex-col items-center justify-between rounded-lg mt-6 md:my-8 mx-2 md:mx-4">
       <div className="md:flex flex-row w-full items-center gap-4 justify-center">
@@ -40,3 +25,4 @@ export default function Hero() {
     </section>
   );
 }
+

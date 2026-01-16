@@ -4,12 +4,11 @@ import { useMemo } from "react";
 import Link from "next/link";
 import AppShell from "../../../components/layout/AppShell";
 import { PageHeader } from "../../../components/common";
-import { useCurrentUser, useMyListings } from "../../hooks/useApi";
+import { useMyListings } from "../../hooks/useApi";
 import { Card, CardContent, Button } from "@repo/ui";
 import ListingCard from "../../listings/ListingCard";
 
 export default function ProfileDemandesPage() {
-  const { data: currentUser } = useCurrentUser();
   const { data: listings, isLoading } = useMyListings();
   const items = useMemo(() => listings || [], [listings]);
 

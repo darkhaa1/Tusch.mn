@@ -68,6 +68,7 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {placeholderImages.map((src, idx) => (
                 <div key={idx} className="aspect-video overflow-hidden rounded-lg bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={src} alt="Photo placeholder" className="h-full w-full object-cover" />
                 </div>
               ))}

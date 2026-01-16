@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { Heart, MapPin, Star, Layers } from "lucide-react";
@@ -86,3 +86,4 @@ export function ProviderCard({
 }
 
 export default ProviderCard;
+

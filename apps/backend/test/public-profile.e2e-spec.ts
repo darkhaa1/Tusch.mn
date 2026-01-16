@@ -1,13 +1,12 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import * as cookieParser from 'cookie-parser';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { PrismaService } from '../prisma/prisma.service';
+import { prisma } from './utils/e2e-database';
 
 describe('Public profile (e2e)', () => {
   let app: INestApplication;
-  let prisma: PrismaService;
-  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -15,10 +14,18 @@ describe('Public profile (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
+  });
 
-    prisma = app.get(PrismaService);
+  afterAll(async () => {
+    await app.close();
+  });
 
+  it('returns public profile safely', async () => {
     const reviewer = await prisma.user.create({
       data: {
         email: `reviewer-${Date.now()}@example.com`,
@@ -41,7 +48,6 @@ describe('Public profile (e2e)', () => {
         avatarUrl: '/uploads/test-avatar.jpg',
       },
     });
-    userId = user.id;
 
     await prisma.listing.create({
       data: {
@@ -58,29 +64,16 @@ describe('Public profile (e2e)', () => {
         targetUserId: user.id,
         reviewerId: reviewer.id,
         rating: 5,
-        comment: 'Сайн хэрэглэгч',
+        comment: 'Great service.',
       },
     });
-  });
 
-  afterAll(async () => {
-    if (prisma) {
-      await prisma.review.deleteMany({ where: { targetUserId: userId } });
-      await prisma.listing.deleteMany({ where: { userId } });
-      await prisma.user.deleteMany({
-        where: { OR: [{ id: userId }, { email: { startsWith: 'reviewer-' } }] },
-      });
-    }
-    await app.close();
-  });
-
-  it('returns public profile safely', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/users/${userId}/public`)
+      .get(`/users/${user.id}/public`)
       .expect(200);
 
     const payload = res.body;
-    expect(payload.user.id).toBe(userId);
+    expect(payload.user.id).toBe(user.id);
     expect(payload.stats.listingsCount).toBeGreaterThanOrEqual(1);
     expect(Array.isArray(payload.recentListings)).toBe(true);
     expect(Array.isArray(payload.reviews)).toBe(true);
@@ -91,6 +84,8 @@ describe('Public profile (e2e)', () => {
   });
 
   it('returns 404 for missing user', async () => {
-    await request(app.getHttpServer()).get('/users/non-existent/public').expect(404);
+    await request(app.getHttpServer())
+      .get('/users/non-existent/public')
+      .expect(404);
   });
 });

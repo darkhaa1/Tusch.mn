@@ -14,11 +14,11 @@ export default function MyListings() {
       listing.user ||
       (currentUser
         ? {
-            id: currentUser.id,
-            firstName: currentUser.firstName || currentUser.firstname || '',
-            lastName: currentUser.lastName || currentUser.lastname || '',
-            email: currentUser.email,
-          }
+          id: currentUser.id,
+          firstName: currentUser.firstName || currentUser.firstName || '',
+          lastName: currentUser.lastName || currentUser.lastName || '',
+          email: currentUser.email,
+        }
         : undefined),
   }));
 

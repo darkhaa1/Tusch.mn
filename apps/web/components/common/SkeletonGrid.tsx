@@ -17,7 +17,7 @@ export function SkeletonGrid({ count, className }: SkeletonGridProps) {
     >
       {Array.from({ length: count }).map((_, index) => (
         <Card key={`skeleton-${index}`} className="overflow-hidden">
-          <Skeleton className="aspect-[4/3] w-full rounded-none" />
+          <Skeleton className="aspect-4/3 w-full rounded-none" />
           <CardContent className="space-y-3">
             <Skeleton className="h-5 w-3/4" />
             <Skeleton className="h-4 w-1/2" />

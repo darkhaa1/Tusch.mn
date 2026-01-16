@@ -79,7 +79,11 @@ export class AdminService {
     return { items, total, page, limit };
   }
 
-  async updateUserStatus(adminId: string, targetId: string, status: UserStatus) {
+  async updateUserStatus(
+    adminId: string,
+    targetId: string,
+    status: UserStatus,
+  ) {
     const existing = await this.prisma.user.findUnique({
       where: { id: targetId },
       select: { id: true },

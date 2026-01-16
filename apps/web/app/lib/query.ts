@@ -1,4 +1,4 @@
-type SearchParamsLike = {
+﻿type SearchParamsLike = {
   get: (key: string) => string | null;
   toString: () => string;
 };
@@ -31,3 +31,4 @@ export function setSearchParams(current: SearchParamsLike, patch: SearchParamsPa
   const query = params.toString();
   return query ? `?${query}` : "";
 }
+

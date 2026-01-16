@@ -1,13 +1,17 @@
 import { RefreshCcw } from "lucide-react";
+import type { ComponentProps } from "react";
 import { Alert, AlertDescription, AlertTitle, buttonVariants } from "@repo/ui";
 import { cn } from "../../app/lib/utils";
 
+type AlertTitleChildren = ComponentProps<typeof AlertTitle>["children"];
+type AlertDescriptionChildren = ComponentProps<typeof AlertDescription>["children"];
+type ButtonChildren = ComponentProps<"button">["children"];
 type ErrorStateProps = {
-  title?: React.ReactNode;
-  message: React.ReactNode;
+  title?: AlertTitleChildren;
+  message: AlertDescriptionChildren;
   onRetry?: () => void;
   isRetrying?: boolean;
-  retryLabel?: React.ReactNode;
+  retryLabel?: ButtonChildren;
 };
 
 /**

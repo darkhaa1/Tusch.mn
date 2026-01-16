@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { ArrowLeft, CheckCheck, Loader2, Paperclip } from "lucide-react";
-import { Avatar, Badge, Button, Input } from "@repo/ui";
+import { Avatar, Button, Input } from "@repo/ui";
 import type { ConversationMessage, ThreadItem } from "../types";
 import { cn } from "../../lib/utils";
 import { buildDisplayName } from "./utils";
@@ -39,7 +39,13 @@ export function ConversationPanel({
   return (
     <div className="relative flex h-[70vh] flex-col rounded-xl border border-border/80 bg-background shadow-sm">
       <div className="flex items-center gap-3 border-b px-4 py-3">
-        <Button variant="ghost" size="icon" className="sm:hidden" onClick={onBackMobile} aria-label="Жагсаалт руу буцах">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="sm:hidden"
+          onClick={onBackMobile}
+          aria-label="Мессежийн жагсаалт руу буцах"
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <Link
@@ -51,7 +57,7 @@ export function ConversationPanel({
           <Avatar src={activeThread?.partnerAvatar || undefined} alt={buildDisplayName(activeThread?.partner)} />
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground line-clamp-1">{buildDisplayName(activeThread?.partner)}</p>
-            <p className="text-xs text-muted-foreground">Профайл руу очих</p>
+            <p className="text-xs text-muted-foreground">Сүүлд идэвхтэй.</p>
           </div>
         </Link>
       </div>
@@ -60,7 +66,7 @@ export function ConversationPanel({
         {isLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Яриаг ачааллаж байна...
+            Мессежүүдийг ачаалж байна...
           </div>
         ) : conversationMessages.length ? (
           conversationMessages.map((message) => (
@@ -80,7 +86,7 @@ export function ConversationPanel({
             </div>
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">Энэ ярианд мессеж алга.</p>
+          <p className="text-sm text-muted-foreground">Одоогоор мессеж алга.</p>
         )}
       </div>
 
@@ -99,7 +105,9 @@ export function ConversationPanel({
         </div>
         {sendError ? <p className="mb-2 text-xs text-red-600">{(sendError as Error).message}</p> : null}
         {!activeListingId ? (
-          <p className="mb-2 text-xs text-amber-600">Энэ ярианд зар холбоогүй бол мессеж илгээх боломжгүй.</p>
+          <p className="mb-2 text-xs text-amber-600">
+            Энэ ярианд холбогдох зар сонгоогүй тул мессеж илгээх боломжгүй.
+          </p>
         ) : null}
         <div className="flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-2">
           <Button variant="ghost" size="icon" className="shrink-0" disabled>
@@ -125,3 +133,4 @@ export function ConversationPanel({
     </div>
   );
 }
+

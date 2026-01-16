@@ -21,7 +21,7 @@ import { AdminModule } from './admin/admin.module';
     AuthModule,
     ListingsModule,
     MessagesModule,
-    AdminModule
+    AdminModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

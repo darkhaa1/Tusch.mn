@@ -161,7 +161,7 @@ export default function PublicProfilePage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {overviewList.map((listing) => (
                     <Card key={listing.id} className="overflow-hidden border border-border/70">
-                      <div className="aspect-[4/3] w-full bg-muted">
+                      <div className="aspect-4/3 w-full bg-muted">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={resolveImageUrl(listing.imageUrl || undefined) || "/placeholder.jpg"}
