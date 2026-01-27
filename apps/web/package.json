@@ -7,13 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "tailwind:init": "tailwindcss init -p"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-tabs": "^1.1.13",
-    "@repo/types": "workspace:*",
-    "@repo/ui": "workspace:*",
+    "@repo/shared": "workspace:*",
     "@tanstack/react-query": "^5.90.17",
     "embla-carousel-react": "^8.6.0",
     "gdarh": "link:C:/Users/gdarh",

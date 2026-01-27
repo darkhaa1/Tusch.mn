@@ -55,3 +55,8 @@
 - [ ] Modals OK: login, signup, new listing (flow 4 étapes), confirm dialogs
 - [ ] Uploads OK: avatar, listing images (3 max)
 - [ ] Navigation mobile: Header + BottomNav fonctionnels
+
+## MVP UI source of truth
+- UI components live in `apps/web/src/components/ui` (source of truth for MVP).
+- Common patterns live in `apps/web/src/components/common` (to be created/used as needed).
+- `@repo/ui` is deprecated for the MVP; avoid new usage.

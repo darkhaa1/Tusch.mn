@@ -4,9 +4,9 @@ const { fontFamily } = require("tailwindcss/defaultTheme");
 module.exports = {
   darkMode: ["class"],
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}", // App Router
-    "./pages/**/*.{js,ts,jsx,tsx}", // Legacy pages
-    "./components/**/*.{js,ts,jsx,tsx}",
+    "./src/app/**/*.{js,ts,jsx,tsx}", // App Router
+    "./src/features/**/*.{js,ts,jsx,tsx}",
+    "./src/components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
