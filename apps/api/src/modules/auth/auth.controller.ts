@@ -13,8 +13,11 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -23,6 +26,7 @@ import { join } from 'path';
 import * as fs from 'fs';
 import { AVATAR_UPLOAD_DIR } from '../../common/multer/constants';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { sanitizeFilename } from '../../common/utils/validate-file-type';
 
 @Controller('auth')
 export class AuthController {
@@ -33,21 +37,26 @@ export class AuthController {
     return {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
-      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'strict' as const, // 🔒 Changed from 'lax' to 'strict' for CSRF protection
+      maxAge: 15 * 60 * 1000, // 🔒 Reduced from 24h to 15min (use refresh token for longer sessions)
       path: '/',
       domain: process.env.COOKIE_DOMAIN || undefined,
     };
   }
 
   @Post('register')
+  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 🔒 Max 3 inscriptions/heure
   register(@Body() dto: AuthDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
-  async login(@Body() body, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(body);
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 🔒 Max 5 tentatives de login/minute
+  async login(
+    @Body() dto: LoginDto, // 🔒 Changed from 'body' to typed DTO
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(dto);
 
     res.cookie('accessToken', result.accessToken, this.cookieOptions);
     return {
@@ -60,13 +69,13 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard) // dY`^ ton JWT guard ici
+  @UseGuards(JwtAuthGuard)
   async getMe(@Req() req) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
     const user = await this.authService.getUserById(userId);
-    return { user: this.authService.sanitizeUser(user) }; // req.user doit A¦tre injectAc par le guard
+    return { user: this.authService.sanitizeUser(user) };
   }
 
   @Patch('me')
@@ -74,14 +83,13 @@ export class AuthController {
   @UseInterceptors(FileInterceptor('avatar', avatarMulterOptions))
   async updateMe(
     @Req() req,
-    @Body() body,
+    @Body() dto: UpdateProfileDto, // 🔒 Changed from 'body' to typed DTO
     @UploadedFile() file?: Express.Multer.File,
   ) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
-    const removeAvatar =
-      body?.removeAvatar === 'true' || body?.removeAvatar === true;
+    const removeAvatar = req.body?.removeAvatar === 'true';
     const avatarUrl = removeAvatar
       ? null
       : file
@@ -96,22 +104,29 @@ export class AuthController {
     }
 
     const updatedUser = await this.authService.updateProfile(userId, {
-      firstName: body.firstName,
-      lastName: body.lastName,
-      phone: body.phone,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      phone: dto.phone,
       avatarUrl,
-      accountType: body.accountType,
-      email: body.email,
+      accountType: dto.accountType,
+      // 🔒 Email change removed - should be separate endpoint with verification
     });
 
+    // 🔒 Secure file cleanup with path traversal protection
     if (
       shouldCleanOldAvatar &&
       previousAvatarUrl?.startsWith('/uploads/avatars/')
     ) {
       const previousName = previousAvatarUrl.split('/').pop();
       if (previousName && previousName !== file?.filename) {
-        const previousPath = join(AVATAR_UPLOAD_DIR, previousName);
-        fs.promises.unlink(previousPath).catch(() => undefined);
+        try {
+          // 🔒 Validate filename to prevent path traversal
+          const safeFilename = sanitizeFilename(previousName);
+          const previousPath = join(AVATAR_UPLOAD_DIR, safeFilename);
+          await fs.promises.unlink(previousPath).catch(() => undefined);
+        } catch {
+          // Invalid filename, skip cleanup
+        }
       }
     }
     return { user: updatedUser };
@@ -125,6 +140,7 @@ export class AuthController {
 
   @Patch('password')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 🔒 Max 3 changements de password/heure
   async changePassword(@Req() req, @Body() body: ChangePasswordDto) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
@@ -148,12 +164,18 @@ export class AuthController {
     await this.authService.deleteUserById(userId);
     res.clearCookie('accessToken', { ...this.cookieOptions, maxAge: 0 });
 
+    // 🔒 Secure file cleanup with path traversal protection
     const avatarUrl = currentUser?.avatarUrl;
     if (avatarUrl?.startsWith('/uploads/avatars/')) {
       const avatarName = avatarUrl.split('/').pop();
       if (avatarName) {
-        const avatarPath = join(AVATAR_UPLOAD_DIR, avatarName);
-        fs.promises.unlink(avatarPath).catch(() => undefined);
+        try {
+          const safeFilename = sanitizeFilename(avatarName);
+          const avatarPath = join(AVATAR_UPLOAD_DIR, safeFilename);
+          await fs.promises.unlink(avatarPath).catch(() => undefined);
+        } catch {
+          // Invalid filename, skip cleanup
+        }
       }
     }
 

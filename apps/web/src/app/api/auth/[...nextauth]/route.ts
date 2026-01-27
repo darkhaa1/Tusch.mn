@@ -3,10 +3,11 @@ import NextAuth, { type AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 
-const authOptions: AuthOptions & { trustHost?: boolean } = {
+const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: { strategy: "jwt" },
-  trustHost: true,
+  // 🔒 Removed trustHost: true (security risk - CSRF bypass)
+  // Instead, configure NEXTAUTH_URL properly in .env
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,

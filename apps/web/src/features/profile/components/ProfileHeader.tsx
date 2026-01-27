@@ -14,6 +14,7 @@ const gradientBg = "bg-gradient-to-r from-secondary/80 via-primary/70 to-primary
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
   const avatar = resolveAvatarUrl(user?.avatarUrl || null);
+  console.log("Resolved avatar URL:", avatar);
   const firstName = user?.firstName || (user as any)?.firstname || "—";
   const lastName = user?.lastName || (user as any)?.lastname || "";
   const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();

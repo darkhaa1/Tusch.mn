@@ -3,8 +3,10 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma.service';
 import { AuthDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { randomUUID } from 'crypto';
+import { UserStatus } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -29,20 +31,38 @@ export class AuthService {
     return this.sanitizeUser(user);
   }
 
-  async login(body: { email: string; password: string }) {
+  async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
-      where: { email: body.email },
+      where: { email: dto.email },
     });
-    if (!user || !user.password)
+
+    if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
+    }
 
-    const passwordValid = await bcrypt.compare(body.password, user.password);
-    if (!passwordValid) throw new UnauthorizedException('Invalid credentials');
+    // 🔒 Check if user is suspended before allowing login
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException(
+        'Account is suspended. Please contact support.',
+      );
+    }
 
-    const accessToken = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
-    });
+    const passwordValid = await bcrypt.compare(dto.password, user.password);
+    if (!passwordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 🔒 JWT with explicit expiration (15 minutes)
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin, // 🔒 Include in token to avoid DB query in guards
+      },
+      {
+        expiresIn: '15m', // 🔒 Short-lived access token
+      },
+    );
 
     return {
       ...this.sanitizeUser(user),
@@ -71,10 +91,24 @@ export class AuthService {
       },
     });
 
-    const accessToken = await this.jwtService.signAsync({
-      sub: user.id,
-      email: user.email,
-    });
+    // 🔒 Check if user is suspended
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException(
+        'Account is suspended. Please contact support.',
+      );
+    }
+
+    // 🔒 JWT with explicit expiration
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+      },
+      {
+        expiresIn: '15m',
+      },
+    );
 
     return {
       ...this.sanitizeUser(user),
@@ -94,12 +128,21 @@ export class AuthService {
       phone?: string;
       avatarUrl?: string | null;
       accountType?: string;
-      email?: string;
+      // 🔒 Email removed - should be separate endpoint with verification
     },
   ) {
+    // 🔒 Explicitly whitelist fields to prevent mass assignment
+    const allowedData: any = {};
+    if (data.firstName !== undefined) allowedData.firstName = data.firstName;
+    if (data.lastName !== undefined) allowedData.lastName = data.lastName;
+    if (data.phone !== undefined) allowedData.phone = data.phone;
+    if (data.avatarUrl !== undefined) allowedData.avatarUrl = data.avatarUrl;
+    if (data.accountType !== undefined)
+      allowedData.accountType = data.accountType;
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data,
+      data: allowedData,
     });
     return this.sanitizeUser(updated);
   }

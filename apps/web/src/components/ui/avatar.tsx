@@ -79,6 +79,8 @@ const AvatarFallback = forwardRef<HTMLSpanElement, AvatarFallbackProps>(
 );
 AvatarFallback.displayName = "AvatarFallback";
 
+
+
 const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
   ({ className, src, alt = "Avatar", children, fallbackText, ...props }, ref) => {
     const showDefault = !children;
@@ -91,7 +93,7 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         .slice(0, 2)
         .toUpperCase() ||
       "U";
-
+    console.log("src", src);
     const hasImageChild = Children.toArray(children).some(
       (child) => isValidElement(child) && child.type === AvatarImage
     );
@@ -101,11 +103,21 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
       src || hasImageChild ? "idle" : "error"
     );
 
+    useEffect(() => {
+      if (src || hasImageChild) {
+        setHasImage(true);
+        setImageStatus((previous) => (previous === "error" ? "idle" : previous));
+        return;
+      }
+      setHasImage(false);
+      setImageStatus("error");
+    }, [src, hasImageChild]);
+
     const value = useMemo<AvatarContextValue>(
       () => ({ imageStatus, hasImage, setHasImage, setImageStatus }),
       [imageStatus, hasImage]
     );
-
+    console.log("Avatar component - src:", src, "hasImage:", hasImage, "imageStatus:", imageStatus);
     return (
       <AvatarContext.Provider value={value}>
         <div
