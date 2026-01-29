@@ -17,6 +17,18 @@ Optional, per app:
 - API: `pnpm --filter api lint`, `pnpm --filter api typecheck`, `pnpm --filter api test`, `pnpm --filter api test:e2e`, `pnpm --filter api build`
 - Web: `pnpm --filter web lint`, `pnpm --filter web typecheck`, `pnpm --filter web build`
 
+## CI (dev branch)
+- GitHub Actions runs on push to `dev`, PRs targeting `dev`, and manual dispatch.
+- Local equivalent (with a running PostgreSQL 15):
+  - `pnpm install`
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `pnpm build`
+  - `pnpm -C apps/api prisma generate`
+  - `pnpm -C apps/api prisma migrate deploy`
+  - `pnpm -C apps/api test:e2e -- --runInBand`
+- Required env in CI: `DATABASE_URL`, `NODE_ENV=test`, `JWT_SECRET` (others optional via GitHub Secrets).
+
 ## Key pages to smoke test
 - `/`
 - `/listings`
