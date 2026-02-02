@@ -78,8 +78,13 @@ jobs:
         working-directory: apps/api
         run: pnpm prisma migrate deploy
 
-      - name: API e2e tests
+      - name: API E2E tests
         working-directory: apps/api
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tusch_test?schema=public
+          JWT_SECRET: ci_dummy_secret_change_me
+          CI: true
         run: pnpm test:e2e --runInBand
 
       - name: Upload test artifacts on failure
