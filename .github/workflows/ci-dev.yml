@@ -62,7 +62,8 @@ jobs:
           exit 1
 
       - name: Prisma generate (api) - BEFORE typecheck
-        run: pnpm -C apps/api prisma generate
+        working-directory: apps/api
+        run: pnpm prisma generate
 
       - name: Lint
         run: pnpm lint
