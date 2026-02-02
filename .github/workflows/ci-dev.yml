@@ -80,7 +80,7 @@ jobs:
 
       - name: API e2e tests
         working-directory: apps/api
-        run: pnpm test:e2e -- --runInBand
+        run: pnpm test:e2e --runInBand
 
       - name: Upload test artifacts on failure
         if: failure()
