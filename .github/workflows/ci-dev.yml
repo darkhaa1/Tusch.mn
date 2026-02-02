@@ -74,14 +74,13 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Prisma generate
-        run: pnpm -C apps/api prisma generate
-
       - name: Prisma migrate deploy
-        run: pnpm -C apps/api prisma migrate deploy
+        working-directory: apps/api
+        run: pnpm prisma migrate deploy
 
       - name: API e2e tests
-        run: pnpm -C apps/api test:e2e -- --runInBand
+        working-directory: apps/api
+        run: pnpm test:e2e -- --runInBand
 
       - name: Upload test artifacts on failure
         if: failure()
