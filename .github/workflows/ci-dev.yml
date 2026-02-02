@@ -61,6 +61,9 @@ jobs:
           echo "Postgres did not become ready in time" >&2
           exit 1
 
+      - name: Prisma generate (api) - BEFORE typecheck
+        run: pnpm -C apps/api prisma generate
+
       - name: Lint
         run: pnpm lint
 
