@@ -24,11 +24,5 @@
   "type": "module",
   "volta": {
     "node": "24.13.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "prisma": "6.19.2",
-      "@prisma/client": "6.19.2"
-    }
   }
 }
