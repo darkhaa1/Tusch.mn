@@ -1,26 +1,5 @@
 import { apiFetch } from "./base";
-
-export type Review = {
-  id: string;
-  targetUserId: string;
-  reviewerId: string;
-  rating: number;
-  comment: string | null;
-  createdAt: string;
-  reviewer: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    avatarUrl: string | null;
-  };
-};
-
-export type ReviewsPage = {
-  items: Review[];
-  total: number;
-  page: number;
-  limit: number;
-};
+import type { Review, ReviewsPage } from "./types";
 
 export async function createReview(body: {
   targetUserId: string;

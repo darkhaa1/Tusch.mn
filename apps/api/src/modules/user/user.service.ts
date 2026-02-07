@@ -109,8 +109,19 @@ export class UserService {
 
   sanitizeUser(user: any) {
     if (!user) return null;
-    const { password: _password, ...rest } = user;
+    const {
+      password: _password,
+      resetToken: _resetToken,
+      resetTokenExp: _resetTokenExp,
+      emailVerifyToken: _emailVerifyToken,
+      emailVerifyTokenExp: _emailVerifyTokenExp,
+      ...rest
+    } = user;
     void _password;
+    void _resetToken;
+    void _resetTokenExp;
+    void _emailVerifyToken;
+    void _emailVerifyTokenExp;
     return rest;
   }
 
@@ -249,6 +260,7 @@ export class UserService {
         lastName: true,
         avatarUrl: true,
         createdAt: true,
+        emailVerified: true,
       },
     });
 
@@ -325,7 +337,7 @@ export class UserService {
         ...safeUser,
         avatarUrl: safeUser.avatarUrl || null,
         verification: {
-          emailVerified: false,
+          emailVerified: safeUser.emailVerified,
           phoneVerified: false,
           idVerified: false,
         },

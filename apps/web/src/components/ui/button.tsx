@@ -1,7 +1,7 @@
 "use client";
 
-import { forwardRef } from "react";
-import type { ButtonHTMLAttributes } from "react";
+import { cloneElement, forwardRef, isValidElement } from "react";
+import type { ButtonHTMLAttributes, MouseEvent as ReactMouseEvent, ReactElement } from "react";
 import { cn } from "@web/lib/utils";
 
 type ButtonVariant = "default" | "secondary" | "outline" | "ghost" | "destructive";
@@ -39,21 +39,44 @@ function buttonVariants({
   return cn(base, focus, disabled, variants[variant], sizes[size]);
 }
 
+type ClickHandler = (event: ReactMouseEvent<HTMLElement>) => void;
+type ClickableChild = ReactElement<{ className?: string; onClick?: ClickHandler }>;
+
 const Button = forwardRef<
   HTMLButtonElement,
   ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: ButtonVariant;
     size?: ButtonSize;
+    asChild?: boolean;
   }
->(({ className, variant = "default", size = "default", ...props }, ref) => {
-  return (
-    <button
-      ref={ref}
-      className={cn(buttonVariants({ variant, size }), className)}
-      {...props}
-    />
-  );
-});
+>(
+  ({ className, variant = "default", size = "default", asChild, children, onClick, ...props }, ref) => {
+    const classes = cn(buttonVariants({ variant, size }), className);
+
+    if (asChild && isValidElement(children)) {
+      const child = children as ClickableChild;
+      const handleClick: ClickHandler | undefined =
+        onClick || child.props.onClick
+          ? (event) => {
+              onClick?.(event as unknown as ReactMouseEvent<HTMLButtonElement>);
+              child.props.onClick?.(event);
+            }
+          : undefined;
+
+      return cloneElement(child, {
+        className: cn(classes, child.props.className),
+        onClick: handleClick,
+        ...props,
+      });
+    }
+
+    return (
+      <button ref={ref} className={classes} onClick={onClick} {...props}>
+        {children}
+      </button>
+    );
+  }
+);
 Button.displayName = "Button";
 
 export { Button, buttonVariants };

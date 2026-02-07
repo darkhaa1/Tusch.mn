@@ -93,3 +93,30 @@ export async function deleteCurrentUser() {
     method: "DELETE",
   });
 }
+
+export async function forgotPassword(email: string) {
+  return apiFetch<{ success: boolean; token?: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  return apiFetch<{ success: boolean }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+
+export async function verifyEmail(token: string) {
+  return apiFetch<{ message: string }>("/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export async function resendVerification() {
+  return apiFetch<{ message: string; token?: string }>("/auth/resend-verification", {
+    method: "POST",
+  });
+}

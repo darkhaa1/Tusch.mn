@@ -42,6 +42,11 @@ model User {
   isAdmin     Boolean  @default(false)
   status      UserStatus @default(ACTIVE)
   avatarUrl   String?
+  emailVerified    Boolean  @default(false)
+  emailVerifyToken String?  @unique
+  emailVerifyTokenExp DateTime?
+  resetToken     String?   @unique
+  resetTokenExp  DateTime?
   listing     Listing[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")

@@ -37,6 +37,7 @@ const stepsTotal = 4;
 export default function NewListingModal({ isOpen, onClose }: NewListingModalProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [step, setStep] = useState(1);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const {
     control,
@@ -61,6 +62,7 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
   const priceValue = useWatch({ control, name: "price" });
 
   const onSubmit = async (data: ListingForm) => {
+    setSubmitError(null);
     try {
       const listing = (await mutation.mutateAsync(data)) as Listing | undefined;
       if (files.length > 0 && listing?.id) {
@@ -71,6 +73,14 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
       setStep(1);
       onClose();
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Алдаа гарлаа";
+      if (message === "Имэйл баталгаажуулна уу") {
+        setSubmitError(
+          "Имэйлээ баталгаажуулсны дараа зар нийтлэх боломжтой."
+        );
+      } else {
+        setSubmitError(message);
+      }
       console.error(err);
     }
   };
@@ -140,6 +150,11 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
         </div>
 
         <div className="max-h-[75vh] overflow-y-auto px-4 py-5 space-y-6">
+          {submitError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {submitError}
+            </div>
+          ) : null}
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-1">

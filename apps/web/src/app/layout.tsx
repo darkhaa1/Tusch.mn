@@ -4,6 +4,7 @@ import { Providers } from './Providers';
 import Header from '@web/features/home/components/Header';
 import Footer from '@web/features/home/components/Footer';
 import BottomNav from '@web/components/nav/BottomNav';
+import VerificationBanner from '@web/components/common/VerificationBanner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Providers englobe tout le contenu qui peut utiliser session/react-query */}
         <Providers>
           <Header />
+          <VerificationBanner />
           {children}
           <Footer />
           <BottomNav />
