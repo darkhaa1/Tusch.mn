@@ -23,6 +23,9 @@ import { join } from 'path';
 import * as fs from 'fs';
 import { AVATAR_UPLOAD_DIR } from '../../common/multer/constants';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -158,6 +161,30 @@ export class AuthController {
     }
 
     return { success: true };
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { success: true };
+  }
+
+  @Post('verify-email')
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto.token);
+  }
+
+  @Post('resend-verification')
+  @UseGuards(JwtAuthGuard)
+  async resendVerification(@Req() req) {
+    const userId = req.user?.sub;
+    if (!userId) throw new UnauthorizedException('Unauthorized');
+    return this.authService.resendVerification(userId);
   }
 
   @Post('oauth-login')

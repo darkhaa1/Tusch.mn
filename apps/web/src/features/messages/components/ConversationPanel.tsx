@@ -36,6 +36,11 @@ export function ConversationPanel({
   onSelectReply,
   onBackMobile,
 }: ConversationPanelProps) {
+  const sendErrorMessage =
+    sendError instanceof Error ? sendError.message : undefined;
+  const isEmailVerificationError =
+    sendErrorMessage === "Имэйл баталгаажуулна уу";
+
   return (
     <div className="relative flex h-[70vh] flex-col rounded-xl border border-border/80 bg-background shadow-sm">
       <div className="flex items-center gap-3 border-b px-4 py-3">
@@ -103,7 +108,17 @@ export function ConversationPanel({
             </button>
           ))}
         </div>
-        {sendError ? <p className="mb-2 text-xs text-red-600">{(sendError as Error).message}</p> : null}
+        {sendErrorMessage ? (
+          <p
+            className={`mb-2 text-xs ${
+              isEmailVerificationError ? "text-amber-600" : "text-red-600"
+            }`}
+          >
+            {isEmailVerificationError
+              ? "Имэйлээ баталгаажуулсны дараа мессеж бичих боломжтой."
+              : sendErrorMessage}
+          </p>
+        ) : null}
         {!activeListingId ? (
           <p className="mb-2 text-xs text-amber-600">
             Энэ ярианд холбогдох зар сонгоогүй тул мессеж илгээх боломжгүй.

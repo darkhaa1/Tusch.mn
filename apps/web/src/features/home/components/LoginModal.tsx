@@ -6,6 +6,7 @@ import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLoginUser } from "@web/lib/hooks/useApi";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Input } from '@web/components/ui';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 type Props = {
   open: boolean;
@@ -18,6 +19,7 @@ export default function LoginModal({ open, onClose }: Props) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
   const loginMutation = useLoginUser();
 
@@ -83,12 +85,21 @@ export default function LoginModal({ open, onClose }: Props) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <Input
-                type="password"
-                placeholder="Нууц үг"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="space-y-1">
+                <Input
+                  type="password"
+                  placeholder="Нууц үг"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="text-sm text-blue-600 hover:underline text-right w-full"
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Нууц үг мартсан?
+                </button>
+              </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button
                 onClick={handleEmailLogin}
@@ -108,6 +119,11 @@ export default function LoginModal({ open, onClose }: Props) {
           )}
         </div>
       </DialogContent>
+
+      <ForgotPasswordModal
+        open={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </Dialog>
   );
 }

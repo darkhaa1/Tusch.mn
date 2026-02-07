@@ -24,6 +24,7 @@ import { GetUser } from '../../common/decorators/get-user.decorator';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { listingImagesMulterOptions } from '../../common/multer/image-options';
+import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
 
 @Controller('listings')
 @ApiTags('listings')
@@ -31,7 +32,7 @@ export class ListingsController {
   constructor(private readonly service: ListingsService) {}
 
   // Création REQUIERT d'être connecté
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard)
   @Post()
   create(@Body() dto: CreateListingDto, @GetUser() user: { id: string }) {
     return this.service.create(dto, user.id);

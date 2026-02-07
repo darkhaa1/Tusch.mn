@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as cookieParser from 'cookie-parser';
+import { createHash, randomBytes } from 'crypto';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { prisma } from './utils/e2e-database';
@@ -33,6 +34,72 @@ describe('App (e2e)', () => {
     phone: string;
     accountType: string;
   }) => request(app.getHttpServer()).post('/auth/register').send(payload);
+
+  const verifyEmail = (token: string) =>
+    request(app.getHttpServer())
+      .post('/auth/verify-email')
+      .send({ token });
+
+  const resendVerification = (cookie: string) =>
+    authedPost('/auth/resend-verification', cookie, {});
+
+  const hashToken = (token: string) =>
+    createHash('sha256').update(token).digest('hex');
+
+  const generateToken = () => randomBytes(32).toString('hex');
+
+  const setEmailVerifyToken = async (
+    email: string,
+    rawToken: string,
+    expiration = new Date(Date.now() + 24 * 60 * 60 * 1000),
+  ) => {
+    await prisma.user.update({
+      where: { email },
+      data: {
+        emailVerified: false,
+        emailVerifyToken: hashToken(rawToken),
+        emailVerifyTokenExp: expiration,
+      },
+    });
+  };
+
+  const setResetToken = async (
+    email: string,
+    rawToken: string,
+    expiration = new Date(Date.now() + 60 * 60 * 1000),
+  ) => {
+    await prisma.user.update({
+      where: { email },
+      data: {
+        resetToken: hashToken(rawToken),
+        resetTokenExp: expiration,
+      },
+    });
+  };
+
+  const markEmailVerified = async (email: string) => {
+    await prisma.user.update({
+      where: { email },
+      data: {
+        emailVerified: true,
+        emailVerifyToken: null,
+        emailVerifyTokenExp: null,
+      },
+    });
+  };
+
+  const registerAndVerify = async (payload: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    accountType: string;
+  }) => {
+    const res = await register(payload).expect(201);
+    await markEmailVerified(payload.email);
+    return res;
+  };
 
   const login = async (email: string, password: string) => {
     const res = await request(app.getHttpServer())
@@ -85,6 +152,188 @@ describe('App (e2e)', () => {
     expect(res.body.user.email).toBe(email);
   });
 
+  it('marks newly registered users as unverified', async () => {
+    const email = `unverified-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    const res = await register({
+      email,
+      password,
+      firstName: 'New',
+      lastName: 'User',
+      phone: '11100011',
+      accountType: 'basic',
+    }).expect(201);
+
+    expect(res.body.emailVerified).toBe(false);
+  });
+
+  it('verifies email with a valid token', async () => {
+    const email = `verify-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    const res = await register({
+      email,
+      password,
+      firstName: 'Verify',
+      lastName: 'User',
+      phone: '11100022',
+      accountType: 'basic',
+    }).expect(201);
+
+    const tokenFromResponse = res.body.token as string | undefined;
+    const token = tokenFromResponse ?? generateToken();
+    if (!tokenFromResponse) {
+      await setEmailVerifyToken(email, token);
+    }
+
+    await verifyEmail(token).expect(201);
+
+    const updated = await prisma.user.findUnique({ where: { email } });
+    expect(updated?.emailVerified).toBe(true);
+  });
+
+  it('rejects invalid or expired email verification tokens', async () => {
+    await verifyEmail('invalid-token').expect(400);
+  });
+
+  it('resends verification token for unverified users', async () => {
+    const email = `resend-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    const res = await register({
+      email,
+      password,
+      firstName: 'Resend',
+      lastName: 'User',
+      phone: '11100033',
+      accountType: 'basic',
+    }).expect(201);
+
+    const firstToken = res.body.token as string | undefined;
+    const beforeUser = await prisma.user.findUnique({
+      where: { email },
+      select: { emailVerifyToken: true },
+    });
+    const cookie = await login(email, password);
+
+    const resendRes = await resendVerification(cookie).expect(201);
+    const resentToken = resendRes.body.token as string | undefined;
+    const afterUser = await prisma.user.findUnique({
+      where: { email },
+      select: { emailVerifyToken: true },
+    });
+
+    expect(afterUser?.emailVerifyToken).toBeTruthy();
+    if (beforeUser?.emailVerifyToken && afterUser?.emailVerifyToken) {
+      expect(afterUser.emailVerifyToken).not.toBe(beforeUser.emailVerifyToken);
+    }
+    if (firstToken && resentToken) {
+      expect(resentToken).not.toBe(firstToken);
+    }
+  });
+
+  it('prevents resend for already verified users', async () => {
+    const email = `verified-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    await register({
+      email,
+      password,
+      firstName: 'Verified',
+      lastName: 'User',
+      phone: '11100044',
+      accountType: 'basic',
+    }).expect(201);
+
+    await markEmailVerified(email);
+    const cookie = await login(email, password);
+
+    await resendVerification(cookie).expect(400);
+  });
+
+  it('blocks unverified users from creating listings', async () => {
+    const email = `blocked-listing-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    await register({
+      email,
+      password,
+      firstName: 'Blocked',
+      lastName: 'Listing',
+      phone: '11100055',
+      accountType: 'basic',
+    }).expect(201);
+
+    const cookie = await login(email, password);
+
+    await authedPost('/listings', cookie, {
+      description: 'Should be blocked.',
+      price: 1200,
+      location: 'UB',
+      category: 'services',
+    }).expect(403);
+  });
+
+  it('blocks unverified users from sending messages', async () => {
+    const verifiedEmail = `msg-verified-${Date.now()}@example.com`;
+    const unverifiedEmail = `msg-unverified-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    const verifiedRes = await registerAndVerify({
+      email: verifiedEmail,
+      password,
+      firstName: 'Verified',
+      lastName: 'Sender',
+      phone: '11100066',
+      accountType: 'basic',
+    });
+
+    await register({
+      email: unverifiedEmail,
+      password,
+      firstName: 'Unverified',
+      lastName: 'Sender',
+      phone: '11100077',
+      accountType: 'basic',
+    }).expect(201);
+
+    const verifiedId = verifiedRes.body.id as string;
+    const verifiedCookie = await login(verifiedEmail, password);
+    const unverifiedCookie = await login(unverifiedEmail, password);
+
+    const listingRes = await authedPost('/listings', verifiedCookie, {
+      description: 'Listing for unverified messaging test.',
+      price: 900,
+      location: 'UB',
+      category: 'services',
+    }).expect(201);
+
+    await authedPost('/messages', unverifiedCookie, {
+      recipientId: verifiedId,
+      listingId: listingRes.body.id as string,
+      content: 'Should be blocked.',
+    }).expect(403);
+  });
+
+  it('auto-verifies OAuth users', async () => {
+    const email = `oauth-${Date.now()}@example.com`;
+
+    await request(app.getHttpServer())
+      .post('/auth/oauth-login')
+      .send({
+        email,
+        firstName: 'OAuth',
+        lastName: 'User',
+        provider: 'google',
+        avatarUrl: null,
+      })
+      .expect(201);
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    expect(user?.emailVerified).toBe(true);
+  });
+
   it('enforces admin guard on stats', async () => {
     const email = `member-${Date.now()}@example.com`;
     const password = 'password123';
@@ -104,7 +353,12 @@ describe('App (e2e)', () => {
 
     await prisma.user.update({
       where: { email },
-      data: { isAdmin: true },
+      data: {
+        isAdmin: true,
+        emailVerified: true,
+        emailVerifyToken: null,
+        emailVerifyTokenExp: null,
+      },
     });
 
     await authedGet('/admin/stats', cookie).expect(200);
@@ -125,7 +379,12 @@ describe('App (e2e)', () => {
 
     await prisma.user.update({
       where: { email },
-      data: { isAdmin: true },
+      data: {
+        isAdmin: true,
+        emailVerified: true,
+        emailVerifyToken: null,
+        emailVerifyTokenExp: null,
+      },
     });
 
     const cookie = await login(email, password);
@@ -189,6 +448,9 @@ describe('App (e2e)', () => {
 
     const userAId = userARes.body.id as string;
     const userBId = userBRes.body.id as string;
+
+    await markEmailVerified(userAEmail);
+    await markEmailVerified(userBEmail);
 
     const cookieA = await login(userAEmail, password);
     const cookieB = await login(userBEmail, password);
@@ -263,6 +525,8 @@ describe('App (e2e)', () => {
       accountType: 'basic',
     }).expect(201);
     const userId = userRes.body.id as string;
+
+    await markEmailVerified(userEmail);
 
     const userCookie = await login(userEmail, password);
 
@@ -529,5 +793,128 @@ describe('App (e2e)', () => {
     expect(page1.body.limit).toBe(10);
     expect(page1.body.total).toBe(1);
     expect(page1.body.items.length).toBe(1);
+  });
+
+  it('completes forgot password and reset password flow', async () => {
+    const email = `reset-${Date.now()}@example.com`;
+    const oldPassword = 'oldpass123';
+    const newPassword = 'newpass456';
+
+    // Register user
+    await register({
+      email,
+      password: oldPassword,
+      firstName: 'Reset',
+      lastName: 'User',
+      phone: '12345678',
+      accountType: 'basic',
+    }).expect(201);
+
+    // Request password reset
+    const forgotRes = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email })
+      .expect(201);
+
+    expect(forgotRes.body.success).toBe(true);
+    const tokenFromResponse = forgotRes.body.token as string | undefined;
+    if (tokenFromResponse) {
+      expect(typeof tokenFromResponse).toBe('string');
+      expect(tokenFromResponse.length).toBe(64); // 32 bytes = 64 hex characters
+    }
+    const afterForgot = await prisma.user.findUnique({
+      where: { email },
+      select: { resetToken: true },
+    });
+    expect(afterForgot?.resetToken).toBeTruthy();
+
+    const token = tokenFromResponse ?? generateToken();
+    if (!tokenFromResponse) {
+      await setResetToken(email, token);
+    }
+
+    // Reset password with token
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token, newPassword })
+      .expect(201);
+
+    // Verify old password doesn't work
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: oldPassword })
+      .expect(401);
+
+    // Verify new password works
+    const cookie = await login(email, newPassword);
+    const meRes = await authedGet('/auth/me', cookie).expect(200);
+    expect(meRes.body.user.email).toBe(email);
+  });
+
+  it('rejects expired reset token', async () => {
+    const email = `expired-${Date.now()}@example.com`;
+
+    await register({
+      email,
+      password: 'password123',
+      firstName: 'Expired',
+      lastName: 'User',
+      phone: '87654321',
+      accountType: 'basic',
+    }).expect(201);
+
+    const token = generateToken();
+    await setResetToken(email, token, new Date(Date.now() - 1000)); // 1 second ago
+
+    // Attempt reset with expired token
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token, newPassword: 'newpass123' })
+      .expect(401);
+  });
+
+  it('rejects invalid reset token', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token: 'invalid-token-12345', newPassword: 'newpass123' })
+      .expect(401);
+  });
+
+  it('returns success for non-existent email to prevent enumeration', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'nonexistent@example.com' })
+      .expect(201);
+
+    expect(res.body.success).toBe(true);
+    // Token might be undefined for non-existent users
+  });
+
+  it('prevents token reuse after successful reset', async () => {
+    const email = `reuse-${Date.now()}@example.com`;
+
+    await register({
+      email,
+      password: 'password123',
+      firstName: 'Reuse',
+      lastName: 'Test',
+      phone: '11111111',
+      accountType: 'basic',
+    }).expect(201);
+
+    const token = generateToken();
+    await setResetToken(email, token);
+
+    // First reset succeeds
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token, newPassword: 'newpass123' })
+      .expect(201);
+
+    // Second reset with same token fails
+    await request(app.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ token, newPassword: 'anotherpass456' })
+      .expect(401);
   });
 });

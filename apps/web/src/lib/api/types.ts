@@ -13,6 +13,7 @@ export type CurrentUser = {
   role?: UserRole;
   isAdmin?: boolean;
   status?: UserStatus;
+  emailVerified: boolean;
 };
 
 export type ListingUser = {

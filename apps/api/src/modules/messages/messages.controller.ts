@@ -12,13 +12,14 @@ import { ApiTags } from '@nestjs/swagger';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessagesService } from './messages.service';
 import { GetUser } from '../../common/decorators/get-user.decorator';
+import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
 
 @Controller('messages')
 @ApiTags('messages')
 export class MessagesController {
   constructor(private readonly service: MessagesService) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard)
   @Post()
   create(@Body() dto: CreateMessageDto, @GetUser() user: { id: string }) {
     return this.service.create(dto, user.id);
