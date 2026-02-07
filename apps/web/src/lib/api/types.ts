@@ -168,3 +168,25 @@ export type AdminListingsPage = {
   page: number;
   limit: number;
 };
+
+export type Review = {
+  id: string;
+  targetUserId: string;
+  reviewerId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  reviewer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+  };
+};
+
+export type ReviewsPage = {
+  items: Review[];
+  total: number;
+  page: number;
+  limit: number;
+};

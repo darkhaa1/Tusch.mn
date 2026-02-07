@@ -63,6 +63,9 @@ describe('App (e2e)', () => {
   ) =>
     request(app.getHttpServer()).patch(path).set('Cookie', cookie).send(body);
 
+  const authedDelete = (path: string, cookie: string) =>
+    request(app.getHttpServer()).delete(path).set('Cookie', cookie);
+
   it('registers, logs in, and returns the current user', async () => {
     const email = `user-${Date.now()}@example.com`;
     const password = 'password123';
@@ -312,5 +315,219 @@ describe('App (e2e)', () => {
     }>;
     expect(recentListings.some((item) => item.id === listing1Id)).toBe(true);
     expect(recentListings.some((item) => item.id === listing2Id)).toBe(false);
+  });
+
+  it('creates a review, prevents self-review and duplicate reviews', async () => {
+    const userAEmail = `reviewa-${Date.now()}@example.com`;
+    const userBEmail = `reviewb-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    // Register two users
+    const userARes = await register({
+      email: userAEmail,
+      password,
+      firstName: 'Reviewer',
+      lastName: 'A',
+      phone: '50000000',
+      accountType: 'basic',
+    }).expect(201);
+    const userAId = userARes.body.id as string;
+
+    const userBRes = await register({
+      email: userBEmail,
+      password,
+      firstName: 'Target',
+      lastName: 'B',
+      phone: '60000000',
+      accountType: 'basic',
+    }).expect(201);
+    const userBId = userBRes.body.id as string;
+
+    const cookieA = await login(userAEmail, password);
+    const cookieB = await login(userBEmail, password);
+
+    // Create a review from A to B
+    const reviewRes = await authedPost('/reviews', cookieA, {
+      targetUserId: userBId,
+      rating: 5,
+      comment: 'Excellent service!',
+    }).expect(201);
+
+    const reviewId = reviewRes.body.id as string;
+    expect(reviewRes.body.rating).toBe(5);
+    expect(reviewRes.body.comment).toBe('Excellent service!');
+    expect(reviewRes.body.reviewer.id).toBe(userAId);
+
+    // Prevent self-review
+    await authedPost('/reviews', cookieB, {
+      targetUserId: userBId,
+      rating: 4,
+      comment: 'Self review attempt',
+    }).expect(400);
+
+    // Prevent duplicate review
+    await authedPost('/reviews', cookieA, {
+      targetUserId: userBId,
+      rating: 3,
+      comment: 'Duplicate attempt',
+    }).expect(409);
+
+    // Fetch reviews for user B
+    const reviewsRes = await request(app.getHttpServer())
+      .get(`/reviews/user/${userBId}`)
+      .expect(200);
+
+    expect(reviewsRes.body.items.length).toBe(1);
+    expect(reviewsRes.body.items[0].id).toBe(reviewId);
+    expect(reviewsRes.body.total).toBe(1);
+
+    // Delete own review
+    await authedDelete(`/reviews/${reviewId}`, cookieA).expect(200);
+
+    // Verify deletion
+    const reviewsAfterDelete = await request(app.getHttpServer())
+      .get(`/reviews/user/${userBId}`)
+      .expect(200);
+
+    expect(reviewsAfterDelete.body.items.length).toBe(0);
+  });
+
+  it('includes reviews in public profile', async () => {
+    const reviewerEmail = `reviewer-${Date.now()}@example.com`;
+    const targetEmail = `target-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    // Register reviewer
+    await register({
+      email: reviewerEmail,
+      password,
+      firstName: 'Reviewer',
+      lastName: 'User',
+      phone: '70000000',
+      accountType: 'basic',
+    }).expect(201);
+
+    // Register target
+    const targetRes = await register({
+      email: targetEmail,
+      password,
+      firstName: 'Target',
+      lastName: 'User',
+      phone: '80000000',
+      accountType: 'basic',
+    }).expect(201);
+    const targetId = targetRes.body.id as string;
+
+    const reviewerCookie = await login(reviewerEmail, password);
+
+    // Create review
+    await authedPost('/reviews', reviewerCookie, {
+      targetUserId: targetId,
+      rating: 4,
+      comment: 'Great experience!',
+    }).expect(201);
+
+    // Fetch public profile
+    const profileRes = await request(app.getHttpServer())
+      .get(`/users/${targetId}/public`)
+      .expect(200);
+
+    expect(profileRes.body.stats.reviewsCount).toBe(1);
+    expect(profileRes.body.stats.ratingAvg).toBe(4);
+    expect(profileRes.body.reviews.length).toBe(1);
+    expect(profileRes.body.reviews[0].rating).toBe(4);
+    expect(profileRes.body.reviews[0].comment).toBe('Great experience!');
+  });
+
+  it('prevents deleting another user\'s review', async () => {
+    const userAEmail = `usera-delete-${Date.now()}@example.com`;
+    const userBEmail = `userb-delete-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    // Register two users
+    await register({
+      email: userAEmail,
+      password,
+      firstName: 'User',
+      lastName: 'A',
+      phone: '90000000',
+      accountType: 'basic',
+    }).expect(201);
+
+    const userBRes = await register({
+      email: userBEmail,
+      password,
+      firstName: 'User',
+      lastName: 'B',
+      phone: '91000000',
+      accountType: 'basic',
+    }).expect(201);
+    const userBId = userBRes.body.id as string;
+
+    const cookieA = await login(userAEmail, password);
+    const cookieB = await login(userBEmail, password);
+
+    // A reviews B
+    const reviewRes = await authedPost('/reviews', cookieA, {
+      targetUserId: userBId,
+      rating: 3,
+      comment: 'OK service',
+    }).expect(201);
+    const reviewId = reviewRes.body.id as string;
+
+    // B tries to delete A's review (should fail with 403)
+    await authedDelete(`/reviews/${reviewId}`, cookieB).expect(403);
+
+    // Verify review still exists
+    const reviewsRes = await request(app.getHttpServer())
+      .get(`/reviews/user/${userBId}`)
+      .expect(200);
+    expect(reviewsRes.body.items.length).toBe(1);
+  });
+
+  it('handles pagination for reviews', async () => {
+    const reviewerEmail = `paginated-reviewer-${Date.now()}@example.com`;
+    const targetEmail = `paginated-target-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    // Register reviewer
+    await register({
+      email: reviewerEmail,
+      password,
+      firstName: 'Paginated',
+      lastName: 'Reviewer',
+      phone: '92000000',
+      accountType: 'basic',
+    }).expect(201);
+
+    // Register target
+    const targetRes = await register({
+      email: targetEmail,
+      password,
+      firstName: 'Paginated',
+      lastName: 'Target',
+      phone: '93000000',
+      accountType: 'basic',
+    }).expect(201);
+    const targetId = targetRes.body.id as string;
+
+    const reviewerCookie = await login(reviewerEmail, password);
+
+    // Create review
+    await authedPost('/reviews', reviewerCookie, {
+      targetUserId: targetId,
+      rating: 5,
+      comment: 'Test pagination',
+    }).expect(201);
+
+    // Test pagination query params
+    const page1 = await request(app.getHttpServer())
+      .get(`/reviews/user/${targetId}?page=1&limit=10`)
+      .expect(200);
+
+    expect(page1.body.page).toBe(1);
+    expect(page1.body.limit).toBe(10);
+    expect(page1.body.total).toBe(1);
+    expect(page1.body.items.length).toBe(1);
   });
 });
