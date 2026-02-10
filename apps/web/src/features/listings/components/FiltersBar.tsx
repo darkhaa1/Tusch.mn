@@ -5,6 +5,7 @@ type FiltersBarProps = {
   title?: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  filters?: ReactNode;
   className?: string;
   children: ReactNode;
 };
@@ -13,6 +14,7 @@ export function FiltersBar({
   title,
   description,
   actions,
+  filters,
   className,
   children,
 }: FiltersBarProps) {
@@ -27,6 +29,7 @@ export function FiltersBar({
           {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
         </div>
       ) : null}
+      {filters ? <div className="flex flex-wrap items-center gap-2">{filters}</div> : null}
       {children}
     </div>
   );

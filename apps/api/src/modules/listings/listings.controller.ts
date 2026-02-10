@@ -42,6 +42,12 @@ export class ListingsController {
   @Get()
   @ApiQuery({ name: 'category', required: false, type: String })
   @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Keyword search (max 100 chars)',
+  })
+  @ApiQuery({
     name: 'page',
     required: false,
     type: Number,

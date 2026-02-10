@@ -56,10 +56,25 @@ export class ListingsService {
   }
 
   async findAll(q: GetListingsQueryDto) {
-    const where: Prisma.ListingWhereInput = {
-      status: ListingStatus.ACTIVE,
-      ...(q.category ? { category: q.category } : {}),
-    };
+    const search = q.search?.trim();
+    const filters: Prisma.ListingWhereInput[] = [
+      { status: ListingStatus.ACTIVE },
+    ];
+
+    if (q.category) {
+      filters.push({ category: q.category });
+    }
+
+    if (search) {
+      filters.push({
+        OR: [
+          { description: { contains: search, mode: 'insensitive' } },
+          { location: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    const where: Prisma.ListingWhereInput = { AND: filters };
     const orderBy = q.sort === ListingsSort.Oldest ? 'asc' : 'desc';
     const skip = (q.page - 1) * q.limit;
 

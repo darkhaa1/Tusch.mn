@@ -12,10 +12,14 @@ type ListingsQueryState = {
   limit: number;
   sort: string;
   category?: string;
+  search?: string;
 };
 
-type ListingsQueryPatch = Partial<Omit<ListingsQueryState, "category">> & {
+type ListingsQueryPatch = Partial<
+  Omit<ListingsQueryState, "category" | "search">
+> & {
   category?: string | null;
+  search?: string | null;
 };
 
 const normalizeParam = (value: string | null) => {
@@ -33,6 +37,7 @@ export function parseListingsQuery(
     limit: getNumberParam(searchParams, "limit", defaults.limit),
     sort: normalizeParam(searchParams.get("sort")) || defaults.sort,
     category: normalizeParam(searchParams.get("category")),
+    search: normalizeParam(searchParams.get("search")),
   };
 }
 
@@ -45,5 +50,6 @@ export function buildListingsQuery(
     limit: patch.limit,
     sort: patch.sort,
     category: patch.category,
+    search: patch.search,
   });
 }

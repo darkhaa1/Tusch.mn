@@ -423,6 +423,113 @@ describe('App (e2e)', () => {
       .expect(404);
   });
 
+  it('searches listings by description and location with filters', async () => {
+    const email = `search-${Date.now()}@example.com`;
+    const password = 'password123';
+    const marker = `kw-${Date.now()}`;
+    const cleaningKey = `cleaning-${marker}`;
+    const plumbingKey = `plumbing-${marker}`;
+    const locationKey = `loc-${marker}`;
+    const caseLocation = `CaseTown-${marker}`;
+    const hiddenKey = `hidden-${marker}`;
+
+    await registerAndVerify({
+      email,
+      password,
+      firstName: 'Search',
+      lastName: 'Tester',
+      phone: '33344455',
+      accountType: 'basic',
+    });
+
+    const cookie = await login(email, password);
+
+    const listingA = await authedPost('/listings', cookie, {
+      description: `Alpha ${cleaningKey}`,
+      price: 1200,
+      location: caseLocation,
+      category: 'services',
+    }).expect(201);
+
+    const listingB = await authedPost('/listings', cookie, {
+      description: `Beta ${plumbingKey}`,
+      price: 1500,
+      location: 'Erdenet',
+      category: 'repairs',
+    }).expect(201);
+
+    const listingC = await authedPost('/listings', cookie, {
+      description: `Gamma ${cleaningKey}`,
+      price: 900,
+      location: locationKey,
+      category: 'home',
+    }).expect(201);
+
+    const hiddenListing = await authedPost('/listings', cookie, {
+      description: `Hidden ${hiddenKey}`,
+      price: 800,
+      location: 'Hiddenville',
+      category: 'services',
+    }).expect(201);
+
+    await prisma.listing.update({
+      where: { id: hiddenListing.body.id as string },
+      data: { status: 'HIDDEN' },
+    });
+
+    const byDescription = await request(app.getHttpServer())
+      .get(`/listings?search=${encodeURIComponent(plumbingKey)}`)
+      .expect(200);
+
+    expect(byDescription.body.total).toBe(1);
+    expect(byDescription.body.items[0].id).toBe(listingB.body.id);
+
+    const byLocation = await request(app.getHttpServer())
+      .get(`/listings?search=${encodeURIComponent(locationKey)}`)
+      .expect(200);
+
+    expect(byLocation.body.total).toBe(1);
+    expect(byLocation.body.items[0].id).toBe(listingC.body.id);
+
+    const byCaseInsensitive = await request(app.getHttpServer())
+      .get(`/listings?search=${encodeURIComponent(caseLocation.toLowerCase())}`)
+      .expect(200);
+
+    expect(byCaseInsensitive.body.items.some((item: { id: string }) => item.id === listingA.body.id)).toBe(true);
+
+    const bySearchAndCategory = await request(app.getHttpServer())
+      .get(
+        `/listings?search=${encodeURIComponent(cleaningKey)}&category=services`,
+      )
+      .expect(200);
+
+    expect(bySearchAndCategory.body.total).toBe(1);
+    expect(bySearchAndCategory.body.items[0].id).toBe(listingA.body.id);
+
+    const noSearch = await request(app.getHttpServer())
+      .get('/listings')
+      .expect(200);
+    const emptySearch = await request(app.getHttpServer())
+      .get('/listings?search=')
+      .expect(200);
+
+    expect(emptySearch.body.total).toBe(noSearch.body.total);
+
+    const noMatches = await request(app.getHttpServer())
+      .get(`/listings?search=${encodeURIComponent(`nomatch-${marker}`)}`)
+      .expect(200);
+
+    expect(noMatches.body.total).toBe(0);
+    expect(noMatches.body.items.length).toBe(0);
+
+    const hiddenSearch = await request(app.getHttpServer())
+      .get(`/listings?search=${encodeURIComponent(hiddenKey)}`)
+      .expect(200);
+
+    expect(hiddenSearch.body.total).toBe(0);
+    expect(hiddenSearch.body.items.length).toBe(0);
+  });
+
   it('handles messages flow from send to threads and conversation', async () => {
     const userAEmail = `usera-${Date.now()}@example.com`;
     const userBEmail = `userb-${Date.now()}@example.com`;

@@ -14,6 +14,7 @@ const gradientBg = "bg-gradient-to-r from-secondary/80 via-primary/70 to-primary
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
   const avatar = resolveAvatarUrl(user?.avatarUrl || null);
+  console.log("Resolved avatar URL:", avatar);
   const firstName = user?.firstName || (user as any)?.firstname || "—";
   const lastName = user?.lastName || (user as any)?.lastname || "";
   const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
@@ -26,7 +27,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
         <div className={cn("h-48 md:h-60 w-full", avatar ? "bg-muted" : gradientBg)} />
         <div className="absolute -bottom-10 left-6 flex items-center gap-3">
           <div className="relative">
-            <Avatar className="h-24 w-24 ring-4 ring-background">
+            <Avatar key={avatar || "fallback"} className="h-24 w-24 ring-4 ring-background">
               {avatar ? <AvatarImage src={avatar} alt={fullName || "Profile"} /> : null}
               <AvatarFallback className="text-xl font-semibold">{(fullName || "—").slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
