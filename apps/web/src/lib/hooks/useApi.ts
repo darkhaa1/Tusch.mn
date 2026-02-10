@@ -79,6 +79,7 @@ export function useListingsPage(params?: {
   page?: number;
   limit?: number;
   sort?: string;
+  search?: string;
 }) {
   return useQuery<ListingsPage>({
     queryKey: [
@@ -87,6 +88,7 @@ export function useListingsPage(params?: {
       params?.page || 1,
       params?.limit || 12,
       params?.sort || 'newest',
+      params?.search || '',
     ],
     queryFn: () => fetchListingsPage(params),
   });

@@ -34,11 +34,11 @@ export function UserMenu({ firstName, avatarUrl, initials, onLogout, isAdmin }: 
       <DropdownMenuTrigger
         className={cn(
           "flex items-center gap-2 rounded-full px-2 py-1 h-10 hover:bg-muted",
-          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          "focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-ring"
         )}
       >
         <div className="relative">
-          <Avatar className="h-8 w-8">
+          <Avatar key={avatarUrl || "fallback"} className="h-8 w-8">
             {avatarUrl ? <AvatarImage src={avatarUrl} alt={firstName || "Profile"} /> : null}
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
@@ -47,10 +47,10 @@ export function UserMenu({ firstName, avatarUrl, initials, onLogout, isAdmin }: 
         <span className="text-sm font-medium text-foreground">{firstName || "Профайл"}</span>
         <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-[280px]">
+      <DropdownMenuContent className="min-w-70">
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="relative">
-            <Avatar className="h-10 w-10">
+            <Avatar key={avatarUrl || "fallback"} className="h-10 w-10">
               {avatarUrl ? <AvatarImage src={avatarUrl} alt={firstName || "Profile"} /> : null}
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>

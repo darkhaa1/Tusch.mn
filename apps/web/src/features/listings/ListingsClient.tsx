@@ -1,8 +1,8 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FilterX, Plus, Search, ArrowLeft } from "lucide-react";
+import { ArrowLeft, FilterX, Plus, Search, X } from "lucide-react";
 import NewListingModal from "@web/features/listings/components/NewListingModal";
 import FiltersBar from "@web/features/listings/components/FiltersBar";
 import Pagination from "@web/features/listings/components/Pagination";
@@ -25,17 +25,48 @@ export default function ListingsClient() {
   const searchParams = useSearchParams();
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const { category, page, limit, sort } = parseListingsQuery(searchParams, {
+  const { category, page, limit, sort, search } = parseListingsQuery(searchParams, {
     page: DEFAULT_PAGE,
     limit: DEFAULT_LIMIT,
     sort: DEFAULT_SORT,
   });
+
+  const [searchValue, setSearchValue] = useState(search ?? "");
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextSearch = new URLSearchParams(window.location.search).get("search")?.trim() ?? "";
+      setSearchValue(nextSearch);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      const trimmed = searchValue.trim();
+      const currentSearch = search ?? "";
+      if (trimmed === currentSearch) return;
+
+      const query = buildListingsQuery(searchParams, {
+        page: 1,
+        limit,
+        sort,
+        category,
+        search: trimmed.length ? trimmed : null,
+      });
+      router.push(`/listings${query}`);
+    }, 300);
+
+    return () => clearTimeout(handle);
+  }, [searchValue, search, category, limit, sort, searchParams, router]);
 
   const { data, isLoading, error, refetch, isFetching } = useListingsPage({
     category,
     page,
     limit,
     sort,
+    search,
   });
 
   const items = data?.items ?? [];
@@ -52,6 +83,8 @@ export default function ListingsClient() {
   const labelFinal = category ? categoryLabel || category : "";
   const showTotal = !isLoading && !error && totalKnown;
   const totalLabel = showTotal ? `${total} зар` : "";
+  const hasSearch = Boolean(search);
+  const hasActiveFilters = Boolean(category || hasSearch);
 
   const updatePage = (nextPage: number) => {
     const query = buildListingsQuery(searchParams, {
@@ -59,6 +92,7 @@ export default function ListingsClient() {
       limit,
       category,
       sort,
+      search,
     });
     router.push(`/listings${query}`);
   };
@@ -69,16 +103,42 @@ export default function ListingsClient() {
       limit,
       category,
       sort: nextSort,
+      search,
     });
     router.push(`/listings${query}`);
   };
 
   const resetFilters = () => {
+    setSearchValue("");
     const query = buildListingsQuery(searchParams, {
       page: 1,
       limit,
       sort,
       category: null,
+      search: null,
+    });
+    router.push(`/listings${query}`);
+  };
+
+  const clearSearch = () => {
+    setSearchValue("");
+    const query = buildListingsQuery(searchParams, {
+      page: 1,
+      limit,
+      sort,
+      category,
+      search: null,
+    });
+    router.push(`/listings${query}`);
+  };
+
+  const clearCategory = () => {
+    const query = buildListingsQuery(searchParams, {
+      page: 1,
+      limit,
+      sort,
+      category: null,
+      search,
     });
     router.push(`/listings${query}`);
   };
@@ -119,10 +179,22 @@ export default function ListingsClient() {
         <div className="relative">
           <Input
             placeholder="Юу хэрэгтэй байна? (жиш: засвар, цэвэрлэгээ)"
-            className="pl-10"
+            className="pl-10 pr-10"
             aria-label="Хайлт"
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
           />
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {searchValue ? (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:text-foreground"
+              aria-label="Хайлт цэвэрлэх"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Илүү хурдан олоход тань тусална.</span>
@@ -132,6 +204,32 @@ export default function ListingsClient() {
 
       <FiltersBar
         title="Категори"
+        filters={
+          hasActiveFilters ? (
+            <>
+              {category ? (
+                <button
+                  type="button"
+                  onClick={clearCategory}
+                  className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground"
+                >
+                  {labelFinal}
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              ) : null}
+              {hasSearch ? (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground"
+                >
+                  {search}
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              ) : null}
+            </>
+          ) : null
+        }
         actions={
           <button
             type="button"
@@ -156,6 +254,7 @@ export default function ListingsClient() {
                     limit,
                     sort,
                     category: item.value,
+                    search,
                   });
                   router.push(`/listings${query}`);
                 }}
@@ -188,12 +287,6 @@ export default function ListingsClient() {
         ))}
       </div>
 
-      {category ? (
-        <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
-          Ангилал: {labelFinal}
-        </span>
-      ) : null}
-
       <Card className="border border-border/80">
         <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3">
@@ -209,12 +302,6 @@ export default function ListingsClient() {
               <option value="newest">Шинэ эхэнд</option>
               <option value="oldest">Хуучин эхэнд</option>
             </select>
-
-            {category ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
-                {labelFinal}
-              </span>
-            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -241,8 +328,12 @@ export default function ListingsClient() {
         />
       ) : items.length === 0 ? (
         <EmptyState
-          title="Илэрц олдсонгүй"
-          description="Таны хайсан ангилалд одоогоор зар алга байна. Бүх заруудыг үзэх эсвэл шинэ зар нэмнэ үү."
+          title={hasSearch ? "Хайлтын илэрц олдсонгүй" : "Илэрц олдсонгүй"}
+          description={
+            hasSearch
+              ? "Түлхүүр үгээ өөрчилж дахин хайж үзээрэй."
+              : "Таны хайсан ангилалд одоогоор зар алга байна. Бүх заруудыг үзэх эсвэл шинэ зар нэмнэ үү."
+          }
           secondaryHref={allListingsHref}
           secondaryLabel="Бүх заруудыг харах"
           primaryAction={
