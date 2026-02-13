@@ -53,22 +53,42 @@ export class MessagesService {
     });
   }
 
-  async getConversation(userId: string, otherUserId?: string) {
-    const conversationFilter = otherUserId
-      ? [
-          { senderId: userId, recipientId: otherUserId },
-          { senderId: otherUserId, recipientId: userId },
-        ]
-      : [{ senderId: userId }, { recipientId: userId }];
+  async getConversation(
+    userId: string,
+    otherUserId: string,
+    page = 1,
+    limit = 30,
+  ) {
+    const where = {
+      OR: [
+        { senderId: userId, recipientId: otherUserId },
+        { senderId: otherUserId, recipientId: userId },
+      ],
+    };
 
-    return this.prisma.message.findMany({
-      where: { OR: conversationFilter },
-      orderBy: { createdAt: 'asc' },
-      include: {
-        sender: { select: this.userSelect },
-        recipient: { select: this.userSelect },
-      },
-    });
+    const include = {
+      sender: { select: this.userSelect },
+      recipient: { select: this.userSelect },
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.message.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include,
+      }),
+      this.prisma.message.count({ where }),
+    ]);
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      hasMore: page * limit < total,
+    };
   }
 
   async getThreads(userId: string) {
@@ -91,6 +111,12 @@ export class MessagesService {
     }
 
     return Array.from(lastByPartner.values());
+  }
+
+  async getUnreadCount(userId: string): Promise<number> {
+    return this.prisma.message.count({
+      where: { recipientId: userId, readAt: null },
+    });
   }
 
   async markAsRead(messageId: string, userId: string) {

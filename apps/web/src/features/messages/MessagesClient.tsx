@@ -39,7 +39,8 @@ export default function MessagesClient() {
   const [draft, setDraft] = useState("");
 
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
-  const { data: users } = useUsers(Boolean(currentUser));
+  const { data: usersData } = useUsers(undefined, Boolean(currentUser));
+  const users = usersData?.items;
   const {
     data: threads,
     isLoading: isLoadingThreads,
@@ -56,9 +57,19 @@ export default function MessagesClient() {
     activePartnerId === undefined ? partnerFromQuery ?? autoPartnerId : activePartnerId;
 
   const {
-    data: conversation,
+    data: conversationData,
     isLoading: isLoadingConversation,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
   } = useConversation(resolvedActivePartnerId || undefined);
+
+  // Flatten all pages into a single array; API returns newest-first per page
+  const conversation = useMemo(() => {
+    if (!conversationData?.pages) return undefined;
+    // Each page has items in desc order; flatten all, then reverse so oldest is first
+    return conversationData.pages.flatMap((p) => p.items).reverse();
+  }, [conversationData]);
   const {
     mutate: sendMessageMutate,
     isPending: isSending,
@@ -169,6 +180,9 @@ export default function MessagesClient() {
               quickReplies={quickReplies}
               onSelectReply={setDraft}
               onBackMobile={() => setActivePartnerId(null)}
+              hasOlderMessages={!!hasNextPage}
+              isLoadingOlder={isFetchingNextPage}
+              onLoadOlder={() => fetchNextPage()}
             />
           ) : (
             <div className="rounded-xl border border-border/80 bg-background p-6 text-sm text-muted-foreground shadow-sm">

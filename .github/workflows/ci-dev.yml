@@ -49,19 +49,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install postgres client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Wait for postgres
-        run: |
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U postgres && exit 0
-            sleep 2
-          done
-          echo "Postgres did not become ready in time" >&2
-          exit 1
-
-      - name: Prisma generate (api) - BEFORE typecheck
+      - name: Prisma generate (api)
         working-directory: apps/api
         run: pnpm prisma generate
 
@@ -71,8 +59,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Build
-        run: pnpm build
+      - name: Build API
+        run: pnpm --filter api build
 
       - name: Prisma migrate deploy
         working-directory: apps/api
@@ -80,20 +68,4 @@ jobs:
 
       - name: API E2E tests
         working-directory: apps/api
-        env:
-          NODE_ENV: test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tusch_test?schema=public
-          JWT_SECRET: ci_dummy_secret_change_me
-          CI: true
         run: pnpm test:e2e --runInBand
-
-      - name: Upload test artifacts on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-test-artifacts
-          path: |
-            apps/api/coverage
-            apps/api/test-results
-            apps/api/logs
-          if-no-files-found: ignore

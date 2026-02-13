@@ -598,8 +598,8 @@ describe('App (e2e)', () => {
       `/messages/with/${userAId}`,
       cookieB,
     ).expect(200);
-    expect(conversationRes.body.length).toBeGreaterThanOrEqual(1);
-    expect(conversationRes.body[0].content).toBe(messageContent);
+    expect(conversationRes.body.items.length).toBeGreaterThanOrEqual(1);
+    expect(conversationRes.body.items[0].content).toBe(messageContent);
 
     const readRes = await authedPatch(
       `/messages/${messageId}/read`,
@@ -612,10 +612,167 @@ describe('App (e2e)', () => {
       `/messages/with/${userAId}`,
       cookieB,
     ).expect(200);
-    const updatedMessage = conversationAfter.body.find(
+    const updatedMessage = conversationAfter.body.items.find(
       (item: { id: string }) => item.id === messageId,
     );
     expect(updatedMessage?.readAt).not.toBeNull();
+  });
+
+  it('returns correct unread message count', async () => {
+    const senderEmail = `unread-sender-${Date.now()}@example.com`;
+    const recipientEmail = `unread-recipient-${Date.now()}@example.com`;
+    const bystanderEmail = `unread-bystander-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    await registerAndVerify({
+      email: senderEmail,
+      password,
+      firstName: 'Sender',
+      lastName: 'User',
+      phone: '70000001',
+      accountType: 'basic',
+    });
+
+    const recipientRes = await registerAndVerify({
+      email: recipientEmail,
+      password,
+      firstName: 'Recipient',
+      lastName: 'User',
+      phone: '70000002',
+      accountType: 'basic',
+    });
+
+    await registerAndVerify({
+      email: bystanderEmail,
+      password,
+      firstName: 'Bystander',
+      lastName: 'User',
+      phone: '70000003',
+      accountType: 'basic',
+    });
+
+    const senderCookie = await login(senderEmail, password);
+    const recipientCookie = await login(recipientEmail, password);
+    const bystanderCookie = await login(bystanderEmail, password);
+    const recipientId = recipientRes.body.id as string;
+
+    // Create a listing for the message flow
+    const listingRes = await authedPost('/listings', senderCookie, {
+      description: 'Listing for unread count test.',
+      price: 100,
+      location: 'UB',
+      category: 'services',
+    }).expect(201);
+    const listingId = listingRes.body.id as string;
+
+    // Unread count starts at 0
+    const res0 = await authedGet('/messages/unread-count', recipientCookie).expect(200);
+    expect(res0.body.count).toBe(0);
+
+    // Send 2 messages to recipient
+    const msg1 = await authedPost('/messages', senderCookie, {
+      recipientId,
+      listingId,
+      content: 'First unread message',
+    }).expect(201);
+
+    await authedPost('/messages', senderCookie, {
+      recipientId,
+      listingId,
+      content: 'Second unread message',
+    }).expect(201);
+
+    // Unread count is 2
+    const res2 = await authedGet('/messages/unread-count', recipientCookie).expect(200);
+    expect(res2.body.count).toBe(2);
+
+    // Mark one message as read — count decreases
+    await authedPatch(`/messages/${msg1.body.id}/read`, recipientCookie, {}).expect(200);
+    const res1 = await authedGet('/messages/unread-count', recipientCookie).expect(200);
+    expect(res1.body.count).toBe(1);
+
+    // Bystander count is still 0 (only counts messages where user is recipient)
+    const resBystander = await authedGet('/messages/unread-count', bystanderCookie).expect(200);
+    expect(resBystander.body.count).toBe(0);
+  });
+
+  it('paginates conversation messages', async () => {
+    const userAEmail = `conv-a-${Date.now()}@example.com`;
+    const userBEmail = `conv-b-${Date.now()}@example.com`;
+    const password = 'password123';
+
+    await registerAndVerify({
+      email: userAEmail,
+      password,
+      firstName: 'ConvA',
+      lastName: 'User',
+      phone: '80000001',
+      accountType: 'basic',
+    });
+
+    const userBRes = await registerAndVerify({
+      email: userBEmail,
+      password,
+      firstName: 'ConvB',
+      lastName: 'User',
+      phone: '80000002',
+      accountType: 'basic',
+    });
+
+    const cookieA = await login(userAEmail, password);
+    const userBId = userBRes.body.id as string;
+
+    const listingRes = await authedPost('/listings', cookieA, {
+      description: 'Listing for conv pagination test.',
+      price: 100,
+      location: 'UB',
+      category: 'services',
+    }).expect(201);
+    const listingId = listingRes.body.id as string;
+
+    // Send 5 messages from A to B
+    for (let i = 1; i <= 5; i++) {
+      await authedPost('/messages', cookieA, {
+        recipientId: userBId,
+        listingId,
+        content: `Message ${i}`,
+      }).expect(201);
+    }
+
+    // Page 1 with limit 2: returns 2 items, hasMore true, total 5
+    const page1 = await authedGet(
+      `/messages/with/${userBId}?page=1&limit=2`,
+      cookieA,
+    ).expect(200);
+    expect(page1.body.items).toHaveLength(2);
+    expect(page1.body.total).toBe(5);
+    expect(page1.body.hasMore).toBe(true);
+    expect(page1.body.page).toBe(1);
+    expect(page1.body.limit).toBe(2);
+
+    // Page 3 with limit 2: returns 1 item, hasMore false
+    const page3 = await authedGet(
+      `/messages/with/${userBId}?page=3&limit=2`,
+      cookieA,
+    ).expect(200);
+    expect(page3.body.items).toHaveLength(1);
+    expect(page3.body.hasMore).toBe(false);
+
+    // Default pagination (no params) returns all 5 (limit defaults to 30)
+    const defaultPage = await authedGet(
+      `/messages/with/${userBId}`,
+      cookieA,
+    ).expect(200);
+    expect(defaultPage.body.items).toHaveLength(5);
+    expect(defaultPage.body.total).toBe(5);
+
+    // Messages are sorted by createdAt desc (newest first)
+    const items = defaultPage.body.items as Array<{ createdAt: string }>;
+    for (let i = 0; i < items.length - 1; i++) {
+      expect(new Date(items[i].createdAt).getTime()).toBeGreaterThanOrEqual(
+        new Date(items[i + 1].createdAt).getTime(),
+      );
+    }
   });
 
   it('filters hidden listings from public profile response', async () => {
@@ -1023,5 +1180,89 @@ describe('App (e2e)', () => {
       .post('/auth/reset-password')
       .send({ token, newPassword: 'anotherpass456' })
       .expect(401);
+  });
+
+  it('paginates and searches users', async () => {
+    const marker = `usrpg-${Date.now()}`;
+    const password = 'password123';
+
+    // Register 3 users with distinct names
+    await registerAndVerify({
+      email: `${marker}-alpha@example.com`,
+      password,
+      firstName: 'AlphaFirst',
+      lastName: 'AlphaLast',
+      phone: '90000001',
+      accountType: 'basic',
+    });
+
+    await registerAndVerify({
+      email: `${marker}-beta@example.com`,
+      password,
+      firstName: 'BetaFirst',
+      lastName: 'BetaLast',
+      phone: '90000002',
+      accountType: 'basic',
+    });
+
+    await registerAndVerify({
+      email: `${marker}-gamma@example.com`,
+      password,
+      firstName: 'GammaFirst',
+      lastName: 'GammaLast',
+      phone: '90000003',
+      accountType: 'basic',
+    });
+
+    const cookie = await login(`${marker}-alpha@example.com`, password);
+
+    // Default pagination returns items with total
+    const defaultRes = await authedGet('/users', cookie).expect(200);
+    expect(defaultRes.body.items).toBeDefined();
+    expect(defaultRes.body.total).toBeGreaterThanOrEqual(3);
+    expect(defaultRes.body.page).toBe(1);
+    expect(defaultRes.body.limit).toBe(20);
+
+    // Page 1 with limit 2
+    const page1 = await authedGet('/users?page=1&limit=2', cookie).expect(200);
+    expect(page1.body.items).toHaveLength(2);
+    expect(page1.body.total).toBeGreaterThanOrEqual(3);
+
+    // Page 2 with limit 2 returns more items
+    const page2 = await authedGet('/users?page=2&limit=2', cookie).expect(200);
+    expect(page2.body.items.length).toBeGreaterThanOrEqual(1);
+
+    // Search by firstName returns matching user
+    const searchRes = await authedGet(
+      `/users?search=AlphaFirst`,
+      cookie,
+    ).expect(200);
+    expect(searchRes.body.items.length).toBeGreaterThanOrEqual(1);
+    expect(
+      searchRes.body.items.some(
+        (u: { firstName: string }) => u.firstName === 'AlphaFirst',
+      ),
+    ).toBe(true);
+
+    // Search is case-insensitive
+    const caseRes = await authedGet(
+      `/users?search=alphafirst`,
+      cookie,
+    ).expect(200);
+    expect(caseRes.body.items.length).toBeGreaterThanOrEqual(1);
+    expect(
+      caseRes.body.items.some(
+        (u: { firstName: string }) => u.firstName === 'AlphaFirst',
+      ),
+    ).toBe(true);
+
+    // passwordHash is never in the response
+    for (const user of defaultRes.body.items) {
+      expect(user.password).toBeUndefined();
+      expect(user.resetToken).toBeUndefined();
+      expect(user.resetTokenExp).toBeUndefined();
+      expect(user.emailVerifyToken).toBeUndefined();
+      expect(user.emailVerifyTokenExp).toBeUndefined();
+    }
   });
 });

@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { UpdateMyRoleDto } from './dto/update-my-role.dto';
 import { UserRole } from '@prisma/client';
 import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
+import { GetUsersQueryDto } from './dto/get-users-query.dto';
 
 @Controller('users')
 export class UserController {
@@ -20,8 +21,8 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  getAll() {
-    return this.userService.findAll();
+  getAll(@Query() query: GetUsersQueryDto) {
+    return this.userService.findAll(query);
   }
 
   @UseGuards(JwtAuthGuard)

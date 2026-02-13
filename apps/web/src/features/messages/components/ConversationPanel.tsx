@@ -20,6 +20,9 @@ type ConversationPanelProps = {
   quickReplies: string[];
   onSelectReply: (reply: string) => void;
   onBackMobile: () => void;
+  hasOlderMessages?: boolean;
+  isLoadingOlder?: boolean;
+  onLoadOlder?: () => void;
 };
 
 export function ConversationPanel({
@@ -35,6 +38,9 @@ export function ConversationPanel({
   quickReplies,
   onSelectReply,
   onBackMobile,
+  hasOlderMessages,
+  isLoadingOlder,
+  onLoadOlder,
 }: ConversationPanelProps) {
   const sendErrorMessage =
     sendError instanceof Error ? sendError.message : undefined;
@@ -74,7 +80,24 @@ export function ConversationPanel({
             Мессежүүдийг ачаалж байна...
           </div>
         ) : conversationMessages.length ? (
-          conversationMessages.map((message) => (
+          <>
+            {hasOlderMessages && (
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLoadOlder}
+                  disabled={isLoadingOlder}
+                  className="text-xs text-muted-foreground"
+                >
+                  {isLoadingOlder ? (
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                  ) : null}
+                  Өмнөх мессежүүд
+                </Button>
+              </div>
+            )}
+            {conversationMessages.map((message) => (
             <div key={message.id} className={cn("flex flex-col gap-1", message.fromMe ? "items-end" : "items-start")}>
               <div
                 className={cn(
@@ -89,7 +112,8 @@ export function ConversationPanel({
                 {message.fromMe ? <CheckCheck className="h-3 w-3" aria-hidden="true" /> : null}
               </div>
             </div>
-          ))
+          ))}
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">Одоогоор мессеж алга.</p>
         )}

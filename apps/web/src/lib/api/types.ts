@@ -191,3 +191,18 @@ export type ReviewsPage = {
   page: number;
   limit: number;
 };
+
+export type ConversationPage = {
+  items: Message[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+};
+
+export type UsersPage = {
+  items: ListingUser[];
+  total: number;
+  page: number;
+  limit: number;
+};

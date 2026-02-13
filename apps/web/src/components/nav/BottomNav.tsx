@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, List, MessageCircle, PlusCircle, User } from "lucide-react";
 import { cn } from "@web/lib/utils";
+import { useUnreadCount } from "@web/lib/hooks/useApi";
 
 type NavItem = {
   href: string;
@@ -16,6 +17,8 @@ type NavItem = {
 export default function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   const items: NavItem[] = [
     { href: "/", label: "Нүүр", icon: Home },
@@ -42,10 +45,11 @@ export default function BottomNav() {
         {items.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
+          const showBadge = item.href === "/messages" && unreadCount > 0;
           const content = (
             <div
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition",
+                "relative flex flex-col items-center justify-center gap-1 rounded-full px-3 py-2 text-xs font-medium transition",
                 item.isPoster
                   ? "bg-primary text-primary-foreground shadow-lg"
                   : active
@@ -55,6 +59,11 @@ export default function BottomNav() {
             >
               <Icon className={cn("h-5 w-5", item.isPoster ? "text-primary-foreground" : undefined)} />
               <span>{item.label}</span>
+              {showBadge && (
+                <span className="absolute -top-1 right-0 bg-red-500 text-white text-[10px] rounded-full min-w-4.5 h-4.5 flex items-center justify-center px-1 leading-none">
+                  {unreadCount}
+                </span>
+              )}
             </div>
           );
 
