@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AdminListingsPage,
   AdminStats,
   AdminUsersPage,
+  ConversationPage,
   Listing,
   ListingStatus,
   ListingsPage,
@@ -10,6 +11,7 @@ import type {
   ProvidersPage,
   ReviewsPage,
   UserStatus,
+  UsersPage,
 } from "@web/lib/api/types";
 import {
   changePassword,
@@ -43,6 +45,7 @@ import {
 import {
   fetchConversationWith,
   fetchMessageThreads,
+  fetchUnreadCount,
   markMessageRead,
   sendMessage,
 } from "@web/lib/api/messages";
@@ -251,10 +254,13 @@ export function useDeleteCurrentUser() {
   });
 }
 
-export function useUsers(enabled = true) {
-  return useQuery({
-    queryKey: ['users'],
-    queryFn: fetchUsers,
+export function useUsers(
+  params?: { page?: number; limit?: number; search?: string },
+  enabled = true,
+) {
+  return useQuery<UsersPage>({
+    queryKey: ['users', params?.page || 1, params?.limit || 20, params?.search || ''],
+    queryFn: () => fetchUsers(params),
     enabled,
   });
 }
@@ -286,10 +292,25 @@ export function useMessageThreads(enabled = true) {
 }
 
 export function useConversation(userId?: string) {
-  return useQuery<Message[]>({
+  return useInfiniteQuery<ConversationPage>({
     queryKey: ['conversation', userId],
-    queryFn: () => fetchConversationWith(userId as string),
+    queryFn: ({ pageParam }) =>
+      fetchConversationWith(userId as string, pageParam as number),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.page + 1 : undefined,
     enabled: !!userId,
+  });
+}
+
+export function useUnreadCount() {
+  const { data: user } = useCurrentUser();
+  return useQuery<{ count: number }>({
+    queryKey: ['unread-count'],
+    queryFn: fetchUnreadCount,
+    enabled: !!user,
+    refetchInterval: 30_000,
+    staleTime: 10_000,
   });
 }
 
@@ -300,6 +321,7 @@ export function useSendMessage() {
     onSuccess: (_result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['conversation', variables.recipientId] });
       queryClient.invalidateQueries({ queryKey: ['message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
   });
 }
@@ -313,6 +335,7 @@ export function useMarkMessageRead() {
         queryClient.invalidateQueries({ queryKey: ['conversation', variables.partnerId] });
       }
       queryClient.invalidateQueries({ queryKey: ['message-threads'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
     },
   });
 }

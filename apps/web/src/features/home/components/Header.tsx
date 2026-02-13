@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 import SignupModal from "./SignUpModal";
 import LoginModal from "./LoginModal";
 import NewListingModal from "@web/features/listings/components/NewListingModal";
-import { useCurrentUser } from "@web/lib/hooks/useApi";
+import { useCurrentUser, useUnreadCount } from "@web/lib/hooks/useApi";
 import resolveAvatarUrl from "@web/lib/resolveImageUrl";
 import { Button, buttonVariants, Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@web/components/ui";
 import { cn } from "@web/lib/utils";
@@ -40,6 +40,8 @@ export default function Header() {
   const [openNewListingModal, setOpenNewListingModal] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
   const isLoggedIn = !!session?.user || !!backendUser;
   const user = (backendUser as any) || (session?.user as any);
 
@@ -51,7 +53,7 @@ export default function Header() {
     "U";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2">
@@ -84,14 +86,20 @@ export default function Header() {
         <nav className="hidden items-center gap-6 md:flex">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const showBadge = item.href === "/messages" && isLoggedIn && unreadCount > 0;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="relative flex items-center gap-2 text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />
                 <span>{item.label}</span>
+                {showBadge && (
+                  <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}

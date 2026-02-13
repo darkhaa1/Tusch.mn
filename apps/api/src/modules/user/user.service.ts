@@ -66,9 +66,46 @@ export class UserService {
     return this.prisma.user.create({ data });
   }
 
-  async findAll() {
-    const users = await this.prisma.user.findMany();
-    return users.map((user) => this.sanitizeUser(user));
+  private static readonly safeUserSelect = {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    avatarUrl: true,
+    role: true,
+    phone: true,
+    createdAt: true,
+    status: true,
+    emailVerified: true,
+  } as const;
+
+  async findAll(params?: { page?: number; limit?: number; search?: string }) {
+    const page = Math.max(1, params?.page ?? 1);
+    const limit = Math.min(50, Math.max(1, params?.limit ?? 20));
+    const search = params?.search?.trim();
+
+    const where: Prisma.UserWhereInput = search
+      ? {
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        select: UserService.safeUserSelect,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
   }
 
   async findById(id: string) {

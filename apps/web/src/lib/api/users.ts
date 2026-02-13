@@ -1,12 +1,22 @@
 import { apiFetch } from "./base";
 import type {
-  ListingUser,
   ProvidersPage,
   PublicUserProfile,
+  UsersPage,
 } from "./types";
 
-export async function fetchUsers(): Promise<ListingUser[]> {
-  return apiFetch("/users", { method: "GET" });
+export async function fetchUsers(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+}): Promise<UsersPage> {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.limit) searchParams.set("limit", String(params.limit));
+  if (params?.search) searchParams.set("search", params.search);
+  const query = searchParams.toString();
+  const path = query ? `/users?${query}` : "/users";
+  return apiFetch<UsersPage>(path, { method: "GET" });
 }
 
 export async function fetchProviders(params?: {
