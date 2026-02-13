@@ -84,15 +84,18 @@ export class UserService {
     const limit = Math.min(50, Math.max(1, params?.limit ?? 20));
     const search = params?.search?.trim();
 
-    const where: Prisma.UserWhereInput = search
-      ? {
-          OR: [
-            { firstName: { contains: search, mode: 'insensitive' } },
-            { lastName: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {};
+    const where: Prisma.UserWhereInput = {
+      deletedAt: null,
+      ...(search
+        ? {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
@@ -109,7 +112,9 @@ export class UserService {
   }
 
   async findById(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
+    });
     return this.sanitizeUser(user);
   }
 
@@ -133,7 +138,10 @@ export class UserService {
   }
 
   async deleteUser(id: string) {
-    return this.prisma.user.delete({ where: { id } });
+    return this.prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   async updateMyRole(userId: string, role: UserRole) {
@@ -195,8 +203,12 @@ export class UserService {
     const category = params?.category?.trim();
     const q = params?.q?.trim();
 
-    const activeListingFilter = { status: ListingStatus.ACTIVE };
+    const activeListingFilter = {
+      status: ListingStatus.ACTIVE,
+      deletedAt: null,
+    };
     const andFilters: Prisma.UserWhereInput[] = [
+      { deletedAt: null },
       { listing: { some: activeListingFilter } },
     ];
 
@@ -232,10 +244,10 @@ export class UserService {
           listing: {
             select: { category: true },
             where: category
-              ? { category, status: ListingStatus.ACTIVE }
+              ? { category, status: ListingStatus.ACTIVE, deletedAt: null }
               : activeListingFilter,
           },
-          _count: { select: { listing: true } },
+          _count: { select: { listing: { where: activeListingFilter } } },
         },
       }),
     ]);
@@ -289,8 +301,8 @@ export class UserService {
     userId: string,
     params?: { page?: number; limit?: number },
   ): Promise<PublicUserProfile> {
-    const safeUser = await this.prisma.user.findUnique({
-      where: { id: userId },
+    const safeUser = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: {
         id: true,
         firstName: true,
@@ -312,10 +324,10 @@ export class UserService {
     const [listingsCount, recentListings, reviewAgg, reviews] =
       await Promise.all([
         this.prisma.listing.count({
-          where: { userId, status: ListingStatus.ACTIVE },
+          where: { userId, status: ListingStatus.ACTIVE, deletedAt: null },
         }),
         this.prisma.listing.findMany({
-          where: { userId, status: ListingStatus.ACTIVE },
+          where: { userId, status: ListingStatus.ACTIVE, deletedAt: null },
           orderBy: { createdAt: 'desc' },
           take: 6,
           select: {

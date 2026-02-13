@@ -61,6 +61,24 @@ export class ListingsController {
   })
   @ApiQuery({ name: 'sort', required: false, enum: ListingsSort })
   @ApiQuery({
+    name: 'minPrice',
+    required: false,
+    type: Number,
+    description: 'Minimum price (>= 0)',
+  })
+  @ApiQuery({
+    name: 'maxPrice',
+    required: false,
+    type: Number,
+    description: 'Maximum price (>= 0, must be >= minPrice)',
+  })
+  @ApiQuery({
+    name: 'location',
+    required: false,
+    type: String,
+    description: 'Location filter (case-insensitive)',
+  })
+  @ApiQuery({
     name: 'legacy',
     required: false,
     type: Number,
@@ -85,6 +103,12 @@ export class ListingsController {
   getMyListings(@GetUser() user: { id: string }) {
     return this.service.getListingsByUser(user.id);
   }
+
+  @Get('locations')
+  getDistinctLocations() {
+    return this.service.getDistinctLocations();
+  }
+
   // Détail : public (ou protège si tu veux)
   @Get(':id')
   findOne(@Param('id') id: string) {

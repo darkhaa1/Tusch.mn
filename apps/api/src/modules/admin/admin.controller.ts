@@ -52,6 +52,12 @@ export class AdminController {
     return this.service.updateUserStatus(adminId, id, dto.status);
   }
 
+  @Patch('users/:id/restore')
+  restoreUser(@Req() req, @Param('id') id: string) {
+    const adminId = this.resolveAdminId(req);
+    return this.service.restoreUser(adminId, id);
+  }
+
   @Get('listings')
   getListings(@Query() query: AdminListingsQueryDto) {
     return this.service.getListings(query);
@@ -65,5 +71,11 @@ export class AdminController {
   ) {
     const adminId = this.resolveAdminId(req);
     return this.service.updateListingStatus(adminId, id, dto.status);
+  }
+
+  @Patch('listings/:id/restore')
+  restoreListing(@Req() req, @Param('id') id: string) {
+    const adminId = this.resolveAdminId(req);
+    return this.service.restoreListing(adminId, id);
   }
 }

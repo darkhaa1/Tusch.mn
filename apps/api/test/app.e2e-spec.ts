@@ -530,6 +530,133 @@ describe('App (e2e)', () => {
     expect(hiddenSearch.body.items.length).toBe(0);
   });
 
+  it('filters listings by price range and location', async () => {
+    const marker = `pf-${Date.now()}`;
+    const email = `pricefilter-${marker}@example.com`;
+    const password = 'password123';
+    const loc1 = `CityA-${marker}`;
+    const loc2 = `CityB-${marker}`;
+
+    await registerAndVerify({
+      email,
+      password,
+      firstName: 'Price',
+      lastName: 'Tester',
+      phone: '55566677',
+      accountType: 'basic',
+    });
+
+    const cookie = await login(email, password);
+
+    const listing1 = await authedPost('/listings', cookie, {
+      description: `Cheap ${marker}`,
+      price: 500,
+      location: loc1,
+      category: 'services',
+    }).expect(201);
+
+    const listing2 = await authedPost('/listings', cookie, {
+      description: `Medium ${marker}`,
+      price: 5000,
+      location: loc2,
+      category: 'services',
+    }).expect(201);
+
+    const listing3 = await authedPost('/listings', cookie, {
+      description: `Expensive ${marker}`,
+      price: 50000,
+      location: loc1,
+      category: 'repairs',
+    }).expect(201);
+
+    // minPrice only
+    const minOnly = await request(app.getHttpServer())
+      .get(`/listings?search=${marker}&minPrice=1000`)
+      .expect(200);
+    expect(minOnly.body.total).toBe(2);
+    expect(
+      minOnly.body.items.every((i: { price: number }) => i.price >= 1000),
+    ).toBe(true);
+
+    // maxPrice only
+    const maxOnly = await request(app.getHttpServer())
+      .get(`/listings?search=${marker}&maxPrice=5000`)
+      .expect(200);
+    expect(maxOnly.body.total).toBe(2);
+    expect(
+      maxOnly.body.items.every((i: { price: number }) => i.price <= 5000),
+    ).toBe(true);
+
+    // price range
+    const range = await request(app.getHttpServer())
+      .get(`/listings?search=${marker}&minPrice=1000&maxPrice=10000`)
+      .expect(200);
+    expect(range.body.total).toBe(1);
+    expect(range.body.items[0].id).toBe(listing2.body.id);
+
+    // location filter
+    const byLocation = await request(app.getHttpServer())
+      .get(
+        `/listings?search=${marker}&location=${encodeURIComponent(loc1)}`,
+      )
+      .expect(200);
+    expect(byLocation.body.total).toBe(2);
+
+    // location filter case-insensitive
+    const byLocationLower = await request(app.getHttpServer())
+      .get(
+        `/listings?search=${marker}&location=${encodeURIComponent(loc1.toLowerCase())}`,
+      )
+      .expect(200);
+    expect(byLocationLower.body.total).toBe(2);
+
+    // combined: price + location + category
+    const combined = await request(app.getHttpServer())
+      .get(
+        `/listings?search=${marker}&minPrice=100&maxPrice=50000&location=${encodeURIComponent(loc1)}&category=services`,
+      )
+      .expect(200);
+    expect(combined.body.total).toBe(1);
+    expect(combined.body.items[0].id).toBe(listing1.body.id);
+
+    // validation: maxPrice < minPrice → 400
+    await request(app.getHttpServer())
+      .get(`/listings?minPrice=5000&maxPrice=100`)
+      .expect(400);
+
+    // GET /listings/locations returns distinct locations
+    const locationsRes = await request(app.getHttpServer())
+      .get('/listings/locations')
+      .expect(200);
+    expect(Array.isArray(locationsRes.body)).toBe(true);
+    expect(locationsRes.body).toContain(loc1);
+    expect(locationsRes.body).toContain(loc2);
+
+    // hide a listing and verify its location still shows (other active listing has same location)
+    await prisma.listing.update({
+      where: { id: listing3.body.id as string },
+      data: { status: 'HIDDEN' },
+    });
+
+    // loc1 still in locations because listing1 is still active
+    const locationsAfterHide = await request(app.getHttpServer())
+      .get('/listings/locations')
+      .expect(200);
+    expect(locationsAfterHide.body).toContain(loc1);
+
+    // hide listing1 too, now loc1 should be gone
+    await prisma.listing.update({
+      where: { id: listing1.body.id as string },
+      data: { status: 'HIDDEN' },
+    });
+
+    const locationsAfterHideAll = await request(app.getHttpServer())
+      .get('/listings/locations')
+      .expect(200);
+    expect(locationsAfterHideAll.body).not.toContain(loc1);
+    expect(locationsAfterHideAll.body).toContain(loc2);
+  });
+
   it('handles messages flow from send to threads and conversation', async () => {
     const userAEmail = `usera-${Date.now()}@example.com`;
     const userBEmail = `userb-${Date.now()}@example.com`;

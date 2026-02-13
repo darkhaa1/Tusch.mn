@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   AdminListingsPage,
+  AdminReportsPage,
   AdminStats,
   AdminUsersPage,
   ConversationPage,
@@ -8,7 +9,10 @@ import type {
   ListingStatus,
   ListingsPage,
   Message,
+  NotificationsPage,
   ProvidersPage,
+  ReportStatus,
+  ReportTargetType,
   ReviewsPage,
   UserStatus,
   UsersPage,
@@ -32,6 +36,7 @@ import {
   createListing,
   deleteListing,
   fetchListingById,
+  fetchListingLocations,
   fetchListings,
   fetchListingsPage,
   fetchMyListings,
@@ -53,6 +58,8 @@ import {
   fetchAdminListings,
   fetchAdminStats,
   fetchAdminUsers,
+  restoreAdminListing,
+  restoreAdminUser,
   updateAdminListingStatus,
   updateAdminUserStatus,
 } from "@web/lib/api/admin";
@@ -61,6 +68,16 @@ import {
   deleteReview,
   fetchUserReviews,
 } from "@web/lib/api/reviews";
+import {
+  createReport,
+  fetchAdminReports,
+  updateAdminReportStatus,
+} from "@web/lib/api/reports";
+import {
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@web/lib/api/notifications";
 
 export function useCurrentUser() {
   return useQuery({
@@ -83,6 +100,9 @@ export function useListingsPage(params?: {
   limit?: number;
   sort?: string;
   search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  location?: string;
 }) {
   return useQuery<ListingsPage>({
     queryKey: [
@@ -92,8 +112,19 @@ export function useListingsPage(params?: {
       params?.limit || 12,
       params?.sort || 'newest',
       params?.search || '',
+      params?.minPrice ?? 'any',
+      params?.maxPrice ?? 'any',
+      params?.location || 'all',
     ],
     queryFn: () => fetchListingsPage(params),
+  });
+}
+
+export function useListingLocations() {
+  return useQuery<string[]>({
+    queryKey: ['listing-locations'],
+    queryFn: fetchListingLocations,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -314,6 +345,48 @@ export function useUnreadCount() {
   });
 }
 
+export function useNotifications(params?: { page?: number; limit?: number }) {
+  const { data: user } = useCurrentUser();
+  return useQuery<NotificationsPage>({
+    queryKey: ['notifications', params?.page || 1, params?.limit || 10],
+    queryFn: () => fetchNotifications(params),
+    enabled: !!user,
+    refetchInterval: 30_000,
+    staleTime: 10_000,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ notificationId }: { notificationId: string }) =>
+      markNotificationRead(notificationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
+export function useMarkAllRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markAllNotificationsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}
+
+export function useCreateReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createReport,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+    },
+  });
+}
+
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -355,9 +428,44 @@ export function useAdminStats() {
   });
 }
 
+export function useAdminReports(params?: {
+  status?: ReportStatus;
+  targetType?: ReportTargetType;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery<AdminReportsPage>({
+    queryKey: [
+      'admin-reports',
+      params?.status || 'all',
+      params?.targetType || 'all',
+      params?.page || 1,
+      params?.limit || 20,
+    ],
+    queryFn: () => fetchAdminReports(params),
+  });
+}
+
+export function useUpdateAdminReportStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      reportId,
+      status,
+    }: {
+      reportId: string;
+      status: Extract<ReportStatus, 'REVIEWED' | 'DISMISSED'>;
+    }) => updateAdminReportStatus(reportId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-reports'] });
+    },
+  });
+}
+
 export function useAdminUsers(params?: {
   q?: string;
   status?: UserStatus;
+  includeDeleted?: boolean;
   page?: number;
   limit?: number;
 }) {
@@ -366,6 +474,7 @@ export function useAdminUsers(params?: {
       'admin-users',
       params?.q || '',
       params?.status || 'all',
+      params?.includeDeleted ? 'with-deleted' : 'without-deleted',
       params?.page || 1,
       params?.limit || 20,
     ],
@@ -388,6 +497,7 @@ export function useUpdateAdminUserStatus() {
 export function useAdminListings(params?: {
   q?: string;
   status?: ListingStatus;
+  includeDeleted?: boolean;
   category?: string;
   page?: number;
   limit?: number;
@@ -397,6 +507,7 @@ export function useAdminListings(params?: {
       'admin-listings',
       params?.q || '',
       params?.status || 'all',
+      params?.includeDeleted ? 'with-deleted' : 'without-deleted',
       params?.category || 'all',
       params?.page || 1,
       params?.limit || 20,
@@ -418,6 +529,30 @@ export function useUpdateAdminListingStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-listings'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    },
+  });
+}
+
+export function useRestoreAdminUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId }: { userId: string }) => restoreAdminUser(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    },
+  });
+}
+
+export function useRestoreAdminListing() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listingId }: { listingId: string }) =>
+      restoreAdminListing(listingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['listings'] });
     },
   });
 }

@@ -30,6 +30,31 @@ enum ListingStatus {
   HIDDEN
 }
 
+enum NotificationType {
+  NEW_MESSAGE
+  NEW_REVIEW
+  LISTING_HIDDEN
+  ACCOUNT_SUSPENDED
+}
+
+enum ReportTargetType {
+  LISTING
+  USER
+}
+
+enum ReportReason {
+  SPAM
+  INAPPROPRIATE
+  FRAUD
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
@@ -53,9 +78,14 @@ model User {
   reviewsGiven     Review[]  @relation("UserReviewsGiven")
   reviewsReceived  Review[]  @relation("UserReviewsReceived")
   adminActionLogs  AdminActionLog[]
+  notifications    Notification[]
+  reports          Report[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  @@index([deletedAt])
 }
 
 model Listing {
@@ -72,8 +102,10 @@ model Listing {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([userId])
+  @@index([deletedAt])
 }
 
 model AdminActionLog {
@@ -133,4 +165,36 @@ model Review {
 
   @@index([targetUserId])
   @@unique([targetUserId, reviewerId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model Report {
+  id          String           @id @default(cuid())
+  reporterId  String
+  targetType  ReportTargetType
+  targetId    String
+  reason      ReportReason
+  description String?
+  status      ReportStatus     @default(PENDING)
+  createdAt   DateTime         @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, targetType, createdAt])
+  @@index([reporterId, targetType, targetId, status])
 }

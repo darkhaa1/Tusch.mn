@@ -59,6 +59,8 @@ export class ListingsService {
     const search = q.search?.trim();
     const filters: Prisma.ListingWhereInput[] = [
       { status: ListingStatus.ACTIVE },
+      { deletedAt: null },
+      { user: { deletedAt: null } },
     ];
 
     if (q.category) {
@@ -71,6 +73,20 @@ export class ListingsService {
           { description: { contains: search, mode: 'insensitive' } },
           { location: { contains: search, mode: 'insensitive' } },
         ],
+      });
+    }
+
+    if (q.minPrice !== undefined) {
+      filters.push({ price: { gte: q.minPrice } });
+    }
+
+    if (q.maxPrice !== undefined) {
+      filters.push({ price: { lte: q.maxPrice } });
+    }
+
+    if (q.location) {
+      filters.push({
+        location: { contains: q.location, mode: 'insensitive' },
       });
     }
 
@@ -99,7 +115,12 @@ export class ListingsService {
 
   async findPublicById(id: string) {
     const item = await this.prisma.listing.findFirst({
-      where: { id, status: ListingStatus.ACTIVE },
+      where: {
+        id,
+        status: ListingStatus.ACTIVE,
+        deletedAt: null,
+        user: { deletedAt: null },
+      },
       include: listingPublicInclude as any,
     });
     if (!item) throw new NotFoundException('Listing not found');
@@ -107,8 +128,8 @@ export class ListingsService {
   }
 
   async findOne(id: string) {
-    const item = await this.prisma.listing.findUnique({
-      where: { id },
+    const item = await this.prisma.listing.findFirst({
+      where: { id, deletedAt: null },
       include: listingPrivateInclude as any,
     });
     if (!item) throw new NotFoundException('Listing not found');
@@ -134,7 +155,10 @@ export class ListingsService {
   async remove(id: string, userId: string) {
     const existing = await this.findOne(id);
     this.ensureOwnership(existing, userId);
-    await this.prisma.listing.delete({ where: { id } });
+    await this.prisma.listing.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
     return { ok: true };
   }
 
@@ -143,8 +167,8 @@ export class ListingsService {
     files: Express.Multer.File[],
     userId: string,
   ) {
-    const listing = await this.prisma.listing.findUnique({
-      where: { id: listingId },
+    const listing = await this.prisma.listing.findFirst({
+      where: { id: listingId, deletedAt: null },
     });
     if (!listing) throw new NotFoundException('Listing not found');
     this.ensureOwnership(listing, userId);
@@ -175,8 +199,8 @@ export class ListingsService {
   }
 
   async deleteImage(listingId: string, imageId: string, userId: string) {
-    const listing = await this.prisma.listing.findUnique({
-      where: { id: listingId },
+    const listing = await this.prisma.listing.findFirst({
+      where: { id: listingId, deletedAt: null },
     });
     if (!listing) throw new NotFoundException('Listing not found');
     this.ensureOwnership(listing, userId);
@@ -205,9 +229,25 @@ export class ListingsService {
 
   async getListingsByUser(userId: string) {
     return this.prisma.listing.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
       include: listingPrivateInclude as any,
     });
+  }
+
+  async getDistinctLocations(): Promise<string[]> {
+    const results = await this.prisma.listing.findMany({
+      where: {
+        status: ListingStatus.ACTIVE,
+        deletedAt: null,
+        user: { deletedAt: null },
+        location: { not: null },
+      },
+      select: { location: true },
+      distinct: ['location'],
+      orderBy: { location: 'asc' },
+    });
+
+    return results.map((r) => r.location as string);
   }
 }

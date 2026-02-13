@@ -1,21 +1,32 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, FilterX, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, DollarSign, FilterX, MapPin, Plus, Search, X } from "lucide-react";
 import NewListingModal from "@web/features/listings/components/NewListingModal";
 import FiltersBar from "@web/features/listings/components/FiltersBar";
 import Pagination from "@web/features/listings/components/Pagination";
 import ListingCard from "./ListingCard";
 import { EmptyState, ErrorState, ListingGrid } from "@web/components/common";
-import { SkeletonGrid } from "@web/components/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  Input,
+  Select,
+  SkeletonGrid,
+  buttonVariants,
+} from "@web/components/ui";
 import AppShell from "@web/components/layout/AppShell";
-import { useListingsPage } from "@web/lib/hooks/useApi";
+import { useListingLocations, useListingsPage } from "@web/lib/hooks/useApi";
 import { buildListingsQuery, parseListingsQuery } from "@web/lib/query";
 import { resolveCategoryLabel } from "./categoryLabels";
-import { Button, Card, CardContent, Input, buttonVariants } from "@web/components/ui";
 import { cn } from "@web/lib/utils";
 import { CATEGORY_OPTIONS } from "@web/lib/categories";
+
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const DEFAULT_SORT = "newest";
@@ -25,18 +36,28 @@ export default function ListingsClient() {
   const searchParams = useSearchParams();
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  const { category, page, limit, sort, search } = parseListingsQuery(searchParams, {
-    page: DEFAULT_PAGE,
-    limit: DEFAULT_LIMIT,
-    sort: DEFAULT_SORT,
-  });
+  const { category, page, limit, sort, search, minPrice, maxPrice, location } =
+    parseListingsQuery(searchParams, {
+      page: DEFAULT_PAGE,
+      limit: DEFAULT_LIMIT,
+      sort: DEFAULT_SORT,
+    });
 
   const [searchValue, setSearchValue] = useState(search ?? "");
+  const [priceMinInput, setPriceMinInput] = useState(minPrice !== undefined ? String(minPrice) : "");
+  const [priceMaxInput, setPriceMaxInput] = useState(maxPrice !== undefined ? String(maxPrice) : "");
 
   useEffect(() => {
     const handlePopState = () => {
-      const nextSearch = new URLSearchParams(window.location.search).get("search")?.trim() ?? "";
-      setSearchValue(nextSearch);
+      const nextSearchParams = new URLSearchParams(window.location.search);
+      const nextQuery = parseListingsQuery(nextSearchParams, {
+        page: DEFAULT_PAGE,
+        limit: DEFAULT_LIMIT,
+        sort: DEFAULT_SORT,
+      });
+      setSearchValue(nextQuery.search ?? "");
+      setPriceMinInput(nextQuery.minPrice !== undefined ? String(nextQuery.minPrice) : "");
+      setPriceMaxInput(nextQuery.maxPrice !== undefined ? String(nextQuery.maxPrice) : "");
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -54,12 +75,17 @@ export default function ListingsClient() {
         sort,
         category,
         search: trimmed.length ? trimmed : null,
+        minPrice,
+        maxPrice,
+        location,
       });
       router.push(`/listings${query}`);
     }, 300);
 
     return () => clearTimeout(handle);
-  }, [searchValue, search, category, limit, sort, searchParams, router]);
+  }, [searchValue, search, category, limit, sort, minPrice, maxPrice, location, searchParams, router]);
+
+  const { data: locations } = useListingLocations();
 
   const { data, isLoading, error, refetch, isFetching } = useListingsPage({
     category,
@@ -67,6 +93,9 @@ export default function ListingsClient() {
     limit,
     sort,
     search,
+    minPrice,
+    maxPrice,
+    location,
   });
 
   const items = data?.items ?? [];
@@ -84,7 +113,16 @@ export default function ListingsClient() {
   const showTotal = !isLoading && !error && totalKnown;
   const totalLabel = showTotal ? `${total} зар` : "";
   const hasSearch = Boolean(search);
-  const hasActiveFilters = Boolean(category || hasSearch);
+  const hasPriceFilter = minPrice !== undefined || maxPrice !== undefined;
+  const hasActiveFilters = Boolean(category || hasSearch || hasPriceFilter || location);
+
+  const priceChipLabel = hasPriceFilter
+    ? minPrice !== undefined && maxPrice !== undefined
+      ? `${minPrice.toLocaleString()}₮ - ${maxPrice.toLocaleString()}₮`
+      : minPrice !== undefined
+        ? `${minPrice.toLocaleString()}₮+`
+        : `${maxPrice!.toLocaleString()}₮ хүртэл`
+    : "";
 
   const updatePage = (nextPage: number) => {
     const query = buildListingsQuery(searchParams, {
@@ -93,6 +131,9 @@ export default function ListingsClient() {
       category,
       sort,
       search,
+      minPrice,
+      maxPrice,
+      location,
     });
     router.push(`/listings${query}`);
   };
@@ -104,18 +145,26 @@ export default function ListingsClient() {
       category,
       sort: nextSort,
       search,
+      minPrice,
+      maxPrice,
+      location,
     });
     router.push(`/listings${query}`);
   };
 
   const resetFilters = () => {
     setSearchValue("");
+    setPriceMinInput("");
+    setPriceMaxInput("");
     const query = buildListingsQuery(searchParams, {
       page: 1,
       limit,
       sort,
       category: null,
       search: null,
+      minPrice: null,
+      maxPrice: null,
+      location: null,
     });
     router.push(`/listings${query}`);
   };
@@ -128,6 +177,9 @@ export default function ListingsClient() {
       sort,
       category,
       search: null,
+      minPrice,
+      maxPrice,
+      location,
     });
     router.push(`/listings${query}`);
   };
@@ -139,6 +191,71 @@ export default function ListingsClient() {
       sort,
       category: null,
       search,
+      minPrice,
+      maxPrice,
+      location,
+    });
+    router.push(`/listings${query}`);
+  };
+
+  const applyPriceFilter = () => {
+    const min = priceMinInput.trim() ? Math.max(0, Math.floor(Number(priceMinInput))) : undefined;
+    const max = priceMaxInput.trim() ? Math.max(0, Math.floor(Number(priceMaxInput))) : undefined;
+    if (min !== undefined && max !== undefined && max < min) return;
+
+    const query = buildListingsQuery(searchParams, {
+      page: 1,
+      limit,
+      sort,
+      category,
+      search,
+      minPrice: min ?? null,
+      maxPrice: max ?? null,
+      location,
+    });
+    router.push(`/listings${query}`);
+  };
+
+  const clearPriceFilter = () => {
+    setPriceMinInput("");
+    setPriceMaxInput("");
+    const query = buildListingsQuery(searchParams, {
+      page: 1,
+      limit,
+      sort,
+      category,
+      search,
+      minPrice: null,
+      maxPrice: null,
+      location,
+    });
+    router.push(`/listings${query}`);
+  };
+
+  const handleLocationChange = (nextLocation: string) => {
+    const query = buildListingsQuery(searchParams, {
+      page: 1,
+      limit,
+      sort,
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      location: nextLocation || null,
+    });
+    router.push(`/listings${query}`);
+  };
+
+  const clearLocation = () => {
+    const query = buildListingsQuery(searchParams, {
+      page: 1,
+      limit,
+      sort,
+      category,
+      search,
+      minPrice,
+      maxPrice,
+      location: null,
     });
     router.push(`/listings${query}`);
   };
@@ -227,6 +344,26 @@ export default function ListingsClient() {
                   <X className="h-3 w-3" aria-hidden="true" />
                 </button>
               ) : null}
+              {hasPriceFilter ? (
+                <button
+                  type="button"
+                  onClick={clearPriceFilter}
+                  className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground"
+                >
+                  {priceChipLabel}
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              ) : null}
+              {location ? (
+                <button
+                  type="button"
+                  onClick={clearLocation}
+                  className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground"
+                >
+                  {location}
+                  <X className="h-3 w-3" aria-hidden="true" />
+                </button>
+              ) : null}
             </>
           ) : null
         }
@@ -255,6 +392,9 @@ export default function ListingsClient() {
                     sort,
                     category: item.value,
                     search,
+                    minPrice,
+                    maxPrice,
+                    location,
                   });
                   router.push(`/listings${query}`);
                 }}
@@ -272,19 +412,70 @@ export default function ListingsClient() {
         </div>
       </FiltersBar>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">Түргэн шүүлтүүр</span>
-        {["Ойрхон", "Яаралтай", "₮ Төсөв"].map((label) => (
-          <button
-            key={label}
-            type="button"
-            disabled
-            className="cursor-not-allowed rounded-full border border-dashed border-border/80 bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
-            title="Тун удахгүй"
+      <div className="flex flex-wrap items-center gap-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "gap-2",
+              hasPriceFilter && "border-primary text-primary"
+            )}
           >
-            {label}
-          </button>
-        ))}
+            <DollarSign className="h-4 w-4" aria-hidden="true" />
+            {hasPriceFilter ? priceChipLabel : "Үнэ"}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-64 p-4">
+            <div className="flex flex-col gap-3">
+              <span className="text-sm font-medium">Үнийн хязгаар</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="Доод"
+                  min={0}
+                  value={priceMinInput}
+                  onChange={(e) => setPriceMinInput(e.target.value)}
+                  className="h-9"
+                />
+                <span className="text-muted-foreground">-</span>
+                <Input
+                  type="number"
+                  placeholder="Дээд"
+                  min={0}
+                  value={priceMaxInput}
+                  onChange={(e) => setPriceMaxInput(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={applyPriceFilter} className="flex-1">
+                  Хайх
+                </Button>
+                {hasPriceFilter && (
+                  <Button size="sm" variant="ghost" onClick={clearPriceFilter}>
+                    Цэвэрлэх
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <Select
+            value={location || ""}
+            onChange={(e) => handleLocationChange(e.target.value)}
+            className={cn("h-9 w-auto min-w-35", location && "border-primary text-primary")}
+            aria-label="Байршил"
+          >
+            <option value="">Бүх байршил</option>
+            {(locations ?? []).map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
 
       <Card className="border border-border/80">
@@ -303,16 +494,18 @@ export default function ListingsClient() {
               <option value="oldest">Хуучин эхэнд</option>
             </select>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={resetFilters}
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2")}
-            >
-              <FilterX className="h-4 w-4" aria-hidden="true" />
-              Шүүлтүүр цэвэрлэх
-            </button>
-          </div>
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={resetFilters}
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2")}
+              >
+                <FilterX className="h-4 w-4" aria-hidden="true" />
+                Шүүлтүүр цэвэрлэх
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -382,6 +575,3 @@ export default function ListingsClient() {
     </AppShell>
   );
 }
-
-
-

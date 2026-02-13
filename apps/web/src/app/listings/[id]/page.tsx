@@ -32,6 +32,7 @@ import { ListingGallery } from "@web/features/listings/components/ListingGallery
 import { ListingDetailsCard } from "@web/features/listings/components/ListingDetailsCard";
 import { ListingSidebar } from "@web/features/listings/components/ListingSidebar";
 import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "@web/lib/categories";
+import { ReportDialogButton } from "@web/components/report/ReportDialogButton";
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -64,6 +65,7 @@ export default function ListingDetailPage() {
     if (!listing || !currentUser) return false;
     return listing.userId === currentUser.id;
   }, [listing, currentUser]);
+  const canReport = Boolean(currentUser) && !isOwner && Boolean(listingId);
 
   useEffect(() => {
     if (!listing) return;
@@ -214,23 +216,33 @@ export default function ListingDetailPage() {
         <Button variant="outline" size="sm" onClick={() => router.back()}>
           Буцах
         </Button>
-        {isOwner ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="rounded-full border border-border bg-background p-2 hover:bg-muted">
-              <EllipsisVertical className="h-5 w-5" aria-hidden="true" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="min-w-[180px]">
-              {!isEditing ? (
-                <DropdownMenuItem onClick={() => setIsEditing(true)}>Засах</DropdownMenuItem>
-              ) : null}
-              <DropdownMenuItem onClick={() => setConfirmDeleteOpen(true)} className="text-destructive">
-                Устгах
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push("/listings")}>Бүх зарууд</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {canReport ? (
+            <ReportDialogButton
+              targetType="LISTING"
+              targetId={listingId as string}
+              variant="outline"
+              size="sm"
+            />
+          ) : null}
+          {isOwner ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger className="rounded-full border border-border bg-background p-2 hover:bg-muted">
+                <EllipsisVertical className="h-5 w-5" aria-hidden="true" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="min-w-[180px]">
+                {!isEditing ? (
+                  <DropdownMenuItem onClick={() => setIsEditing(true)}>Засах</DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem onClick={() => setConfirmDeleteOpen(true)} className="text-destructive">
+                  Устгах
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push("/listings")}>Бүх зарууд</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

@@ -6,6 +6,8 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ListingsModule } from './modules/listings/listings.module';
 import { MessagesModule } from './modules/messages/messages.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { UserModule } from './modules/user/user.module';
 import { validateEnv } from './config/env.schema';
@@ -27,6 +29,8 @@ import { validateEnv } from './config/env.schema';
     MessagesModule,
     AdminModule,
     ReviewsModule,
+    NotificationsModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}
