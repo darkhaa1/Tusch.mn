@@ -4,12 +4,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   private userSelect = {
     id: true,
@@ -25,14 +30,18 @@ export class MessagesService {
       throw new BadRequestException('Cannot send message to yourself');
     }
 
-    const [recipient, listing] = await this.prisma.$transaction([
-      this.prisma.user.findUnique({
-        where: { id: dto.recipientId },
+    const [recipient, listing, sender] = await this.prisma.$transaction([
+      this.prisma.user.findFirst({
+        where: { id: dto.recipientId, deletedAt: null },
         select: { id: true },
       }),
-      this.prisma.listing.findUnique({
-        where: { id: dto.listingId },
+      this.prisma.listing.findFirst({
+        where: { id: dto.listingId, deletedAt: null },
         select: { id: true },
+      }),
+      this.prisma.user.findFirst({
+        where: { id: senderId, deletedAt: null },
+        select: { firstName: true, lastName: true },
       }),
     ]);
 
@@ -42,8 +51,11 @@ export class MessagesService {
     if (!listing) {
       throw new NotFoundException('Listing not found');
     }
+    if (!sender) {
+      throw new NotFoundException('Sender not found');
+    }
 
-    return this.prisma.message.create({
+    const message = await this.prisma.message.create({
       data: {
         content: dto.content,
         sender: { connect: { id: senderId } },
@@ -51,6 +63,18 @@ export class MessagesService {
         listing: { connect: { id: dto.listingId } },
       },
     });
+
+    const senderName =
+      [sender.firstName, sender.lastName].filter(Boolean).join(' ').trim() ||
+      'another user';
+    await this.notificationsService.create({
+      userId: dto.recipientId,
+      type: NotificationType.NEW_MESSAGE,
+      title: 'New message',
+      body: `You received a message from ${senderName}.`,
+    });
+
+    return message;
   }
 
   async getConversation(

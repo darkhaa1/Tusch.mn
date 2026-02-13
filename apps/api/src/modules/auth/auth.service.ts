@@ -60,6 +60,9 @@ export class AuthService {
     });
     if (!user || !user.password)
       throw new UnauthorizedException('Invalid credentials');
+    if (user.deletedAt) {
+      throw new UnauthorizedException('Бүртгэл устгагдсан байна');
+    }
 
     const passwordValid = await bcrypt.compare(body.password, user.password);
     if (!passwordValid) throw new UnauthorizedException('Invalid credentials');
@@ -157,7 +160,10 @@ export class AuthService {
   }
 
   async deleteUserById(id: string) {
-    return this.prisma.user.delete({ where: { id } });
+    return this.prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   async deleteProfileAvatar(userId: string) {

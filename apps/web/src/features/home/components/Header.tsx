@@ -16,6 +16,7 @@ import { Button, buttonVariants, Sheet, SheetContent, SheetDescription, SheetFoo
 import { cn } from "@web/lib/utils";
 import { logout } from "@web/lib/logout";
 import { UserMenu } from "@web/components/header/UserMenu";
+import { NotificationsBell } from "@web/components/header/NotificationsBell";
 
 const navItems = [
   { href: "/offerers", label: "Үйлчилгээ үзүүлэгчид", icon: Users },
@@ -63,6 +64,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-3 md:hidden">
+          {isLoggedIn ? <NotificationsBell /> : null}
           <Button
             variant="outline"
             size="sm"
@@ -114,15 +116,18 @@ export default function Header() {
 
         <div className="hidden items-center gap-2 md:flex">
           {isLoggedIn ? (
-            <UserMenu
-              firstName={firstName}
-              avatarUrl={avatar}
-              initials={initials}
-              isAdmin={Boolean(backendUser?.isAdmin)}
-              onLogout={() => {
-                void logout(router, queryClient);
-              }}
-            />
+            <>
+              <NotificationsBell />
+              <UserMenu
+                firstName={firstName}
+                avatarUrl={avatar}
+                initials={initials}
+                isAdmin={Boolean(backendUser?.isAdmin)}
+                onLogout={() => {
+                  void logout(router, queryClient);
+                }}
+              />
+            </>
           ) : (
             <>
               <Button

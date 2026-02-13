@@ -5,12 +5,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   private reviewInclude = {
     reviewer: {
@@ -31,13 +36,13 @@ export class ReviewsService {
 
     // Validate: Both users exist
     const [targetUser, reviewer] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: dto.targetUserId },
+      this.prisma.user.findFirst({
+        where: { id: dto.targetUserId, deletedAt: null },
         select: { id: true },
       }),
-      this.prisma.user.findUnique({
-        where: { id: reviewerId },
-        select: { id: true },
+      this.prisma.user.findFirst({
+        where: { id: reviewerId, deletedAt: null },
+        select: { id: true, firstName: true, lastName: true },
       }),
     ]);
 
@@ -73,6 +78,16 @@ export class ReviewsService {
       include: this.reviewInclude as any,
     });
 
+    const reviewerName =
+      [reviewer.firstName, reviewer.lastName].filter(Boolean).join(' ').trim() ||
+      'A user';
+    await this.notificationsService.create({
+      userId: dto.targetUserId,
+      type: NotificationType.NEW_REVIEW,
+      title: 'New review',
+      body: `${reviewerName} left you a review.`,
+    });
+
     return review;
   }
 
@@ -82,8 +97,8 @@ export class ReviewsService {
     const skip = (safePage - 1) * safeLimit;
 
     // Validate target user exists
-    const targetUser = await this.prisma.user.findUnique({
-      where: { id: targetUserId },
+    const targetUser = await this.prisma.user.findFirst({
+      where: { id: targetUserId, deletedAt: null },
       select: { id: true },
     });
 

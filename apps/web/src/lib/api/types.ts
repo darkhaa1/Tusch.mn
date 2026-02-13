@@ -1,6 +1,14 @@
 export type UserRole = "CLIENT" | "PROVIDER" | "BOTH";
 export type UserStatus = "ACTIVE" | "SUSPENDED";
 export type ListingStatus = "ACTIVE" | "HIDDEN";
+export type NotificationType =
+  | "NEW_MESSAGE"
+  | "NEW_REVIEW"
+  | "LISTING_HIDDEN"
+  | "ACCOUNT_SUSPENDED";
+export type ReportTargetType = "LISTING" | "USER";
+export type ReportReason = "SPAM" | "INAPPROPRIATE" | "FRAUD" | "OTHER";
+export type ReportStatus = "PENDING" | "REVIEWED" | "DISMISSED";
 
 export type CurrentUser = {
   id: string;
@@ -50,6 +58,16 @@ export type Message = {
   updatedAt: string;
   sender?: ListingUser;
   recipient?: ListingUser;
+};
+
+export type Notification = {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
 };
 
 export type PublicUserProfile = {
@@ -137,6 +155,7 @@ export type AdminUser = {
   email?: string;
   phone?: string | null;
   status: UserStatus;
+  deletedAt?: string | null;
   isAdmin: boolean;
   createdAt: string;
 };
@@ -155,6 +174,7 @@ export type AdminListing = {
   location?: string | null;
   description: string;
   status: ListingStatus;
+  deletedAt?: string | null;
   createdAt: string;
   user?: {
     id: string;
@@ -202,6 +222,64 @@ export type ConversationPage = {
 
 export type UsersPage = {
   items: ListingUser[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export type NotificationsPage = {
+  items: Notification[];
+  total: number;
+  page: number;
+  limit: number;
+  unreadCount: number;
+};
+
+export type Report = {
+  id: string;
+  reporterId: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  reason: ReportReason;
+  description: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+};
+
+export type AdminReport = Report & {
+  reporter: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  target:
+    | {
+        id: string;
+        description: string;
+        status: ListingStatus;
+        deletedAt: string | null;
+        user: {
+          id: string;
+          firstName: string;
+          lastName: string;
+        };
+      }
+    | {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        status: UserStatus;
+        deletedAt: string | null;
+      }
+    | null;
+};
+
+export type AdminReportsPage = {
+  items: AdminReport[];
   total: number;
   page: number;
   limit: number;

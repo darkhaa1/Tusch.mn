@@ -1,12 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ListingStatus, Prisma, UserStatus } from '@prisma/client';
+import {
+  ListingStatus,
+  NotificationType,
+  Prisma,
+  UserStatus,
+} from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { AdminListingsQueryDto } from './dto/admin-listings-query.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async getStats() {
     const [
@@ -44,6 +53,9 @@ export class AdminService {
     const q = query.q?.trim();
 
     const where: Prisma.UserWhereInput = {
+      ...(query.includeDeleted
+        ? { deletedAt: { not: null } }
+        : { deletedAt: null }),
       ...(query.status ? { status: query.status } : {}),
       ...(q
         ? {
@@ -69,6 +81,7 @@ export class AdminService {
           email: true,
           phone: true,
           status: true,
+          deletedAt: true,
           isAdmin: true,
           createdAt: true,
         },
@@ -86,7 +99,7 @@ export class AdminService {
   ) {
     const existing = await this.prisma.user.findUnique({
       where: { id: targetId },
-      select: { id: true },
+      select: { id: true, status: true },
     });
     if (!existing) throw new NotFoundException('User not found');
 
@@ -111,6 +124,18 @@ export class AdminService {
       }),
     ]);
 
+    if (
+      status === UserStatus.SUSPENDED &&
+      existing.status !== UserStatus.SUSPENDED
+    ) {
+      await this.notificationsService.create({
+        userId: targetId,
+        type: NotificationType.ACCOUNT_SUSPENDED,
+        title: 'Account suspended',
+        body: 'Your account has been suspended by an administrator.',
+      });
+    }
+
     return updated;
   }
 
@@ -121,6 +146,9 @@ export class AdminService {
     const q = query.q?.trim();
 
     const where: Prisma.ListingWhereInput = {
+      ...(query.includeDeleted
+        ? { deletedAt: { not: null } }
+        : { deletedAt: null }),
       ...(query.status ? { status: query.status } : {}),
       ...(query.category ? { category: query.category } : {}),
       ...(q
@@ -155,6 +183,7 @@ export class AdminService {
           location: true,
           description: true,
           status: true,
+          deletedAt: true,
           createdAt: true,
           user: {
             select: {
@@ -178,7 +207,7 @@ export class AdminService {
   ) {
     const existing = await this.prisma.listing.findUnique({
       where: { id: targetId },
-      select: { id: true },
+      select: { id: true, userId: true, status: true },
     });
     if (!existing) throw new NotFoundException('Listing not found');
 
@@ -202,6 +231,79 @@ export class AdminService {
       }),
     ]);
 
+    if (
+      status === ListingStatus.HIDDEN &&
+      existing.status !== ListingStatus.HIDDEN
+    ) {
+      await this.notificationsService.create({
+        userId: existing.userId,
+        type: NotificationType.LISTING_HIDDEN,
+        title: 'Listing hidden',
+        body: 'One of your listings was hidden by an administrator.',
+      });
+    }
+
     return updated;
+  }
+
+  async restoreUser(adminId: string, targetId: string) {
+    const existing = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('User not found');
+
+    const [restored] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetId },
+        data: { deletedAt: null },
+        select: {
+          id: true,
+          status: true,
+          deletedAt: true,
+          isAdmin: true,
+        },
+      }),
+      this.prisma.adminActionLog.create({
+        data: {
+          adminId,
+          action: 'USER_RESTORE',
+          targetType: 'User',
+          targetId,
+        },
+      }),
+    ]);
+
+    return restored;
+  }
+
+  async restoreListing(adminId: string, targetId: string) {
+    const existing = await this.prisma.listing.findUnique({
+      where: { id: targetId },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('Listing not found');
+
+    const [restored] = await this.prisma.$transaction([
+      this.prisma.listing.update({
+        where: { id: targetId },
+        data: { deletedAt: null, status: ListingStatus.ACTIVE },
+        select: {
+          id: true,
+          status: true,
+          deletedAt: true,
+        },
+      }),
+      this.prisma.adminActionLog.create({
+        data: {
+          adminId,
+          action: 'LISTING_RESTORE',
+          targetType: 'Listing',
+          targetId,
+        },
+      }),
+    ]);
+
+    return restored;
   }
 }

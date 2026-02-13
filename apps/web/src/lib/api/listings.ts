@@ -24,6 +24,9 @@ export async function fetchListingsPage(params?: {
   limit?: number;
   sort?: string;
   search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  location?: string;
 }): Promise<ListingsPage> {
   const searchParams = new URLSearchParams();
   if (params?.category) searchParams.set("category", params.category);
@@ -31,6 +34,9 @@ export async function fetchListingsPage(params?: {
   if (params?.limit) searchParams.set("limit", String(params.limit));
   if (params?.sort) searchParams.set("sort", params.sort);
   if (params?.search) searchParams.set("search", params.search);
+  if (params?.minPrice !== undefined) searchParams.set("minPrice", String(params.minPrice));
+  if (params?.maxPrice !== undefined) searchParams.set("maxPrice", String(params.maxPrice));
+  if (params?.location) searchParams.set("location", params.location);
   const query = searchParams.toString();
   const path = query ? `/listings?${query}` : "/listings";
 
@@ -129,4 +135,8 @@ export async function deleteListingImage(listingId: string, imageId: string) {
   return apiFetch(`/listings/${listingId}/images/${imageId}`, {
     method: "DELETE",
   });
+}
+
+export async function fetchListingLocations(): Promise<string[]> {
+  return apiFetch<string[]>("/listings/locations", { method: "GET" });
 }

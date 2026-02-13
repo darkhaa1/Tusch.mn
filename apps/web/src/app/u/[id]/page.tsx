@@ -21,6 +21,7 @@ import AppShell from "@web/components/layout/AppShell";
 import { usePublicUserProfile, useCurrentUser, useCreateReview } from "@web/lib/hooks/useApi";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import { cn } from "@web/lib/utils";
+import { ReportDialogButton } from "@web/components/report/ReportDialogButton";
 
 function formatMemberSince(iso?: string) {
   if (!iso) return "";
@@ -70,6 +71,7 @@ export default function PublicProfilePage() {
 
   const isError = !!error;
   const canWriteReview = currentUser && currentUser.id !== userId;
+  const canReportProfile = Boolean(currentUser?.id && userId && currentUser.id !== userId);
 
   const handleSubmitReview = async () => {
     setReviewError("");
@@ -158,6 +160,14 @@ export default function PublicProfilePage() {
                     Холбогдох
                   </Button>
                 </Link>
+                {canReportProfile ? (
+                  <ReportDialogButton
+                    targetType="USER"
+                    targetId={userId as string}
+                    variant="outline"
+                    size="sm"
+                  />
+                ) : null}
               </div>
             </CardContent>
           </Card>

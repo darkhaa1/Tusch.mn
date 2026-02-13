@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin", label: "Хянах самбар" },
   { href: "/admin/users", label: "Хэрэглэгчид" },
   { href: "/admin/listings", label: "Зарууд" },
+  { href: "/admin/reports", label: "Мэдэгдлүүд" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

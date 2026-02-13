@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from '../../database/prisma.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
 import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
 
 @Module({
-  imports: [PassportModule, PrismaModule],
+  imports: [PassportModule, PrismaModule, NotificationsModule],
   controllers: [MessagesController],
   providers: [MessagesService, EmailVerifiedGuard],
 })
