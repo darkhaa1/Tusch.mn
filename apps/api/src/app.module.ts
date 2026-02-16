@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { join } from 'path';
+import { validateEnv } from './config/env.schema';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ListingsModule } from './modules/listings/listings.module';
@@ -10,7 +12,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { UserModule } from './modules/user/user.module';
-import { validateEnv } from './config/env.schema';
 
 @Module({
   imports: [
@@ -19,6 +20,9 @@ import { validateEnv } from './config/env.schema';
       envFilePath: ['apps/api/.env', '.env'],
       validate: validateEnv,
     }),
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: 60000, limit: 60 },
+    ]),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',

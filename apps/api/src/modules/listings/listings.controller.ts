@@ -16,10 +16,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import {
-  GetListingsQueryDto,
-  ListingsSort,
-} from './dto/get-listings-query.dto';
+import { GetListingsQueryDto } from './dto/get-listings-query.dto';
+import { ListingsSort } from '@repo/shared';
 import { GetUser } from '../../common/decorators/get-user.decorator';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';

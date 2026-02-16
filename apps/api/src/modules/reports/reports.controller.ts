@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import { GetUser } from '../../common/decorators/get-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -23,6 +24,7 @@ export class ReportsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('reports')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   create(
     @Body() dto: CreateReportDto,
     @GetUser() user: { id?: string; sub?: string },

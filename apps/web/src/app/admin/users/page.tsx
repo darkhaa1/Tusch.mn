@@ -141,15 +141,15 @@ export default function AdminUsersPage() {
                         {user.deletedAt ? <Badge variant="outline">??????????</Badge> : null}
                       </div>
                     </td>
-                    <td className="px-4 py-3">{user.email || "—"}</td>
-                    <td className="px-4 py-3">{user.phone || "—"}</td>
+                    <td className="px-4 py-3">{user.email || "â€”"}</td>
+                    <td className="px-4 py-3">{user.phone || "â€”"}</td>
                     <td className="px-4 py-3">
                       <Badge variant={STATUS_VARIANTS[user.status]}>
                         {STATUS_LABELS[user.status]}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "â€”"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {user.deletedAt ? (
@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-muted-foreground">
-          ????: {total} · ?????? {page} / {totalPages}
+          ????: {total} Â· ?????? {page} / {totalPages}
         </div>
         <div className="flex gap-2">
           <Button

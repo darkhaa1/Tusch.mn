@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/register.dto';
@@ -44,11 +45,13 @@ export class AuthController {
   }
 
   @Post('register')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   register(@Body() dto: AuthDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   async login(@Body() body, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(body);
 
@@ -164,6 +167,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
@@ -181,6 +185,7 @@ export class AuthController {
 
   @Post('resend-verification')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 2 } })
   async resendVerification(@Req() req) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');

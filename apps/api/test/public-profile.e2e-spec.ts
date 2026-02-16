@@ -1,24 +1,13 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import * as cookieParser from 'cookie-parser';
+import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
 import { prisma } from './utils/e2e-database';
+import { createTestApp } from './utils/create-test-app';
 
 describe('Public profile (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.use(cookieParser());
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await app.init();
+    app = await createTestApp();
   });
 
   afterAll(async () => {
@@ -54,7 +43,7 @@ describe('Public profile (e2e)', () => {
         description: 'Test listing',
         price: 1000,
         location: 'UB',
-        category: 'test',
+        category: 'tutoring',
         userId: user.id,
       },
     });

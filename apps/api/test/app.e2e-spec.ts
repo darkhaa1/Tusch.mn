@@ -1,25 +1,14 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import * as cookieParser from 'cookie-parser';
+import { INestApplication } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
 import { prisma } from './utils/e2e-database';
+import { createTestApp } from './utils/create-test-app';
 
 describe('App (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.use(cookieParser());
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await app.init();
+    app = await createTestApp();
   });
 
   afterAll(async () => {
@@ -271,7 +260,7 @@ describe('App (e2e)', () => {
       description: 'Should be blocked.',
       price: 1200,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(403);
   });
 
@@ -306,7 +295,7 @@ describe('App (e2e)', () => {
       description: 'Listing for unverified messaging test.',
       price: 900,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
 
     await authedPost('/messages', unverifiedCookie, {
@@ -393,7 +382,7 @@ describe('App (e2e)', () => {
       description: 'Listing created for e2e testing.',
       price: 1200,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
 
     const listingId = createRes.body.id as string;
@@ -448,28 +437,28 @@ describe('App (e2e)', () => {
       description: `Alpha ${cleaningKey}`,
       price: 1200,
       location: caseLocation,
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
 
     const listingB = await authedPost('/listings', cookie, {
       description: `Beta ${plumbingKey}`,
       price: 1500,
       location: 'Erdenet',
-      category: 'repairs',
+      category: 'auto_repair',
     }).expect(201);
 
     const listingC = await authedPost('/listings', cookie, {
       description: `Gamma ${cleaningKey}`,
       price: 900,
       location: locationKey,
-      category: 'home',
+      category: 'home_cleaning',
     }).expect(201);
 
     const hiddenListing = await authedPost('/listings', cookie, {
       description: `Hidden ${hiddenKey}`,
       price: 800,
       location: 'Hiddenville',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
 
     await prisma.listing.update({
@@ -499,7 +488,7 @@ describe('App (e2e)', () => {
 
     const bySearchAndCategory = await request(app.getHttpServer())
       .get(
-        `/listings?search=${encodeURIComponent(cleaningKey)}&category=services`,
+        `/listings?search=${encodeURIComponent(cleaningKey)}&category=tutoring`,
       )
       .expect(200);
 
@@ -552,21 +541,21 @@ describe('App (e2e)', () => {
       description: `Cheap ${marker}`,
       price: 500,
       location: loc1,
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
 
     const listing2 = await authedPost('/listings', cookie, {
       description: `Medium ${marker}`,
       price: 5000,
       location: loc2,
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
 
     const listing3 = await authedPost('/listings', cookie, {
       description: `Expensive ${marker}`,
       price: 50000,
       location: loc1,
-      category: 'repairs',
+      category: 'auto_repair',
     }).expect(201);
 
     // minPrice only
@@ -613,7 +602,7 @@ describe('App (e2e)', () => {
     // combined: price + location + category
     const combined = await request(app.getHttpServer())
       .get(
-        `/listings?search=${marker}&minPrice=100&maxPrice=50000&location=${encodeURIComponent(loc1)}&category=services`,
+        `/listings?search=${marker}&minPrice=100&maxPrice=50000&location=${encodeURIComponent(loc1)}&category=tutoring`,
       )
       .expect(200);
     expect(combined.body.total).toBe(1);
@@ -693,7 +682,7 @@ describe('App (e2e)', () => {
       description: 'Listing for messages flow testing.',
       price: 500,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
 
     const listingId = listingRes.body.id as string;
@@ -788,7 +777,7 @@ describe('App (e2e)', () => {
       description: 'Listing for unread count test.',
       price: 100,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
     const listingId = listingRes.body.id as string;
 
@@ -853,7 +842,7 @@ describe('App (e2e)', () => {
       description: 'Listing for conv pagination test.',
       price: 100,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
     const listingId = listingRes.body.id as string;
 
@@ -925,7 +914,7 @@ describe('App (e2e)', () => {
       description: 'Public listing one for profile.',
       price: 1200,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
     const listing1Id = listing1Res.body.id as string;
 
@@ -933,7 +922,7 @@ describe('App (e2e)', () => {
       description: 'Public listing two for profile.',
       price: 1400,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
     const listing2Id = listing2Res.body.id as string;
 

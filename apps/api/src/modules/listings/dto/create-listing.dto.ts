@@ -1,4 +1,5 @@
 import {
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -7,6 +8,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { CATEGORY_SLUGS } from '@repo/shared';
 
 export class CreateListingDto {
   @IsString()
@@ -24,8 +26,7 @@ export class CreateListingDto {
   @MaxLength(255)
   location?: string;
 
-  @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
+  @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category!: string;
 }

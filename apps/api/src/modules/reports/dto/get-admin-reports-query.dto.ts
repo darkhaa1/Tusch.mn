@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { ReportStatus, ReportTargetType } from '@prisma/client';
+import { ReportStatus, ReportTargetType } from '@repo/shared';
 import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class GetAdminReportsQueryDto {

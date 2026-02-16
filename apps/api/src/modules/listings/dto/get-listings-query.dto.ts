@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -12,6 +13,7 @@ import {
   ValidatorConstraintInterface,
   ValidationArguments,
 } from 'class-validator';
+import { ListingsSort, CATEGORY_SLUGS } from '@repo/shared';
 
 @ValidatorConstraint({ name: 'maxPriceGteMinPrice', async: false })
 class MaxPriceGteMinPrice implements ValidatorConstraintInterface {
@@ -26,14 +28,9 @@ class MaxPriceGteMinPrice implements ValidatorConstraintInterface {
   }
 }
 
-export enum ListingsSort {
-  Newest = 'newest',
-  Oldest = 'oldest',
-}
-
 export class GetListingsQueryDto {
   @IsOptional()
-  @IsString()
+  @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category?: string;
 
   @IsOptional()
