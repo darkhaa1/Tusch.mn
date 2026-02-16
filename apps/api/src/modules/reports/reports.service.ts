@@ -9,7 +9,7 @@ import {
   ReportStatus,
   ReportTargetType,
   UserStatus,
-} from '@prisma/client';
+} from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { GetAdminReportsQueryDto } from './dto/get-admin-reports-query.dto';

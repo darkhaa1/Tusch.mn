@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import {
   ListingStatus,
   NotificationType,
-  Prisma,
   UserStatus,
-} from '@prisma/client';
+} from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';

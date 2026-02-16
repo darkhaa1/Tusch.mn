@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { UserStatus } from '@prisma/client';
+import { UserStatus } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()

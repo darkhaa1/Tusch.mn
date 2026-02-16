@@ -8,6 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { CATEGORY_SLUGS } from '@repo/shared';
 
 export class QueryListingDto {
   @IsOptional()
@@ -41,6 +42,6 @@ export class QueryListingDto {
   userId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category?: string;
 }

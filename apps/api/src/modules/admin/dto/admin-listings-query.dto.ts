@@ -8,7 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { ListingStatus } from '@prisma/client';
+import { ListingStatus } from '@repo/shared';
 
 export class AdminListingsQueryDto {
   @IsOptional()

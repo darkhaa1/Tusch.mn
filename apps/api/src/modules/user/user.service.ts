@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ListingStatus, Prisma, UserRole } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { ListingStatus, UserRole } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { ProviderCardDto, ProvidersResponseDto } from './dto/provider-card.dto';
 

@@ -1,24 +1,13 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import * as cookieParser from 'cookie-parser';
+import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
 import { prisma } from './utils/e2e-database';
+import { createTestApp } from './utils/create-test-app';
 
 describe('Soft delete (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    app.use(cookieParser());
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, transform: true }),
-    );
-    await app.init();
+    app = await createTestApp();
   });
 
   afterAll(async () => {
@@ -110,7 +99,7 @@ describe('Soft delete (e2e)', () => {
       description: 'Soft-delete listing test',
       price: 1500,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
     const listingId = createRes.body.id as string;
 
@@ -169,7 +158,7 @@ describe('Soft delete (e2e)', () => {
       description: 'Listing to restore',
       price: 1900,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
     const listingId = createRes.body.id as string;
 
@@ -264,7 +253,7 @@ describe('Soft delete (e2e)', () => {
       description: 'Deleted listing visibility test',
       price: 2000,
       location: 'UB',
-      category: 'services',
+      category: 'tutoring',
     }).expect(201);
     const listingId = listingRes.body.id as string;
 

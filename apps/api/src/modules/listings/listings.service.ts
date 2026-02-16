@@ -4,14 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Listing, ListingStatus, Prisma } from '@prisma/client';
+import { Listing, Prisma } from '@prisma/client';
+import { ListingStatus, ListingsSort } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
-import {
-  GetListingsQueryDto,
-  ListingsSort,
-} from './dto/get-listings-query.dto';
+import { GetListingsQueryDto } from './dto/get-listings-query.dto';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
 

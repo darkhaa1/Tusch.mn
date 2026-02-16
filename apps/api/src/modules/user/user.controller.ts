@@ -11,7 +11,7 @@ import {
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { UpdateMyRoleDto } from './dto/update-my-role.dto';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '@repo/shared';
 import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
 

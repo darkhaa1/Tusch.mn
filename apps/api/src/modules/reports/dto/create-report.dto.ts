@@ -1,4 +1,4 @@
-import { ReportReason, ReportTargetType } from '@prisma/client';
+import { ReportReason, ReportTargetType } from '@repo/shared';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateReportDto {
