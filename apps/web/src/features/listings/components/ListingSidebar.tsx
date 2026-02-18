@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { GripVertical } from "lucide-react";
 import type { ChangeEvent } from "react";
 import Link from "next/link";
 import { Avatar, Button } from "@web/components/ui";
@@ -14,13 +15,15 @@ type ListingSidebarProps = {
   authorPhone?: string | null;
   authorAvatar?: string | null;
   profileHref?: string | null;
-  images: Array<{ id: string; url: string }>;
+  images: Array<{ id: string; url: string; thumbnailUrl?: string | null }>;
   heading: string;
   isOwner: boolean;
   deletingImageId: string | null;
   isUploadingImages: boolean;
+  isReorderingImages: boolean;
   onDeleteImage: (id: string) => void;
   onUploadImages: (event: ChangeEvent<HTMLInputElement>) => void;
+  onReorderImages: (imageIds: string[]) => void;
   onOpenMessage: () => void;
   messageFeedback: string | null;
   showMessageCta: boolean;
@@ -38,12 +41,28 @@ export function ListingSidebar({
   isOwner,
   deletingImageId,
   isUploadingImages,
+  isReorderingImages,
   onDeleteImage,
   onUploadImages,
+  onReorderImages,
   onOpenMessage,
   messageFeedback,
   showMessageCta,
 }: ListingSidebarProps) {
+  const handleDrop = (draggedId: string, targetId: string) => {
+    if (draggedId === targetId) return;
+
+    const nextImages = [...images];
+    const fromIndex = nextImages.findIndex((image) => image.id === draggedId);
+    const toIndex = nextImages.findIndex((image) => image.id === targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const [draggedImage] = nextImages.splice(fromIndex, 1);
+    if (!draggedImage) return;
+    nextImages.splice(toIndex, 0, draggedImage);
+    onReorderImages(nextImages.map((image) => image.id));
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-4 rounded-xl border border-border/80 bg-background p-6">
@@ -94,9 +113,30 @@ export function ListingSidebar({
           <div className="text-xs uppercase text-muted-foreground">Зураг</div>
           <div className="flex flex-wrap gap-2">
             {images.map((image) => (
-              <div key={image.id} className="relative h-24 w-24 overflow-hidden rounded-lg border">
+              <div
+                key={image.id}
+                className="relative h-24 w-24 overflow-hidden rounded-lg border"
+                draggable={!isReorderingImages}
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", image.id);
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const draggedId = event.dataTransfer.getData("text/plain");
+                  if (!draggedId) return;
+                  handleDrop(draggedId, image.id);
+                }}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resolveImageUrl(image.url) || "/placeholder.jpg"} alt={heading} className="h-full w-full object-cover" />
+                <img src={resolveImageUrl(image.thumbnailUrl) || resolveImageUrl(image.url) || "/placeholder.jpg"} alt={heading} className="h-full w-full object-cover" />
+                <div className="absolute left-1 top-1 rounded bg-black/50 p-1 text-white">
+                  <GripVertical className="h-4 w-4" aria-hidden="true" />
+                </div>
                 <Button
                   type="button"
                   size="sm"

@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { join } from 'path';
 import { validateEnv } from './config/env.schema';
 import { AdminModule } from './modules/admin/admin.module';
@@ -21,7 +22,11 @@ import { UserModule } from './modules/user/user.module';
       validate: validateEnv,
     }),
     ThrottlerModule.forRoot([
-      { name: 'default', ttl: 60000, limit: 60 },
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 60,
+      },
     ]),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
@@ -35,6 +40,11 @@ import { UserModule } from './modules/user/user.module';
     ReviewsModule,
     NotificationsModule,
     ReportsModule,
+  ],
+  providers: [
+    ...(process.env.NODE_ENV !== 'test'
+      ? [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
+      : []),
   ],
 })
 export class AppModule {}

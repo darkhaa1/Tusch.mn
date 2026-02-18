@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
@@ -24,7 +23,6 @@ async function bootstrap() {
     credentials: true, // ✅ Permet l'envoi de cookies
   }); // 🔓 Active les requêtes cross-origin
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.useGlobalGuards(app.get(ThrottlerGuard));
 
   // ✅ Swagger config
   const config = new DocumentBuilder()

@@ -11,7 +11,12 @@ import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { GetListingsQueryDto } from './dto/get-listings-query.dto';
 import { unlink } from 'fs/promises';
-import { join } from 'path';
+import { join, parse as parsePath } from 'path';
+import {
+  processImage,
+  generateThumbnail,
+} from '../../common/image/image-processor';
+import { LISTING_UPLOAD_DIR } from '../../common/multer/constants';
 
 const listingPublicInclude = {
   user: {
@@ -185,11 +190,46 @@ export class ListingsService {
       (pos) => !usedPositions.has(pos),
     );
 
-    const data = files.map((file, index) => ({
-      listingId,
-      url: `/uploads/listings/${file.filename}`,
-      position: availablePositions[index],
-    }));
+    const data: Array<{
+      listingId: string;
+      url: string;
+      thumbnailUrl: string;
+      position: number;
+    }> = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const rawPath = file.path;
+      const parsed = parsePath(file.filename);
+      const baseName = parsed.name;
+
+      const processedFilename = `${baseName}.jpg`;
+      const processedPath = join(LISTING_UPLOAD_DIR, processedFilename);
+      const thumbFilename = `${baseName}_thumb.jpg`;
+      const thumbPath = join(LISTING_UPLOAD_DIR, thumbFilename);
+
+      await processImage(rawPath, processedPath);
+
+      if (
+        parsed.ext.toLowerCase() !== '.jpg' &&
+        parsed.ext.toLowerCase() !== '.jpeg'
+      ) {
+        try {
+          await unlink(rawPath);
+        } catch {
+          // ignore
+        }
+      }
+
+      await generateThumbnail(processedPath, thumbPath);
+
+      data.push({
+        listingId,
+        url: `/uploads/listings/${processedFilename}`,
+        thumbnailUrl: `/uploads/listings/${thumbFilename}`,
+        position: availablePositions[i],
+      });
+    }
 
     await (this.prisma as any).listingImage.createMany({ data });
 
@@ -210,7 +250,7 @@ export class ListingsService {
       throw new NotFoundException('Image not found');
     }
 
-    // Remove physical file if possible
+    // Remove physical files if possible
     if (image.url) {
       const filePath = join(process.cwd(), image.url.replace(/^\//, ''));
       try {
@@ -220,7 +260,69 @@ export class ListingsService {
       }
     }
 
+    if (image.thumbnailUrl) {
+      const thumbPath = join(
+        process.cwd(),
+        image.thumbnailUrl.replace(/^\//, ''),
+      );
+      try {
+        await unlink(thumbPath);
+      } catch {
+        // ignore if already deleted
+      }
+    }
+
     await (this.prisma as any).listingImage.delete({ where: { id: imageId } });
+
+    return this.findOne(listingId);
+  }
+
+  async reorderImages(listingId: string, imageIds: string[], userId: string) {
+    const listing = await this.prisma.listing.findFirst({
+      where: { id: listingId, deletedAt: null },
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+    this.ensureOwnership(listing, userId);
+
+    const images = await (this.prisma as any).listingImage.findMany({
+      where: { listingId },
+      select: { id: true },
+      orderBy: { position: 'asc' },
+    });
+
+    if (imageIds.length !== images.length) {
+      throw new BadRequestException('Image list length mismatch');
+    }
+
+    const uniqueIds = new Set(imageIds);
+    if (uniqueIds.size !== imageIds.length) {
+      throw new BadRequestException('Duplicate image IDs are not allowed');
+    }
+
+    const existingIds = new Set(images.map((image) => image.id));
+    for (const imageId of imageIds) {
+      if (!existingIds.has(imageId)) {
+        throw new BadRequestException(
+          'All image IDs must belong to this listing',
+        );
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (let index = 0; index < imageIds.length; index++) {
+        await (tx as any).listingImage.update({
+          where: { id: imageIds[index] },
+          data: { position: index + 1000 },
+        });
+      }
+
+      for (let index = 0; index < imageIds.length; index++) {
+        await (tx as any).listingImage.update({
+          where: { id: imageIds[index] },
+          data: { position: index },
+        });
+      }
+    });
 
     return this.findOne(listingId);
   }

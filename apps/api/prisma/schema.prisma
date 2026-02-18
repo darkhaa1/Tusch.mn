@@ -141,12 +141,13 @@ model Message {
 }
 
 model ListingImage {
-  id        String   @id @default(cuid())
-  listingId String
-  url       String
-  position  Int
-  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  listingId    String
+  url          String
+  thumbnailUrl String?
+  position     Int
+  listing      Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt    DateTime @default(now())
 
   @@unique([listingId, position])
   @@index([listingId])

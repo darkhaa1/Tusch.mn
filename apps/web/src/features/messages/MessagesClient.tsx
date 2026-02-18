@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CheckCheck } from "lucide-react";
 import AppShell from "@web/components/layout/AppShell";
 import { Badge } from "@web/components/ui";
@@ -21,22 +22,21 @@ import { ConversationPanel } from "./components/ConversationPanel";
 import { formatTime } from "./components/utils";
 import type { ConversationMessage, ThreadItem } from "./types";
 
-const quickReplies = [
-  "Сайн байна уу!",
-  "Танд тусламж хэрэгтэй юу?",
-  "Үнийн талаар тохиролцож болох уу?",
-  "Баярлалаа, удахгүй холбоо барья.",
-];
-
 function getPartnerId(message: Message, currentUserId?: string) {
   if (!currentUserId) return null;
   return message.senderId === currentUserId ? message.recipientId : message.senderId;
 }
 
 export default function MessagesClient() {
+  const t = useTranslations("messages.client");
   const searchParams = useSearchParams();
   const [activePartnerId, setActivePartnerId] = useState<string | null | undefined>(undefined);
   const [draft, setDraft] = useState("");
+
+  const quickReplies = useMemo(
+    () => [t("quickReply1"), t("quickReply2"), t("quickReply3"), t("quickReply4")],
+    [t],
+  );
 
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
   const { data: usersData } = useUsers(undefined, Boolean(currentUser));
@@ -64,10 +64,8 @@ export default function MessagesClient() {
     isFetchingNextPage,
   } = useConversation(resolvedActivePartnerId || undefined);
 
-  // Flatten all pages into a single array; API returns newest-first per page
   const conversation = useMemo(() => {
     if (!conversationData?.pages) return undefined;
-    // Each page has items in desc order; flatten all, then reverse so oldest is first
     return conversationData.pages.flatMap((p) => p.items).reverse();
   }, [conversationData]);
   const {
@@ -136,21 +134,20 @@ export default function MessagesClient() {
 
   return (
     <AppShell
-      title="Мессежүүд"
-      description="Мессежүүдээ нэг дороос хянаж, хариулаарай."
+      title={t("title")}
+      description={t("description")}
       actions={
         !mobileShowList ? (
           <Badge variant="secondary" className="gap-1">
             <CheckCheck className="h-4 w-4" aria-hidden="true" />
-            Уншсан
+            {t("read")}
           </Badge>
         ) : null
       }
     >
-
       {showAuthRequired ? (
         <div className="rounded-xl border border-border/80 bg-background p-6 shadow-sm">
-          <p className="text-sm text-muted-foreground">Мессежээ харах, илгээхийн тулд нэвтэрнэ үү.</p>
+          <p className="text-sm text-muted-foreground">{t("authRequired")}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-[320px_1fr] sm:gap-6">
@@ -186,7 +183,7 @@ export default function MessagesClient() {
             />
           ) : (
             <div className="rounded-xl border border-border/80 bg-background p-6 text-sm text-muted-foreground shadow-sm">
-              Яриа эхлүүлэхийн тулд хэрэглэгч сонгоно уу.
+              {t("selectUser")}
             </div>
           )}
         </div>

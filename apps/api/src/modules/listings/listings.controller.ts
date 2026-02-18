@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Param,
   Post,
   Put,
@@ -23,6 +24,7 @@ import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { listingImagesMulterOptions } from '../../common/multer/image-options';
 import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
+import { ReorderImagesDto } from './dto/reorder-images.dto';
 
 @Controller('listings')
 @ApiTags('listings')
@@ -154,5 +156,15 @@ export class ListingsController {
     @GetUser() user: { id: string },
   ) {
     return this.service.deleteImage(id, imageId, user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/images/reorder')
+  reorderImages(
+    @Param('id') id: string,
+    @Body() dto: ReorderImagesDto,
+    @GetUser() user: { id: string },
+  ) {
+    return this.service.reorderImages(id, dto.imageIds, user.id);
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, DollarSign, FilterX, MapPin, Plus, Search, X } from "lucide-react";
 import NewListingModal from "@web/features/listings/components/NewListingModal";
 import FiltersBar from "@web/features/listings/components/FiltersBar";
@@ -32,6 +33,8 @@ const DEFAULT_LIMIT = 12;
 const DEFAULT_SORT = "newest";
 
 export default function ListingsClient() {
+  const t = useTranslations("listings.client");
+  const tErrors = useTranslations("errors");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -111,17 +114,20 @@ export default function ListingsClient() {
   const categoryLabel = resolveCategoryLabel(category);
   const labelFinal = category ? categoryLabel || category : "";
   const showTotal = !isLoading && !error && totalKnown;
-  const totalLabel = showTotal ? `${total} зар` : "";
+  const totalLabel = showTotal ? t("totalListings", { count: total }) : "";
   const hasSearch = Boolean(search);
   const hasPriceFilter = minPrice !== undefined || maxPrice !== undefined;
   const hasActiveFilters = Boolean(category || hasSearch || hasPriceFilter || location);
 
   const priceChipLabel = hasPriceFilter
     ? minPrice !== undefined && maxPrice !== undefined
-      ? `${minPrice.toLocaleString()}₮ - ${maxPrice.toLocaleString()}₮`
+      ? t("priceRangeCompact", {
+          min: `${minPrice.toLocaleString()}€`,
+          max: `${maxPrice.toLocaleString()}€`,
+        })
       : minPrice !== undefined
-        ? `${minPrice.toLocaleString()}₮+`
-        : `${maxPrice!.toLocaleString()}₮ хүртэл`
+        ? t("pricePlus", { value: `${minPrice.toLocaleString()}€` })
+        : t("priceUpTo", { value: `${maxPrice!.toLocaleString()}€` })
     : "";
 
   const updatePage = (nextPage: number) => {
@@ -267,12 +273,12 @@ export default function ListingsClient() {
   });
   const allListingsHref = `/listings${allListingsQuery}`;
 
-  const errorMessage = error instanceof Error ? error.message : "Түр зуурын алдаа гарлаа.";
+  const errorMessage = error instanceof Error ? error.message : tErrors("generic");
 
   return (
     <AppShell
-      title="Зарууд"
-      description={totalLabel || "Шинэ заруудыг үзэж, хүссэн үйлчилгээгээ хайна уу."}
+      title={t("title")}
+      description={totalLabel || t("description")}
       actions={
         <div className="flex items-center gap-2">
           <Button
@@ -283,11 +289,11 @@ export default function ListingsClient() {
             onClick={() => router.back()}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            Буцах
+            {t("back")}
           </Button>
           <Button type="button" className="gap-2" onClick={() => setCreateModalOpen(true)}>
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Зар нэмэх
+            {t("addListing")}
           </Button>
         </div>
       }
@@ -295,9 +301,9 @@ export default function ListingsClient() {
       <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-card/60 p-4 shadow-sm">
         <div className="relative">
           <Input
-            placeholder="Юу хэрэгтэй байна? (жиш: засвар, цэвэрлэгээ)"
+            placeholder={t("searchPlaceholder")}
             className="pl-10 pr-10"
-            aria-label="Хайлт"
+            aria-label={t("searchAria")}
             value={searchValue}
             onChange={(event) => setSearchValue(event.target.value)}
           />
@@ -307,20 +313,20 @@ export default function ListingsClient() {
               type="button"
               onClick={clearSearch}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition hover:text-foreground"
-              aria-label="Хайлт цэвэрлэх"
+              aria-label={t("clearSearchAria")}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           ) : null}
         </div>
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Илүү хурдан олоход тань тусална.</span>
+          <span>{t("quickHint")}</span>
           {showTotal ? <span className="font-medium text-foreground">{totalLabel}</span> : null}
         </div>
       </div>
 
       <FiltersBar
-        title="Категори"
+        title={t("categoryTitle")}
         filters={
           hasActiveFilters ? (
             <>
@@ -374,7 +380,7 @@ export default function ListingsClient() {
             className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2 ui-interactive")}
           >
             <FilterX className="h-4 w-4" aria-hidden="true" />
-            Цэвэрлэх
+            {t("clearFilters")}
           </button>
         }
       >
@@ -422,15 +428,15 @@ export default function ListingsClient() {
             )}
           >
             <DollarSign className="h-4 w-4" aria-hidden="true" />
-            {hasPriceFilter ? priceChipLabel : "Үнэ"}
+            {hasPriceFilter ? priceChipLabel : t("price")}
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-64 p-4">
             <div className="flex flex-col gap-3">
-              <span className="text-sm font-medium">Үнийн хязгаар</span>
+              <span className="text-sm font-medium">{t("priceRange")}</span>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
-                  placeholder="Доод"
+                  placeholder={t("priceMinPlaceholder")}
                   min={0}
                   value={priceMinInput}
                   onChange={(e) => setPriceMinInput(e.target.value)}
@@ -439,7 +445,7 @@ export default function ListingsClient() {
                 <span className="text-muted-foreground">-</span>
                 <Input
                   type="number"
-                  placeholder="Дээд"
+                  placeholder={t("priceMaxPlaceholder")}
                   min={0}
                   value={priceMaxInput}
                   onChange={(e) => setPriceMaxInput(e.target.value)}
@@ -448,11 +454,11 @@ export default function ListingsClient() {
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" onClick={applyPriceFilter} className="flex-1">
-                  Хайх
+                  {t("search")}
                 </Button>
                 {hasPriceFilter && (
                   <Button size="sm" variant="ghost" onClick={clearPriceFilter}>
-                    Цэвэрлэх
+                    {t("clearFilters")}
                   </Button>
                 )}
               </div>
@@ -466,9 +472,9 @@ export default function ListingsClient() {
             value={location || ""}
             onChange={(e) => handleLocationChange(e.target.value)}
             className={cn("h-9 w-auto min-w-35", location && "border-primary text-primary")}
-            aria-label="Байршил"
+            aria-label={t("locationAria")}
           >
-            <option value="">Бүх байршил</option>
+            <option value="">{t("allLocations")}</option>
             {(locations ?? []).map((loc) => (
               <option key={loc} value={loc}>
                 {loc}
@@ -482,7 +488,7 @@ export default function ListingsClient() {
         <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3">
             <label className="text-sm font-medium text-muted-foreground" htmlFor="sort-select">
-              Эрэмбэлэх
+              {t("sortLabel")}
             </label>
             <select
               id="sort-select"
@@ -490,8 +496,8 @@ export default function ListingsClient() {
               onChange={(event) => handleSortChange(event.target.value)}
               className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm transition focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              <option value="newest">Шинэ эхэнд</option>
-              <option value="oldest">Хуучин эхэнд</option>
+              <option value="newest">{t("sortNewest")}</option>
+              <option value="oldest">{t("sortOldest")}</option>
             </select>
           </div>
           {hasActiveFilters && (
@@ -502,7 +508,7 @@ export default function ListingsClient() {
                 className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2")}
               >
                 <FilterX className="h-4 w-4" aria-hidden="true" />
-                Шүүлтүүр цэвэрлэх
+                {t("clearFilterSet")}
               </button>
             </div>
           )}
@@ -513,29 +519,25 @@ export default function ListingsClient() {
         <SkeletonGrid count={limit} />
       ) : error ? (
         <ErrorState
-          title="Ачааллахад алдаа гарлаа"
+          title={t("errorTitle")}
           message={errorMessage}
           onRetry={() => refetch()}
           isRetrying={isFetching}
-          retryLabel="Дахин ачаалах"
+          retryLabel={t("retry")}
         />
       ) : items.length === 0 ? (
         <EmptyState
-          title={hasSearch ? "Хайлтын илэрц олдсонгүй" : "Илэрц олдсонгүй"}
-          description={
-            hasSearch
-              ? "Түлхүүр үгээ өөрчилж дахин хайж үзээрэй."
-              : "Таны хайсан ангилалд одоогоор зар алга байна. Бүх заруудыг үзэх эсвэл шинэ зар нэмнэ үү."
-          }
+          title={hasSearch ? t("emptySearchTitle") : t("emptyTitle")}
+          description={hasSearch ? t("emptySearchDescription") : t("emptyDescription")}
           secondaryHref={allListingsHref}
-          secondaryLabel="Бүх заруудыг харах"
+          secondaryLabel={t("seeAllListings")}
           primaryAction={
             <button
               type="button"
               onClick={() => setCreateModalOpen(true)}
               className={buttonVariants({ size: "sm" })}
             >
-              Зар нэмэх
+              {t("addListing")}
             </button>
           }
         />
@@ -555,8 +557,8 @@ export default function ListingsClient() {
           hasNext={hasNext}
           isBusy={isFetching}
           onPageChange={updatePage}
-          previousLabel="Өмнөх"
-          nextLabel="Дараах"
+          previousLabel={t("previous")}
+          nextLabel={t("next")}
         />
       ) : null}
       <button
@@ -566,7 +568,7 @@ export default function ListingsClient() {
           buttonVariants(),
           "fixed bottom-5 right-5 z-40 h-14 w-14 rounded-full p-0 shadow-md shadow-primary/30 sm:hidden"
         )}
-        aria-label="Зар нэмэх"
+        aria-label={t("floatingAddAria")}
       >
         <Plus className="h-5 w-5" aria-hidden="true" />
       </button>

@@ -62,6 +62,7 @@ export type PublicUserProfile = {
     description: string;
     createdAt: string;
     imageUrl: string | null;
+    thumbnailUrl: string | null;
   }>;
   reviews: Array<{
     id: string;
@@ -112,7 +113,7 @@ export type Listing = {
   status?: ListingStatus;
   userId: string;
   user?: ListingUser;
-  images?: Array<{ id: string; url: string; position: number }>;
+  images?: Array<{ id: string; url: string; thumbnailUrl?: string | null; position: number }>;
   createdAt: string;
   updatedAt: string;
 };

@@ -40,6 +40,7 @@ import {
   fetchListings,
   fetchListingsPage,
   fetchMyListings,
+  reorderListingImages,
   updateListing,
 } from "@web/lib/api/listings";
 import {
@@ -174,6 +175,22 @@ export function useDeleteListing() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] });
       queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+    },
+  });
+}
+
+export function useReorderListingImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      listingId,
+      imageIds,
+    }: {
+      listingId: string;
+      imageIds: string[];
+    }) => reorderListingImages(listingId, imageIds),
+    onSuccess: (_result, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['listing', variables.listingId] });
     },
   });
 }
