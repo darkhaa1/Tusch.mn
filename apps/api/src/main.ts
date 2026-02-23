@@ -20,6 +20,12 @@ async function bootstrap() {
   app.use(bodyParser.json({ limit: '10mb' }));
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
   app.use(cookieParser());
+  app
+    .getHttpAdapter()
+    .get('/', (_req: any, res: any) =>
+      res.status(302).set('Location', '/api/docs').end(),
+    );
+  app.use('/favicon.ico', (_req, res) => res.status(204).end());
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   app.enableCors({
     origin: process.env.CORS_ORIGIN,
@@ -32,14 +38,28 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor(metricsService));
 
   const config = new DocumentBuilder()
-    .setTitle('Tusch API')
-    .setDescription('API documentation for tusch.mn')
+    .setTitle('Tusch.mn API')
+    .setDescription('API de la marketplace de services Tusch.mn')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'JWT-auth',
+    )
+    .addTag('auth', 'Authentification et gestion de compte')
+    .addTag('users', 'Gestion des utilisateurs')
+    .addTag('listings', 'Annonces de services')
+    .addTag('offers', 'Offres sur les annonces')
+    .addTag('messages', 'Messagerie')
+    .addTag('notifications', 'Notifications')
+    .addTag('reviews', 'Avis et notes')
+    .addTag('reports', 'Signalements')
+    .addTag('admin', 'Administration')
+    .addTag('health', 'Monitoring')
+    .addTag('metrics', 'Metrics')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(3310);
   console.log(`Server running on http://localhost:3310`);
