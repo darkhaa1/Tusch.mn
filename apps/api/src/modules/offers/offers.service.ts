@@ -180,4 +180,89 @@ export class OffersService {
       include: offerInclude,
     });
   }
+
+  async accept(id: string, userId: string) {
+    const offer = await (this.prisma as any).offer.findUnique({
+      where: { id },
+      include: {
+        listing: { select: { id: true, userId: true, description: true } },
+        provider: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+    if (!offer) throw new NotFoundException('Offer not found');
+
+    if (offer.listing.userId !== userId) {
+      throw new ForbiddenException('Not your listing');
+    }
+
+    if (offer.status !== 'PENDING') {
+      throw new BadRequestException('Only pending offers can be accepted');
+    }
+
+    const now = new Date();
+    const [updatedOffer] = await this.prisma.$transaction([
+      (this.prisma as any).offer.update({
+        where: { id },
+        data: { status: 'ACCEPTED', respondedAt: now },
+        include: offerInclude,
+      }),
+      (this.prisma as any).offer.updateMany({
+        where: {
+          listingId: offer.listingId,
+          status: 'PENDING',
+          id: { not: id },
+        },
+        data: { status: 'REJECTED', respondedAt: now },
+      }),
+      this.prisma.message.create({
+        data: {
+          senderId: userId,
+          recipientId: offer.providerId,
+          listingId: offer.listingId,
+          content: 'Your offer was accepted. You can now chat.',
+        },
+      }),
+      this.prisma.notification.create({
+        data: {
+          userId: offer.providerId,
+          type: NotificationType.OFFER_ACCEPTED,
+          title: 'Offer accepted',
+          body: 'Your offer has been accepted.',
+        },
+      }),
+    ]);
+
+    return updatedOffer;
+  }
+
+  async reject(id: string, userId: string) {
+    const offer = await (this.prisma as any).offer.findUnique({
+      where: { id },
+      include: { listing: { select: { userId: true } } },
+    });
+    if (!offer) throw new NotFoundException('Offer not found');
+
+    if (offer.listing.userId !== userId) {
+      throw new ForbiddenException('Not your listing');
+    }
+
+    if (offer.status !== 'PENDING') {
+      throw new BadRequestException('Only pending offers can be rejected');
+    }
+
+    const updatedOffer = await (this.prisma as any).offer.update({
+      where: { id },
+      data: { status: 'REJECTED', respondedAt: new Date() },
+      include: offerInclude,
+    });
+
+    await this.notifications.create({
+      userId: offer.providerId,
+      type: NotificationType.OFFER_REJECTED,
+      title: 'Offer rejected',
+      body: 'Your offer has been rejected.',
+    });
+
+    return updatedOffer;
+  }
 }

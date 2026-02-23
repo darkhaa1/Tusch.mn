@@ -305,6 +305,81 @@ describe('Offers (e2e)', () => {
     ).expect(400);
   });
 
+  it('owner accepts an offer and notifies provider', async () => {
+    const ctx = await setup();
+
+    const offerRes = await authedPost(
+      `/offers/listing/${ctx.listingId}`,
+      ctx.providerCookie,
+      { price: 3000, message: 'Please accept' },
+    ).expect(201);
+
+    const res = await authedPatch(
+      `/offers/${offerRes.body.id}/accept`,
+      ctx.clientCookie,
+    ).expect(200);
+
+    expect(res.body.status).toBe('ACCEPTED');
+    expect(res.body.respondedAt).toBeTruthy();
+
+    const notif = await prisma.notification.findFirst({
+      where: { userId: ctx.providerId, type: 'OFFER_ACCEPTED' },
+    });
+    expect(notif).toBeTruthy();
+
+    const message = await prisma.message.findFirst({
+      where: {
+        listingId: ctx.listingId,
+        senderId: ctx.clientId,
+        recipientId: ctx.providerId,
+      },
+    });
+    expect(message).toBeTruthy();
+  });
+
+  it('owner rejects an offer', async () => {
+    const ctx = await setup();
+
+    const offerRes = await authedPost(
+      `/offers/listing/${ctx.listingId}`,
+      ctx.providerCookie,
+      { price: 3000, message: 'Reject me' },
+    ).expect(201);
+
+    const res = await authedPatch(
+      `/offers/${offerRes.body.id}/reject`,
+      ctx.clientCookie,
+    ).expect(200);
+
+    expect(res.body.status).toBe('REJECTED');
+    expect(res.body.respondedAt).toBeTruthy();
+
+    const notif = await prisma.notification.findFirst({
+      where: { userId: ctx.providerId, type: 'OFFER_REJECTED' },
+    });
+    expect(notif).toBeTruthy();
+  });
+
+  it('non-owner cannot accept or reject an offer', async () => {
+    const ctx = await setup();
+
+    const offerRes = await authedPost(
+      `/offers/listing/${ctx.listingId}`,
+      ctx.providerCookie,
+      { price: 3000, message: 'Not yours' },
+    ).expect(201);
+
+    await authedPatch(
+      `/offers/${offerRes.body.id}/accept`,
+      ctx.providerCookie,
+    ).expect(403);
+
+    await authedPatch(
+      `/offers/${offerRes.body.id}/reject`,
+      ctx.providerCookie,
+    ).expect(403);
+  });
+
   it('creates a notification for the listing owner', async () => {
     const ctx = await setup();
 
