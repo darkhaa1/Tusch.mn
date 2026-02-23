@@ -32,6 +32,7 @@ export type PublicUserProfile = {
     description: string;
     createdAt: Date;
     imageUrl: string | null;
+    thumbnailUrl: string | null;
   }>;
   reviews: Array<{
     id: string;
@@ -341,7 +342,7 @@ export class UserService {
             images: {
               orderBy: { position: 'asc' },
               take: 1,
-              select: { url: true },
+              select: { url: true, thumbnailUrl: true },
             },
           },
         }),
@@ -380,6 +381,7 @@ export class UserService {
       description: listing.description,
       createdAt: listing.createdAt,
       imageUrl: listing.images?.[0]?.url || null,
+      thumbnailUrl: listing.images?.[0]?.thumbnailUrl || null,
     }));
 
     return {

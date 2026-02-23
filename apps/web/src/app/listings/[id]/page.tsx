@@ -7,10 +7,12 @@ import {
   useCurrentUser,
   useDeleteListing,
   useListing,
+  useReorderListingImages,
   useSendMessage,
   useUpdateListing,
 } from "@web/lib/hooks/useApi";
 import { deleteListingImage, uploadListingImages } from "@web/lib/api/listings";
+import type { Listing } from "@web/lib/api/types";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import {
   Button,
@@ -43,6 +45,7 @@ export default function ListingDetailPage() {
   const { data: currentUser } = useCurrentUser();
   const updateListing = useUpdateListing();
   const deleteListing = useDeleteListing();
+  const reorderListingImages = useReorderListingImages();
   const sendMessage = useSendMessage();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -60,6 +63,7 @@ export default function ListingDetailPage() {
     category: "",
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [images, setImages] = useState<NonNullable<Listing["images"]>>([]);
 
   const isOwner = useMemo(() => {
     if (!listing || !currentUser) return false;
@@ -75,6 +79,7 @@ export default function ListingDetailPage() {
       location: listing.location || "",
       category: listing.category || "",
     });
+    setImages(listing.images || []);
     setSelectedIndex(0);
   }, [listing]);
 
@@ -166,6 +171,47 @@ export default function ListingDetailPage() {
     }
   };
 
+  const handleReorderImages = async (nextImageIds: string[]) => {
+    if (!listingId || images.length === 0) return;
+
+    const previousImages = images;
+    const selectedImageId = previousImages[selectedIndex]?.id;
+    const reorderedImages = nextImageIds
+      .map((id) => previousImages.find((image) => image.id === id))
+      .filter((image): image is NonNullable<Listing["images"]>[number] => Boolean(image));
+
+    if (reorderedImages.length !== previousImages.length) {
+      setFormError("Зургийн дараалал буруу байна.");
+      return;
+    }
+
+    setFormError(null);
+    setImages(reorderedImages);
+
+    if (selectedImageId) {
+      const newSelectedIndex = reorderedImages.findIndex((image) => image.id === selectedImageId);
+      if (newSelectedIndex >= 0) {
+        setSelectedIndex(newSelectedIndex);
+      }
+    }
+
+    try {
+      await reorderListingImages.mutateAsync({
+        listingId,
+        imageIds: nextImageIds,
+      });
+    } catch (err: any) {
+      setImages(previousImages);
+      if (selectedImageId) {
+        const previousIndex = previousImages.findIndex((image) => image.id === selectedImageId);
+        if (previousIndex >= 0) {
+          setSelectedIndex(previousIndex);
+        }
+      }
+      setFormError(err?.message || "Зургийн дараалал хадгалахад алдаа гарлаа.");
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!listing || !listingId || !listing.userId) return;
     if (!currentUser) {
@@ -199,9 +245,8 @@ export default function ListingDetailPage() {
   const author = listing.user;
   const authorName = author ? `${author.firstName || ""} ${author.lastName || ""}`.trim() || author.email : "Хэрэглэгч";
   const authorAvatar = resolveImageUrl(author?.avatarUrl);
-  const images = listing.images || [];
   const imageUrls = images.map((img) => resolveImageUrl(img.url) || "/placeholder.jpg");
-  const displayedMain = imageUrls[selectedIndex] || resolveImageUrl(listing.images?.[0]?.url) || "/placeholder.jpg";
+  const displayedMain = imageUrls[selectedIndex] || resolveImageUrl(images[0]?.url) || "/placeholder.jpg";
   const categoryValue = isEditing ? formState.category : listing.category;
   const categoryLabel = categoryValue ? CATEGORY_LABEL_MAP.get(categoryValue) || categoryValue : null;
   const heading = categoryLabel || "Зар";
@@ -230,7 +275,7 @@ export default function ListingDetailPage() {
               <DropdownMenuTrigger className="rounded-full border border-border bg-background p-2 hover:bg-muted">
                 <EllipsisVertical className="h-5 w-5" aria-hidden="true" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="min-w-[180px]">
+              <DropdownMenuContent className="min-w-45">
                 {!isEditing ? (
                   <DropdownMenuItem onClick={() => setIsEditing(true)}>Засах</DropdownMenuItem>
                 ) : null}
@@ -285,8 +330,10 @@ export default function ListingDetailPage() {
           isOwner={isOwner}
           deletingImageId={deletingImageId}
           isUploadingImages={isUploadingImages}
+          isReorderingImages={reorderListingImages.isPending}
           onDeleteImage={handleDeleteImage}
           onUploadImages={handleImagesUpload}
+          onReorderImages={handleReorderImages}
           onOpenMessage={() => {
             setMessageDialogOpen(true);
             setMessageFeedback(null);

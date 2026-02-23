@@ -2,36 +2,36 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, Users, MessageCircle, Plus } from "lucide-react";
+import { Menu, MessageCircle, Plus, Users } from "lucide-react";
 import { useSession } from "next-auth/react";
 import SignupModal from "./SignUpModal";
 import LoginModal from "./LoginModal";
 import NewListingModal from "@web/features/listings/components/NewListingModal";
 import { useCurrentUser, useUnreadCount } from "@web/lib/hooks/useApi";
 import resolveAvatarUrl from "@web/lib/resolveImageUrl";
-import { Button, buttonVariants, Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@web/components/ui";
+import {
+  Button,
+  buttonVariants,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@web/components/ui";
 import { cn } from "@web/lib/utils";
 import { logout } from "@web/lib/logout";
 import { UserMenu } from "@web/components/header/UserMenu";
 import { NotificationsBell } from "@web/components/header/NotificationsBell";
-
-const navItems = [
-  { href: "/offerers", label: "Үйлчилгээ үзүүлэгчид", icon: Users },
-  { href: "/messages", label: "Мессеж", icon: MessageCircle },
-];
-
-const mobileNav = [
-  { href: "/annonces", label: "Зар" },
-  { href: "/categories", label: "Ангилалууд" },
-  { href: "/about", label: "Бидний тухай" },
-  { href: "/offerers", label: "Үйлчилгээ үзүүлэгчид" },
-  { href: "/messages", label: "Мессеж" },
-];
+import { useAppLocale } from "@web/app/IntlProvider";
 
 export default function Header() {
+  const t = useTranslations("common.header");
+  const { locale, toggleLocale } = useAppLocale();
   const { data: session } = useSession();
   const { data: backendUser } = useCurrentUser();
   const router = useRouter();
@@ -40,6 +40,25 @@ export default function Header() {
   const [openLoginModal, setOpenLoginModal] = useState(false);
   const [openNewListingModal, setOpenNewListingModal] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = useMemo(
+    () => [
+      { href: "/offerers", label: t("navOfferers"), icon: Users },
+      { href: "/messages", label: t("navMessages"), icon: MessageCircle },
+    ],
+    [t],
+  );
+
+  const mobileNav = useMemo(
+    () => [
+      { href: "/annonces", label: t("mobileListings") },
+      { href: "/categories", label: t("mobileCategories") },
+      { href: "/about", label: t("mobileAbout") },
+      { href: "/offerers", label: t("navOfferers") },
+      { href: "/messages", label: t("navMessages") },
+    ],
+    [t],
+  );
 
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
@@ -64,6 +83,14 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-3 md:hidden">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleLocale}
+            aria-label={t("switchLanguage")}
+          >
+            {locale === "mn" ? t("languageEn") : t("languageMn")}
+          </Button>
           {isLoggedIn ? <NotificationsBell /> : null}
           <Button
             variant="outline"
@@ -72,12 +99,12 @@ export default function Header() {
             className="gap-2 ui-interactive"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Зар нэмэх
+            {t("addListing")}
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Цэс нээх"
+            aria-label={t("openMenu")}
             onClick={() => setMobileOpen(true)}
             className="ui-interactive"
           >
@@ -110,11 +137,19 @@ export default function Header() {
             onClick={() => setOpenNewListingModal(true)}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Зар нэмэх
+            {t("addListing")}
           </Button>
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleLocale}
+            aria-label={t("switchLanguage")}
+          >
+            {locale === "mn" ? t("languageEn") : t("languageMn")}
+          </Button>
           {isLoggedIn ? (
             <>
               <NotificationsBell />
@@ -136,10 +171,10 @@ export default function Header() {
                 onClick={() => setOpenLoginModal(true)}
                 className="ui-interactive"
               >
-                Нэвтрэх
+                {t("login")}
               </Button>
               <Button size="sm" onClick={() => setOpenSignUpModal(true)} className="ui-interactive">
-                Бүртгүүлэх
+                {t("signup")}
               </Button>
             </>
           )}
@@ -149,8 +184,8 @@ export default function Header() {
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="right" className="w-full max-w-xs sm:max-w-sm">
           <SheetHeader>
-            <SheetTitle>Цэс</SheetTitle>
-            <SheetDescription>Танд хэрэгтэй зүйл рүү түргэн очно.</SheetDescription>
+            <SheetTitle>{t("menuTitle")}</SheetTitle>
+            <SheetDescription>{t("menuDescription")}</SheetDescription>
           </SheetHeader>
           <div className="flex flex-col gap-2 p-4">
             {mobileNav.map((item) => (
@@ -173,7 +208,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(buttonVariants({ variant: "outline" }), "justify-start text-base ui-interactive")}
               >
-                Профайл
+                {t("profile")}
               </Link>
             ) : (
               <div className="grid grid-cols-1 gap-2">
@@ -185,7 +220,7 @@ export default function Header() {
                   }}
                   className="ui-interactive"
                 >
-                  Нэвтрэх
+                  {t("login")}
                 </Button>
                 <Button
                   onClick={() => {
@@ -194,7 +229,7 @@ export default function Header() {
                   }}
                   className="ui-interactive"
                 >
-                  Бүртгүүлэх
+                  {t("signup")}
                 </Button>
               </div>
             )}
@@ -208,7 +243,7 @@ export default function Header() {
               }}
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Зар нэмэх
+              {t("addListing")}
             </Button>
           </SheetFooter>
         </SheetContent>

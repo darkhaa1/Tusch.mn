@@ -11,8 +11,8 @@ import type { AdminUser, UserStatus } from "@web/lib/api/types";
 import { cn } from "@web/lib/utils";
 
 const STATUS_LABELS: Record<UserStatus, string> = {
-  ACTIVE: "????????",
-  SUSPENDED: "??? ??????",
+  ACTIVE: "Идэвхтэй",
+  SUSPENDED: "Түр хаасан",
 };
 
 const STATUS_VARIANTS: Record<UserStatus, "success" | "destructive"> = {
@@ -59,7 +59,7 @@ export default function AdminUsersPage() {
       <Card className="border border-border/80">
         <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-end md:justify-between">
           <div className="flex flex-1 flex-col gap-2">
-            <SelectLabel htmlFor="admin-users-search">????</SelectLabel>
+            <SelectLabel htmlFor="admin-users-search">Хайх</SelectLabel>
             <Input
               id="admin-users-search"
               value={search}
@@ -67,11 +67,11 @@ export default function AdminUsersPage() {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-              placeholder="???, ???????? ????"
+              placeholder="Нэр, имэйл, утсаар хайх"
             />
           </div>
           <div className="flex w-full flex-col gap-2 md:w-60">
-            <SelectLabel htmlFor="admin-users-status">?????</SelectLabel>
+            <SelectLabel htmlFor="admin-users-status">Төлөв</SelectLabel>
             <Select
               id="admin-users-status"
               value={statusFilter}
@@ -80,10 +80,10 @@ export default function AdminUsersPage() {
                 setPage(1);
               }}
             >
-              <option value="all">????</option>
-              <option value="ACTIVE">????????</option>
-              <option value="SUSPENDED">??? ??????</option>
-              <option value="deleted">??????????</option>
+              <option value="all">Бүгд</option>
+              <option value="ACTIVE">Идэвхтэй</option>
+              <option value="SUSPENDED">Түр хаасан</option>
+              <option value="deleted">Устгасан</option>
             </Select>
           </div>
         </CardContent>
@@ -92,7 +92,7 @@ export default function AdminUsersPage() {
       {error ? (
         <Card className="border border-border/80">
           <CardContent className="p-6 text-sm text-destructive">
-            ????????????? ???????? ?????????? ????? ??????.
+            Хэрэглэгчдийн жагсаалтыг ачааллахад алдаа гарлаа.
           </CardContent>
         </Card>
       ) : null}
@@ -102,25 +102,25 @@ export default function AdminUsersPage() {
           <table className="min-w-190 w-full text-sm">
             <thead className="bg-muted/40 text-muted-foreground">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">?????????</th>
-                <th className="px-4 py-3 text-left font-medium">?????</th>
-                <th className="px-4 py-3 text-left font-medium">????</th>
-                <th className="px-4 py-3 text-left font-medium">?????</th>
-                <th className="px-4 py-3 text-left font-medium">?????</th>
-                <th className="px-4 py-3 text-right font-medium">??????</th>
+                <th className="px-4 py-3 text-left font-medium">Хэрэглэгч</th>
+                <th className="px-4 py-3 text-left font-medium">Имэйл</th>
+                <th className="px-4 py-3 text-left font-medium">Утас</th>
+                <th className="px-4 py-3 text-left font-medium">Төлөв</th>
+                <th className="px-4 py-3 text-left font-medium">Огноо</th>
+                <th className="px-4 py-3 text-right font-medium">Үйлдэл</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/70">
               {isLoading ? (
                 <tr>
                   <td className="px-4 py-6 text-muted-foreground" colSpan={6}>
-                    ???????? ?????...
+                    Хэрэглэгчид ачаалж байна...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
                   <td className="px-4 py-6 text-muted-foreground" colSpan={6}>
-                    ????????? ?????????.
+                    Хэрэглэгч олдсонгүй.
                   </td>
                 </tr>
               ) : (
@@ -134,11 +134,11 @@ export default function AdminUsersPage() {
                   >
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">
-                        {`${user.firstName || ""} ${user.lastName || ""}`.trim() || "??????"}
+                        {`${user.firstName || ""} ${user.lastName || ""}`.trim() || "Хэрэглэгч"}
                       </div>
                       <div className="mt-1 flex flex-wrap gap-1">
-                        {user.isAdmin ? <Badge variant="secondary">?????</Badge> : null}
-                        {user.deletedAt ? <Badge variant="outline">??????????</Badge> : null}
+                        {user.isAdmin ? <Badge variant="secondary">Админ</Badge> : null}
+                        {user.deletedAt ? <Badge variant="outline">Устгасан</Badge> : null}
                       </div>
                     </td>
                     <td className="px-4 py-3">{user.email || "—"}</td>
@@ -159,7 +159,7 @@ export default function AdminUsersPage() {
                           onClick={() => handleRestore(user)}
                           disabled={restoreUser.isPending}
                         >
-                          ???????
+                          Сэргээх
                         </Button>
                       ) : (
                         <Button
@@ -169,7 +169,7 @@ export default function AdminUsersPage() {
                           disabled={updateStatus.isPending}
                           className={cn(user.status !== "ACTIVE" && "border-border/80")}
                         >
-                          {user.status === "ACTIVE" ? "??? ????" : "???????"}
+                          {user.status === "ACTIVE" ? "Түр хаах" : "Идэвхжүүлэх"}
                         </Button>
                       )}
                     </td>
@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-muted-foreground">
-          ????: {total} · ?????? {page} / {totalPages}
+          Нийт: {total} · Хуудас {page} / {totalPages}
         </div>
         <div className="flex gap-2">
           <Button
@@ -192,7 +192,7 @@ export default function AdminUsersPage() {
             onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             disabled={page <= 1}
           >
-            ?????
+            Өмнөх
           </Button>
           <Button
             variant="outline"
@@ -200,7 +200,7 @@ export default function AdminUsersPage() {
             onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
             disabled={page >= totalPages}
           >
-            ??????
+            Дараах
           </Button>
         </div>
       </div>

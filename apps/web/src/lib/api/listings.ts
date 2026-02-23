@@ -137,6 +137,16 @@ export async function deleteListingImage(listingId: string, imageId: string) {
   });
 }
 
+export async function reorderListingImages(
+  listingId: string,
+  imageIds: string[],
+) {
+  return apiFetch(`/listings/${listingId}/images/reorder`, {
+    method: "PATCH",
+    body: JSON.stringify({ imageIds }),
+  });
+}
+
 export async function fetchListingLocations(): Promise<string[]> {
   return apiFetch<string[]>("/listings/locations", { method: "GET" });
 }

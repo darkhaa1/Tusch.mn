@@ -1,11 +1,19 @@
-// components/SignupModal.tsx
 "use client";
 
 import { useState } from "react";
 import { X } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { useRegisterUser } from "@web/lib/hooks/useApi";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Input } from "@web/components/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Button,
+  Input,
+} from "@web/components/ui";
 
 type Props = {
   open: boolean;
@@ -13,6 +21,7 @@ type Props = {
 };
 
 export default function SignupModal({ open, onClose }: Props) {
+  const t = useTranslations("auth.signUpModal");
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +36,7 @@ export default function SignupModal({ open, onClose }: Props) {
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-      setError("Нууц үг тохирохгүй байна");
+      setError(t("passwordMismatch"));
       return;
     }
 
@@ -35,7 +44,7 @@ export default function SignupModal({ open, onClose }: Props) {
     setError("");
     try {
       await registerMutation.mutateAsync({ email, password, accountType, firstName, lastName, phone });
-      alert("Амжилттай бүртгэлээ!");
+      alert(t("success"));
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -49,21 +58,19 @@ export default function SignupModal({ open, onClose }: Props) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Бүртгүүлээрэй!</DialogTitle>
+            <DialogTitle>{t("title")}</DialogTitle>
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="h-8 w-8"
               onClick={onClose}
-              aria-label="Хаах"
+              aria-label={t("close")}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
-          <DialogDescription>
-            Таны хорооны оршин суугчид, мэргэжилтнүүд таны хэрэгцээнд хариу өгөнө.
-          </DialogDescription>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         {step > 1 ? (
@@ -73,48 +80,48 @@ export default function SignupModal({ open, onClose }: Props) {
             className="-ml-1 inline-flex items-center gap-2 text-sm text-muted-foreground"
             onClick={() => setStep(step - 1)}
           >
-            ← Буцах
+            {t("goBack")}
           </Button>
         ) : null}
 
         {step === 1 && (
           <div className="space-y-3">
             <Button variant="outline" className="w-full justify-center" onClick={() => signIn("google")}>
-              Google-ээр холбогдох
+              {t("google")}
             </Button>
             <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700" onClick={() => signIn("facebook")}>
-              Facebook-ээр үргэлжлүүлэх
+              {t("facebook")}
             </Button>
 
             <div className="flex items-center gap-2 text-gray-400 text-sm justify-center">
-              <div className="h-px bg-gray-300 flex-1" /> эсвэл <div className="h-px bg-gray-300 flex-1" />
+              <div className="h-px bg-gray-300 flex-1" /> {t("or")} <div className="h-px bg-gray-300 flex-1" />
             </div>
 
             <Button variant="outline" className="w-full justify-center" onClick={() => setStep(2)}>
-              И-мэйл хаягаар бүртгүүлэх
+              {t("emailSignup")}
             </Button>
           </div>
         )}
 
         {step === 2 && (
           <div className="space-y-3">
-            <h3 className="text-center font-semibold">Би бүртгүүлэх төрөл:</h3>
+            <h3 className="text-center font-semibold">{t("selectAccountType")}</h3>
 
-            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType("Хувь хүн"); setStep(3); }}>
-              Хувь хүн
+            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType(t("accountIndividual")); setStep(3); }}>
+              {t("accountIndividual")}
             </Button>
 
-            <div className="flex items-center justify-center text-gray-400 text-sm">— эсвэл —</div>
+            <div className="flex items-center justify-center text-gray-400 text-sm">- {t("or")} -</div>
 
-            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType("Хувиараа хөдөлмөр эрхлэгч"); setStep(3); }}>
-              Бие даан ажиллагч / Хувиараа хөдөлмөр эрхлэгч
+            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType(t("accountFreelancer")); setStep(3); }}>
+              {t("accountFreelancer")}
             </Button>
 
-            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType("Байгууллага"); setStep(3); }}>
-              Байгууллага
+            <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType(t("accountCompany")); setStep(3); }}>
+              {t("accountCompany")}
             </Button>
 
-            <p className="text-center text-xs text-gray-400 mt-2">2 үе шатны 1-р алхам</p>
+            <p className="text-center text-xs text-gray-400 mt-2">{t("stepIndicator")}</p>
           </div>
         )}
 
@@ -122,37 +129,37 @@ export default function SignupModal({ open, onClose }: Props) {
           <div className="flex flex-col gap-2">
             <Input
               type="text"
-              placeholder="Овог"
+              placeholder={t("lastNamePlaceholder")}
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
             />
             <Input
               type="text"
-              placeholder="Нэр"
+              placeholder={t("firstNamePlaceholder")}
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
             />
             <Input
               type="tel"
-              placeholder="Утасны дугаар"
+              placeholder={t("phonePlaceholder")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
             <Input
               type="email"
-              placeholder="Имэйл хаяг"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
             <Input
               type="password"
-              placeholder="Нууц үг"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
             <Input
               type="password"
-              placeholder="Нууц үг давтах"
+              placeholder={t("confirmPasswordPlaceholder")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
@@ -162,7 +169,7 @@ export default function SignupModal({ open, onClose }: Props) {
               disabled={loading}
               className="w-full justify-center"
             >
-              {loading ? "Түр хүлээнэ үү…" : "Бүртгүүлэх"}
+              {loading ? t("submitting") : t("submit")}
             </Button>
           </div>
         )}

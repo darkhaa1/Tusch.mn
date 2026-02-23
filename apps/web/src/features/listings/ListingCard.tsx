@@ -26,13 +26,13 @@ export default function ListingCard({ listing }: ListingCardProps) {
       ? `${listing.price.toLocaleString()} ₮`
       : "Тохиролцоно";
   const locationLabel = listing.location?.trim() || "Байршил оруулаагүй";
-  const coverUrl = resolveImageUrl(listing.images?.[0]?.url) || "/placeholder.jpg";
+  const coverUrl = resolveImageUrl(listing.images?.[0]?.thumbnailUrl) || resolveImageUrl(listing.images?.[0]?.url) || "/placeholder.jpg";
   const isVerified = Boolean((listing.user as any)?.isVerified || (listing.user as any)?.verified);
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden ui-card">
       <div className="relative">
-        <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+        <div className="aspect-4/3 w-full overflow-hidden bg-muted">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={coverUrl}
@@ -40,7 +40,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
             className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/20 to-transparent" />
         <div className="absolute left-3 top-3 flex items-center gap-2">
           {categoryLabel ? (
             <span className="rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur">

@@ -9,7 +9,8 @@
   "maxWorkers": 1,
   "testTimeout": 30000,
   "moduleNameMapper": {
-    "^src/(.*)$": "<rootDir>/../src/$1"
+    "^src/(.*)$": "<rootDir>/../src/$1",
+    "^@repo/shared(.*)$": "<rootDir>/../../../packages/shared/src$1"
   },
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"

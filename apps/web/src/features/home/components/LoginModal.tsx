@@ -4,8 +4,17 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useLoginUser } from "@web/lib/hooks/useApi";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Button, Input } from '@web/components/ui';
+import { useTranslations } from 'next-intl';
+import { useLoginUser } from '@web/lib/hooks/useApi';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Button,
+  Input,
+} from '@web/components/ui';
 import ForgotPasswordModal from './ForgotPasswordModal';
 
 type Props = {
@@ -14,6 +23,7 @@ type Props = {
 };
 
 export default function LoginModal({ open, onClose }: Props) {
+  const t = useTranslations('auth.loginModal');
   const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +42,7 @@ export default function LoginModal({ open, onClose }: Props) {
       onClose();
       router.push('/profile');
     } catch (err: any) {
-      setError(err.message || 'Нэвтрэхэд алдаа гарлаа');
+      setError(err.message || t('defaultError'));
     } finally {
       setLoading(false);
     }
@@ -43,20 +53,20 @@ export default function LoginModal({ open, onClose }: Props) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Нэвтрэх</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="h-8 w-8"
               onClick={onClose}
-              aria-label="Хаах"
+              aria-label={t('close')}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
           <DialogDescription>
-            {showForm ? 'Имэйлээр нэвтрэх' : 'Нэвтрэх аргаа сонгоно уу'}
+            {showForm ? t('descriptionEmail') : t('descriptionMethods')}
           </DialogDescription>
         </DialogHeader>
 
@@ -68,27 +78,28 @@ export default function LoginModal({ open, onClose }: Props) {
                 className="w-full justify-center"
                 onClick={() => signIn('google', { callbackUrl: '/profile' })}
               >
-                Google-ээр холбогдох
+                {t('google')}
               </Button>
               <div className="flex items-center gap-2 text-gray-400 text-sm justify-center">
-                <div className="h-px bg-gray-300 flex-1" /> эсвэл <div className="h-px bg-gray-300 flex-1" />
+                <div className="h-px bg-gray-300 flex-1" /> {t('or')}{' '}
+                <div className="h-px bg-gray-300 flex-1" />
               </div>
               <Button className="w-full justify-center" onClick={() => setShowForm(true)}>
-                Имэйлээр нэвтрэх
+                {t('emailLogin')}
               </Button>
             </>
           ) : (
             <>
               <Input
                 type="email"
-                placeholder="Имэйл"
+                placeholder={t('emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
               <div className="space-y-1">
                 <Input
                   type="password"
-                  placeholder="Нууц үг"
+                  placeholder={t('passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -97,7 +108,7 @@ export default function LoginModal({ open, onClose }: Props) {
                   className="text-sm text-blue-600 hover:underline text-right w-full"
                   onClick={() => setShowForgotPassword(true)}
                 >
-                  Нууц үг мартсан?
+                  {t('forgotPassword')}
                 </button>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
@@ -106,14 +117,14 @@ export default function LoginModal({ open, onClose }: Props) {
                 disabled={loading}
                 className="w-full justify-center"
               >
-                {loading ? 'Түр хүлээнэ үү…' : 'Нэвтрэх'}
+                {loading ? t('submitting') : t('submit')}
               </Button>
               <Button
                 variant="ghost"
                 className="w-full justify-center text-sm text-muted-foreground"
                 onClick={() => setShowForm(false)}
               >
-                ← Буцах
+                {t('goBack')}
               </Button>
             </>
           )}
