@@ -75,4 +75,22 @@ export class OffersController {
   ) {
     return this.service.cancel(id, user.id);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/accept')
+  accept(
+    @Param('id') id: string,
+    @GetUser() user: { id: string },
+  ) {
+    return this.service.accept(id, user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/reject')
+  reject(
+    @Param('id') id: string,
+    @GetUser() user: { id: string },
+  ) {
+    return this.service.reject(id, user.id);
+  }
 }

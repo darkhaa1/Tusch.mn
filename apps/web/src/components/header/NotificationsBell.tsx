@@ -10,6 +10,8 @@ import { cn } from "@web/lib/utils";
 const notificationTargetByType: Record<NotificationType, string> = {
   NEW_MESSAGE: "/messages",
   NEW_OFFER: "/profile/demandes",
+  OFFER_ACCEPTED: "/messages",
+  OFFER_REJECTED: "/profile/demandes",
   NEW_REVIEW: "/profile",
   LISTING_HIDDEN: "/profile",
   ACCOUNT_SUSPENDED: "/profile",
