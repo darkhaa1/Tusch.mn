@@ -1,5 +1,5 @@
 import * as sharp from 'sharp';
-import { writeFile } from 'fs/promises';
+import { readFile, writeFile } from 'fs/promises';
 
 const MAIN_MAX_WIDTH = 1200;
 const MAIN_JPEG_QUALITY = 80;
@@ -13,7 +13,8 @@ export async function processImage(
   inputPath: string,
   outputPath: string,
 ): Promise<void> {
-  const buffer = await sharp(inputPath)
+  const input = await readFile(inputPath);
+  const buffer = await sharp(input)
     .resize({ width: MAIN_MAX_WIDTH, withoutEnlargement: true })
     .jpeg({ quality: MAIN_JPEG_QUALITY })
     .toBuffer();
