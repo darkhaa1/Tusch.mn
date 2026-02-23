@@ -6,12 +6,12 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
-import { Menu, MessageCircle, Plus, Users } from "lucide-react";
+import { Menu, MessageCircle, Plus, Tag, Users } from "lucide-react";
 import { useSession } from "next-auth/react";
 import SignupModal from "./SignUpModal";
 import LoginModal from "./LoginModal";
 import NewListingModal from "@web/features/listings/components/NewListingModal";
-import { useCurrentUser, useUnreadCount } from "@web/lib/hooks/useApi";
+import { useCurrentUser, useOffersPendingCount, useUnreadCount } from "@web/lib/hooks/useApi";
 import resolveAvatarUrl from "@web/lib/resolveImageUrl";
 import {
   Button,
@@ -41,12 +41,32 @@ export default function Header() {
   const [openNewListingModal, setOpenNewListingModal] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
+  const { data: pendingOffers } = useOffersPendingCount();
+  const pendingOffersCount = pendingOffers?.count ?? 0;
+  const pendingOffersLabel = pendingOffers?.isTruncated
+    ? `${pendingOffersCount}+`
+    : `${pendingOffersCount}`;
+
   const navItems = useMemo(
     () => [
       { href: "/offerers", label: t("navOfferers"), icon: Users },
-      { href: "/messages", label: t("navMessages"), icon: MessageCircle },
+      {
+        href: "/messages",
+        label: t("navMessages"),
+        icon: MessageCircle,
+        badge: unreadCount,
+      },
+      {
+        href: "/profile?tab=offers",
+        label: t("navOffers"),
+        icon: Tag,
+        badge: pendingOffersCount,
+        badgeLabel: pendingOffersLabel,
+      },
     ],
-    [t],
+    [t, unreadCount, pendingOffersCount, pendingOffersLabel],
   );
 
   const mobileNav = useMemo(
@@ -56,12 +76,10 @@ export default function Header() {
       { href: "/about", label: t("mobileAbout") },
       { href: "/offerers", label: t("navOfferers") },
       { href: "/messages", label: t("navMessages") },
+      { href: "/profile?tab=offers", label: t("navOffers") },
     ],
     [t],
   );
-
-  const { data: unreadData } = useUnreadCount();
-  const unreadCount = unreadData?.count ?? 0;
   const isLoggedIn = !!session?.user || !!backendUser;
   const user = (backendUser as any) || (session?.user as any);
 
@@ -115,7 +133,7 @@ export default function Header() {
         <nav className="hidden items-center gap-6 md:flex">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const showBadge = item.href === "/messages" && isLoggedIn && unreadCount > 0;
+            const showBadge = isLoggedIn && item.badge && item.badge > 0;
             return (
               <Link
                 key={item.href}
@@ -126,7 +144,7 @@ export default function Header() {
                 <span>{item.label}</span>
                 {showBadge && (
                   <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 leading-none">
-                    {unreadCount}
+                    {item.badgeLabel || item.badge}
                   </span>
                 )}
               </Link>

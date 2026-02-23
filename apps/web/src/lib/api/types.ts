@@ -13,6 +13,7 @@ export type {
   Listing,
   Message,
   Notification,
+  Offer,
   PublicUserProfile,
   ProviderCard,
   AdminUser,
@@ -32,4 +33,5 @@ export type {
   ReviewsPage,
   ConversationPage,
   NotificationsPage,
+  OffersPage,
 } from "@repo/shared";

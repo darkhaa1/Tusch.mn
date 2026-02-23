@@ -9,6 +9,7 @@
     "header": {
       "navOfferers": "Үйлчилгээ үзүүлэгчид",
       "navMessages": "Мессеж",
+      "navOffers": "Үнийн санал",
       "mobileListings": "Зар",
       "mobileCategories": "Ангилалууд",
       "mobileAbout": "Бидний тухай",
@@ -116,6 +117,88 @@
       "quickReply2": "Танд тусламж хэрэгтэй юу?",
       "quickReply3": "Үнийн талаар тохиролцож болох уу?",
       "quickReply4": "Баярлалаа, удахгүй холбоо барья."
+    }
+  },
+  "offers": {
+    "tabs": {
+      "offers": "Үнийн санал",
+      "sent": "Илгээсэн",
+      "received": "Хүлээн авсан"
+    },
+    "listing": {
+      "detailsTab": "Дэлгэрэнгүй",
+      "offersTab": "Ирсэн санал",
+      "emptyTitle": "Одоогоор санал алга",
+      "emptyDescription": "Энэ зарын саналууд энд харагдана."
+    },
+    "labels": {
+      "offer": "Санал",
+      "provider": "Үйлчилгээ үзүүлэгч",
+      "unknownProvider": "Үйлчилгээ үзүүлэгч",
+      "unknownListing": "Зар",
+      "priceOnRequest": "Тохиролцоно",
+      "estimatedDays": "Тооцоот {days} хоног",
+      "price": "Үнэ",
+      "message": "Мессеж",
+      "estimatedDaysLabel": "Тооцоот хоног"
+    },
+    "status": {
+      "PENDING": "Хүлээгдэж байна",
+      "ACCEPTED": "Зөвшөөрсөн",
+      "REJECTED": "Татгалзсан",
+      "EXPIRED": "Хугацаа дууссан",
+      "CANCELLED": "Цуцлагдсан"
+    },
+    "actions": {
+      "accept": "Зөвшөөрөх",
+      "reject": "Татгалзах",
+      "cancel": "Цуцлах",
+      "makeOffer": "Санал илгээх",
+      "sendOffer": "Санал илгээх",
+      "close": "Хаах",
+      "processing": "Боловсруулж байна...",
+      "retry": "Дахин оролдох",
+      "previous": "Өмнөх",
+      "next": "Дараах"
+    },
+    "confirm": {
+      "acceptTitle": "Саналыг зөвшөөрөх үү?",
+      "acceptDescription": "Үйлчилгээ үзүүлэгчид мэдэгдэл очиж, чат үүснэ.",
+      "rejectTitle": "Саналыг татгалзах уу?",
+      "rejectDescription": "Энэ санал татгалзагдана.",
+      "cancelTitle": "Саналаа цуцлах уу?",
+      "cancelDescription": "Илгээсэн саналаа цуцална."
+    },
+    "create": {
+      "title": "Санал илгээх",
+      "description": "Зарын эзэнд үнэ болон мессежээ илгээнэ.",
+      "pricePlaceholder": "Үнээ оруулна уу",
+      "messagePlaceholder": "Саналаа тайлбарлана уу",
+      "estimatedPlaceholder": "Тооцоот хоног (заавал биш)"
+    },
+    "toast": {
+      "created": "Санал илгээгдлээ.",
+      "accepted": "Санал зөвшөөрөгдлөө.",
+      "rejected": "Санал татгалзагдлаа.",
+      "cancelled": "Санал цуцлагдлаа."
+    },
+    "empty": {
+      "title": "Одоогоор санал алга",
+      "description": "Санал илгээснээр энд харагдана.",
+      "sentTitle": "Илгээсэн санал алга",
+      "sentDescription": "Таны илгээсэн саналууд энд харагдана.",
+      "receivedTitle": "Ирсэн санал алга",
+      "receivedDescription": "Ирсэн саналууд энд харагдана."
+    },
+    "pagination": {
+      "page": "Хуудас {page}"
+    },
+    "errors": {
+      "title": "Санал ачаалах үед алдаа гарлаа",
+      "generic": "Түр зуурын алдаа гарлаа.",
+      "priceRequired": "Үнээ зөв оруулна уу.",
+      "messageRequired": "Мессеж бичнэ үү.",
+      "estimatedDays": "Тооцоот хоног эерэг тоо байх ёстой."
     }
   },
   "profile": {},

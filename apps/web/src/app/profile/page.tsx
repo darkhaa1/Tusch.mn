@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import AppShell from "@web/components/layout/AppShell";
 import { ProfileHeader } from "@web/features/profile/components/ProfileHeader";
@@ -31,7 +31,9 @@ export default function ProfilePage() {
     <AppShell>
       <div className="space-y-4">
         <ProfileHeader user={headerUser} />
-        <ProfileTabs user={currentUser} />
+        <Suspense fallback={null}>
+          <ProfileTabs user={currentUser} />
+        </Suspense>
       </div>
     </AppShell>
   );
