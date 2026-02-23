@@ -27,6 +27,10 @@ type ListingSidebarProps = {
   onOpenMessage: () => void;
   messageFeedback: string | null;
   showMessageCta: boolean;
+  showOfferCta?: boolean;
+  offerCtaLabel?: string;
+  offerFeedback?: string | null;
+  onOpenOffer?: () => void;
 };
 
 export function ListingSidebar({
@@ -48,6 +52,10 @@ export function ListingSidebar({
   onOpenMessage,
   messageFeedback,
   showMessageCta,
+  showOfferCta = false,
+  offerCtaLabel,
+  offerFeedback,
+  onOpenOffer,
 }: ListingSidebarProps) {
   const handleDrop = (draggedId: string, targetId: string) => {
     if (draggedId === targetId) return;
@@ -104,6 +112,21 @@ export function ListingSidebar({
               Мессеж илгээх
             </Button>
             {messageFeedback ? <p className="text-sm text-muted-foreground">{messageFeedback}</p> : null}
+          </div>
+        ) : null}
+
+        {showOfferCta ? (
+          <div className="space-y-2">
+            <Button
+              className="w-full"
+              variant="secondary"
+              onClick={() => onOpenOffer?.()}
+            >
+              {offerCtaLabel || "Санал илгээх"}
+            </Button>
+            {offerFeedback ? (
+              <p className="text-sm text-muted-foreground">{offerFeedback}</p>
+            ) : null}
           </div>
         ) : null}
       </div>

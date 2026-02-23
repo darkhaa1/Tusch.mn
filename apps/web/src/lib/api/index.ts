@@ -3,6 +3,7 @@ export * from "./auth";
 export * from "./listings";
 export * from "./users";
 export * from "./messages";
+export * from "./offers";
 export * from "./admin";
 export * from "./reviews";
 export * from "./notifications";

@@ -2,17 +2,21 @@
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { EllipsisVertical } from "lucide-react";
 import {
   useCurrentUser,
   useDeleteListing,
   useListing,
+  useOffersByListing,
+  useAcceptOffer,
+  useRejectOffer,
   useReorderListingImages,
   useSendMessage,
   useUpdateListing,
 } from "@web/lib/hooks/useApi";
 import { deleteListingImage, uploadListingImages } from "@web/lib/api/listings";
-import type { Listing } from "@web/lib/api/types";
+import type { Listing, Offer } from "@web/lib/api/types";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import {
   Button,
@@ -28,6 +32,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
 } from "@web/components/ui";
 import { ListingGallery } from "@web/features/listings/components/ListingGallery";
@@ -35,14 +43,19 @@ import { ListingDetailsCard } from "@web/features/listings/components/ListingDet
 import { ListingSidebar } from "@web/features/listings/components/ListingSidebar";
 import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "@web/lib/categories";
 import { ReportDialogButton } from "@web/components/report/ReportDialogButton";
+import { CreateOfferModal } from "@web/features/offers/CreateOfferModal";
+import { OffersList } from "@web/features/offers/OffersList";
 
 export default function ListingDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations("offers");
   const listingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: listing, isLoading, error, refetch } = useListing(listingId);
   const { data: currentUser } = useCurrentUser();
+  const acceptOffer = useAcceptOffer();
+  const rejectOffer = useRejectOffer();
   const updateListing = useUpdateListing();
   const deleteListing = useDeleteListing();
   const reorderListingImages = useReorderListingImages();
@@ -56,6 +69,10 @@ export default function ListingDetailPage() {
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const [messageFeedback, setMessageFeedback] = useState<string | null>(null);
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [offerToast, setOfferToast] = useState<string | null>(null);
+  const [offerToastVariant, setOfferToastVariant] = useState<"success" | "error">("success");
+  const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
   const [formState, setFormState] = useState({
     description: "",
     price: "",
@@ -70,6 +87,12 @@ export default function ListingDetailPage() {
     return listing.userId === currentUser.id;
   }, [listing, currentUser]);
   const canReport = Boolean(currentUser) && !isOwner && Boolean(listingId);
+  const canMakeOffer = Boolean(currentUser) &&
+    !isOwner &&
+    ["PROVIDER", "BOTH"].includes(String(currentUser?.role || ""));
+
+  const { data: offersByListing, isLoading: offersLoading, error: offersError, refetch: refetchOffers } =
+    useOffersByListing(listingId as string, isOwner);
 
   useEffect(() => {
     if (!listing) return;
@@ -82,6 +105,12 @@ export default function ListingDetailPage() {
     setImages(listing.images || []);
     setSelectedIndex(0);
   }, [listing]);
+
+  useEffect(() => {
+    if (!offerToast) return;
+    const timeout = setTimeout(() => setOfferToast(null), 3000);
+    return () => clearTimeout(timeout);
+  }, [offerToast]);
 
   const handleSave = async () => {
     if (!listingId) return;
@@ -238,6 +267,36 @@ export default function ListingDetailPage() {
     }
   };
 
+  const handleAcceptOffer = async (offer: Offer) => {
+    setBusyOfferId(offer.id);
+    setOfferToastVariant("success");
+    try {
+      await acceptOffer.mutateAsync({ offerId: offer.id });
+      setOfferToast(t("toast.accepted"));
+      await refetchOffers();
+    } catch (err) {
+      setOfferToastVariant("error");
+      setOfferToast(err instanceof Error ? err.message : t("errors.generic"));
+    } finally {
+      setBusyOfferId(null);
+    }
+  };
+
+  const handleRejectOffer = async (offer: Offer) => {
+    setBusyOfferId(offer.id);
+    setOfferToastVariant("success");
+    try {
+      await rejectOffer.mutateAsync({ offerId: offer.id });
+      setOfferToast(t("toast.rejected"));
+      await refetchOffers();
+    } catch (err) {
+      setOfferToastVariant("error");
+      setOfferToast(err instanceof Error ? err.message : t("errors.generic"));
+    } finally {
+      setBusyOfferId(null);
+    }
+  };
+
   if (isLoading) return <p className="py-10 text-center text-muted-foreground">Уншиж байна...</p>;
   if (error) return <p className="py-10 text-center text-destructive">Алдаа гарлаа.</p>;
   if (!listing) return <p className="py-10 text-center text-muted-foreground">Зар олдсонгүй</p>;
@@ -301,19 +360,71 @@ export default function ListingDetailPage() {
             onSelect={setSelectedIndex}
           />
 
-          <ListingDetailsCard
-            heading={heading}
-            categoryLabel={categoryLabel}
-            listingDescription={listing.description}
-            isEditing={isEditing}
-            formState={formState}
-            onFieldChange={(field, value) => setFormState((prev) => ({ ...prev, [field]: value }))}
-            onSave={handleSave}
-            onCancel={handleCancelEdit}
-            isSaving={updateListing.isPending}
-            categories={CATEGORY_OPTIONS}
-            formError={formError}
-          />
+          {isOwner ? (
+            <Tabs defaultValue="details" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger
+                  value="details"
+                  className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  {t("listing.detailsTab")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="offers"
+                  className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  {t("listing.offersTab")}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="details">
+                <ListingDetailsCard
+                  heading={heading}
+                  categoryLabel={categoryLabel}
+                  listingDescription={listing.description}
+                  isEditing={isEditing}
+                  formState={formState}
+                  onFieldChange={(field, value) =>
+                    setFormState((prev) => ({ ...prev, [field]: value }))
+                  }
+                  onSave={handleSave}
+                  onCancel={handleCancelEdit}
+                  isSaving={updateListing.isPending}
+                  categories={CATEGORY_OPTIONS}
+                  formError={formError}
+                />
+              </TabsContent>
+              <TabsContent value="offers">
+                <OffersList
+                  items={offersByListing ?? []}
+                  isLoading={offersLoading}
+                  error={offersError}
+                  onRetry={() => refetchOffers()}
+                  showProvider
+                  onAccept={handleAcceptOffer}
+                  onReject={handleRejectOffer}
+                  busyOfferId={busyOfferId}
+                  emptyTitle={t("listing.emptyTitle")}
+                  emptyDescription={t("listing.emptyDescription")}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <ListingDetailsCard
+              heading={heading}
+              categoryLabel={categoryLabel}
+              listingDescription={listing.description}
+              isEditing={isEditing}
+              formState={formState}
+              onFieldChange={(field, value) =>
+                setFormState((prev) => ({ ...prev, [field]: value }))
+              }
+              onSave={handleSave}
+              onCancel={handleCancelEdit}
+              isSaving={updateListing.isPending}
+              categories={CATEGORY_OPTIONS}
+              formError={formError}
+            />
+          )}
         </div>
 
         <ListingSidebar
@@ -340,6 +451,9 @@ export default function ListingDetailPage() {
           }}
           messageFeedback={messageFeedback}
           showMessageCta={!isOwner}
+          showOfferCta={canMakeOffer}
+          offerCtaLabel={t("actions.makeOffer")}
+          onOpenOffer={() => setOfferModalOpen(true)}
         />
       </div>
 
@@ -402,6 +516,27 @@ export default function ListingDetailPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {listingId ? (
+        <CreateOfferModal
+          listingId={listingId as string}
+          open={offerModalOpen}
+          onOpenChange={setOfferModalOpen}
+        />
+      ) : null}
+
+      {offerToast ? (
+        <div
+          role="status"
+          className={`fixed right-4 top-4 z-50 rounded-lg border px-4 py-2 text-sm shadow ${
+            offerToastVariant === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-rose-200 bg-rose-50 text-rose-700"
+          }`}
+        >
+          {offerToast}
+        </div>
+      ) : null}
     </div>
   );
 }

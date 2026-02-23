@@ -1,7 +1,12 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger, Card, CardContent } from "@web/components/ui";
 import type { CurrentUser } from "@web/lib/api/types";
+import { OffersReceivedTab } from "@web/features/offers/OffersReceivedTab";
+import { OffersSentTab } from "@web/features/offers/OffersSentTab";
 
 type ProfileTabsProps = {
   user: CurrentUser | null | undefined;
@@ -10,11 +15,26 @@ type ProfileTabsProps = {
 const placeholderImages = ["/placeholder.jpg", "/placeholder.jpg", "/placeholder.jpg"];
 
 export function ProfileTabs({ user }: ProfileTabsProps) {
+  const t = useTranslations("offers");
+  const searchParams = useSearchParams();
+  const allowedTabs = useMemo(
+    () => new Set(["overview", "photos", "reviews", "activity", "offers"]),
+    [],
+  );
+  const resolveTab = useCallback(
+    (value: string | null) => (value && allowedTabs.has(value) ? value : "overview"),
+    [allowedTabs],
+  );
+  const [activeTab, setActiveTab] = useState(resolveTab(searchParams.get("tab")));
+
+  useEffect(() => {
+    setActiveTab(resolveTab(searchParams.get("tab")));
+  }, [searchParams, resolveTab]);
   const createdAt = (user as any)?.createdAt ? new Date((user as any).createdAt) : null;
 
   return (
-    <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
         <TabsTrigger
           value="overview"
           className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
@@ -38,6 +58,12 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
           className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
         >
           Идэвх
+        </TabsTrigger>
+        <TabsTrigger
+          value="offers"
+          className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
+        >
+          {t("tabs.offers")}
         </TabsTrigger>
       </TabsList>
 
@@ -90,6 +116,35 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
           <CardContent className="p-4 space-y-2">
             <p className="text-sm font-semibold text-foreground">Миний зарууд</p>
             <p className="text-sm text-muted-foreground">Одоогоор мэдээлэлгүй.</p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="offers">
+        <Card className="border border-border/80">
+          <CardContent className="p-4">
+            <Tabs defaultValue="received" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger
+                  value="received"
+                  className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  {t("tabs.received")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="sent"
+                  className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  {t("tabs.sent")}
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="received">
+                <OffersReceivedTab />
+              </TabsContent>
+              <TabsContent value="sent">
+                <OffersSentTab />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </TabsContent>

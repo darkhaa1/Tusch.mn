@@ -9,6 +9,7 @@
     "header": {
       "navOfferers": "Service Providers",
       "navMessages": "Messages",
+      "navOffers": "Offers",
       "mobileListings": "Listings",
       "mobileCategories": "Categories",
       "mobileAbout": "About Us",
@@ -37,15 +38,15 @@
       "passwordPlaceholder": "Password",
       "forgotPassword": "Forgot password?",
       "submit": "Log in",
-      "submitting": "Please wait…",
-      "goBack": "← Back",
+      "submitting": "Please waitâ€¦",
+      "goBack": "â† Back",
       "defaultError": "Failed to log in"
     },
     "signUpModal": {
       "title": "Create your account!",
       "close": "Close",
       "description": "Find services and professionals that match your needs.",
-      "goBack": "← Back",
+      "goBack": "â† Back",
       "google": "Continue with Google",
       "facebook": "Continue with Facebook",
       "or": "or",
@@ -62,7 +63,7 @@
       "passwordPlaceholder": "Password",
       "confirmPasswordPlaceholder": "Confirm password",
       "submit": "Sign up",
-      "submitting": "Please wait…",
+      "submitting": "Please waitâ€¦",
       "passwordMismatch": "Passwords do not match",
       "success": "Registration successful!"
     }
@@ -116,6 +117,88 @@
       "quickReply2": "How can I help you?",
       "quickReply3": "Can we discuss the price?",
       "quickReply4": "Thanks, I will contact you soon."
+    }
+  },
+  "offers": {
+    "tabs": {
+      "offers": "Offers",
+      "sent": "Sent",
+      "received": "Received"
+    },
+    "listing": {
+      "detailsTab": "Details",
+      "offersTab": "Offers received",
+      "emptyTitle": "No offers yet",
+      "emptyDescription": "Offers for this listing will appear here."
+    },
+    "labels": {
+      "offer": "Offer",
+      "provider": "Provider",
+      "unknownProvider": "Unknown provider",
+      "unknownListing": "Listing",
+      "priceOnRequest": "Offer",
+      "estimatedDays": "Estimated {days} days",
+      "price": "Price",
+      "message": "Message",
+      "estimatedDaysLabel": "Estimated days"
+    },
+    "status": {
+      "PENDING": "Pending",
+      "ACCEPTED": "Accepted",
+      "REJECTED": "Rejected",
+      "EXPIRED": "Expired",
+      "CANCELLED": "Cancelled"
+    },
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "cancel": "Cancel",
+      "makeOffer": "Make an offer",
+      "sendOffer": "Send offer",
+      "close": "Close",
+      "processing": "Processing...",
+      "retry": "Retry",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "confirm": {
+      "acceptTitle": "Accept this offer?",
+      "acceptDescription": "The provider will be notified and a conversation will be created.",
+      "rejectTitle": "Reject this offer?",
+      "rejectDescription": "The provider will be notified about the rejection.",
+      "cancelTitle": "Cancel your offer?",
+      "cancelDescription": "Your offer will be cancelled."
+    },
+    "create": {
+      "title": "Make an offer",
+      "description": "Send your price and message to the listing owner.",
+      "pricePlaceholder": "Enter your price",
+      "messagePlaceholder": "Tell the owner about your offer",
+      "estimatedPlaceholder": "Estimated days (optional)"
+    },
+    "toast": {
+      "created": "Offer sent.",
+      "accepted": "Offer accepted.",
+      "rejected": "Offer rejected.",
+      "cancelled": "Offer cancelled."
+    },
+    "empty": {
+      "title": "No offers yet",
+      "description": "Offers will appear here once created.",
+      "sentTitle": "No sent offers",
+      "sentDescription": "Your sent offers will appear here.",
+      "receivedTitle": "No received offers",
+      "receivedDescription": "Offers from providers will appear here."
+    },
+    "pagination": {
+      "page": "Page {page}"
+    },
+    "errors": {
+      "title": "Failed to load offers",
+      "generic": "Something went wrong.",
+      "priceRequired": "Please enter a valid price.",
+      "messageRequired": "Please add a message.",
+      "estimatedDays": "Estimated days must be a positive number."
     }
   },
   "profile": {},
