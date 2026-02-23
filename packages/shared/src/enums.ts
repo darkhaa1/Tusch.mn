@@ -20,6 +20,7 @@ export type ListingStatus = (typeof ListingStatus)[keyof typeof ListingStatus];
 export const NotificationType = {
   NEW_MESSAGE: "NEW_MESSAGE",
   NEW_REVIEW: "NEW_REVIEW",
+  NEW_OFFER: "NEW_OFFER",
   LISTING_HIDDEN: "LISTING_HIDDEN",
   ACCOUNT_SUSPENDED: "ACCOUNT_SUSPENDED",
 } as const;
@@ -47,6 +48,15 @@ export const ReportStatus = {
   DISMISSED: "DISMISSED",
 } as const;
 export type ReportStatus = (typeof ReportStatus)[keyof typeof ReportStatus];
+
+export const OfferStatus = {
+  PENDING: "PENDING",
+  ACCEPTED: "ACCEPTED",
+  REJECTED: "REJECTED",
+  EXPIRED: "EXPIRED",
+  CANCELLED: "CANCELLED",
+} as const;
+export type OfferStatus = (typeof OfferStatus)[keyof typeof OfferStatus];
 
 export const ListingsSort = {
   Newest: "newest",
