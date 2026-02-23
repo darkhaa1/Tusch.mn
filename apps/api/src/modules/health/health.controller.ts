@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   HealthCheck,
   HealthCheckService,
@@ -17,12 +17,37 @@ export class HealthController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'Liveness check' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service is alive',
+    schema: { example: { status: 'ok' } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   liveness() {
     return { status: 'ok' };
   }
 
   @Get('ready')
   @HealthCheck()
+  @ApiOperation({ summary: 'Readiness check' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service readiness',
+    schema: {
+      example: {
+        status: 'ok',
+        info: { database: { status: 'up' } },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   readiness() {
     return this.health.check([
       // Database check

@@ -13,6 +13,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/register.dto';
@@ -29,6 +37,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Controller('auth')
+@ApiTags('auth')
 export class AuthController {
   jwtService: any;
   constructor(private authService: AuthService) {}
@@ -46,12 +55,46 @@ export class AuthController {
 
   @Post('register')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: 'Create an account' })
+  @ApiBody({ type: AuthDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Account created',
+    schema: { example: { id: 'usr_1', email: 'user@example.com' } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 409, description: 'Email already used' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   register(@Body() dto: AuthDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @ApiOperation({ summary: 'Login' })
+  @ApiBody({
+    schema: {
+      properties: {
+        email: { type: 'string', example: 'user@example.com' },
+        password: { type: 'string', example: 'password123' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Login successful (JWT cookie)',
+    schema: {
+      example: {
+        user: { id: 'usr_1', email: 'user@example.com', avatarUrl: null },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async login(@Body() body, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(body);
 
@@ -66,18 +109,55 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard) // dY`^ ton JWT guard ici
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile',
+    schema: { example: { user: { id: 'usr_1', email: 'user@example.com' } } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async getMe(@Req() req) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
     const user = await this.authService.getUserById(userId);
-    return { user: this.authService.sanitizeUser(user) }; // req.user doit A¦tre injectAc par le guard
+    return { user: this.authService.sanitizeUser(user) };
   }
 
   @Patch('me')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('avatar', avatarMulterOptions))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update profile' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        firstName: { type: 'string', example: 'Bataa' },
+        lastName: { type: 'string', example: 'Enkh' },
+        phone: { type: 'string', example: '99112233' },
+        email: { type: 'string', example: 'user@example.com' },
+        accountType: { type: 'string', example: 'basic' },
+        removeAvatar: { type: 'boolean', example: false },
+        avatar: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile updated',
+    schema: { example: { user: { id: 'usr_1', firstName: 'Bataa' } } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async updateMe(
     @Req() req,
     @Body() body,
@@ -124,6 +204,16 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ summary: 'Logout' })
+  @ApiResponse({
+    status: 201,
+    description: 'Logout successful',
+    schema: { example: { message: 'Logout successful' } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('accessToken', { ...this.cookieOptions, maxAge: 0 });
     return { message: 'Logout successful' };
@@ -131,6 +221,18 @@ export class AuthController {
 
   @Patch('password')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Change password' })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password changed',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async changePassword(@Req() req, @Body() body: ChangePasswordDto) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
@@ -144,6 +246,17 @@ export class AuthController {
 
   @Delete('me')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Delete my account' })
+  @ApiResponse({
+    status: 200,
+    description: 'Account deleted',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async deleteMe(@Req() req, @Res({ passthrough: true }) res: Response) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
@@ -168,17 +281,50 @@ export class AuthController {
 
   @Post('forgot-password')
   @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @ApiOperation({ summary: 'Request password reset email' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Email sent if account exists',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
 
   @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password using token' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Password reset',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired token' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return { success: true };
   }
 
   @Post('verify-email')
+  @ApiOperation({ summary: 'Verify email using token' })
+  @ApiBody({ type: VerifyEmailDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Email verified',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     return this.authService.verifyEmail(dto.token);
   }
@@ -186,6 +332,17 @@ export class AuthController {
   @Post('resend-verification')
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { ttl: 60000, limit: 2 } })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Resend verification email' })
+  @ApiResponse({
+    status: 201,
+    description: 'Verification email resent',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Email already verified' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async resendVerification(@Req() req) {
     const userId = req.user?.sub;
     if (!userId) throw new UnauthorizedException('Unauthorized');
@@ -193,6 +350,21 @@ export class AuthController {
   }
 
   @Post('oauth-login')
+  @ApiOperation({ summary: 'OAuth login' })
+  @ApiBody({ type: OAuthLoginDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Login successful (JWT cookie)',
+    schema: {
+      example: {
+        user: { id: 'usr_1', email: 'user@example.com', avatarUrl: null },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async oauthLogin(
     @Body() body: OAuthLoginDto,
     @Res({ passthrough: true }) res: Response,

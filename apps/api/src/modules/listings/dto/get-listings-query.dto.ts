@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
@@ -29,21 +30,25 @@ class MaxPriceGteMinPrice implements ValidatorConstraintInterface {
 }
 
 export class GetListingsQueryDto {
+  @ApiPropertyOptional({ description: 'Slug de catégorie' })
   @IsOptional()
   @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category?: string;
 
+  @ApiPropertyOptional({ description: 'Recherche par mot-clé' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   search?: string;
 
+  @ApiPropertyOptional({ description: 'Prix minimum', minimum: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   minPrice?: number;
 
+  @ApiPropertyOptional({ description: 'Prix maximum', minimum: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -51,17 +56,20 @@ export class GetListingsQueryDto {
   @Validate(MaxPriceGteMinPrice)
   maxPrice?: number;
 
+  @ApiPropertyOptional({ description: 'Filtrer par ville' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   location?: string;
 
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   page: number = 1;
 
+  @ApiPropertyOptional({ default: 12, minimum: 1, maximum: 50 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -69,10 +77,12 @@ export class GetListingsQueryDto {
   @Max(50)
   limit: number = 12;
 
+  @ApiPropertyOptional({ enum: ListingsSort, default: 'newest' })
   @IsOptional()
   @IsEnum(ListingsSort)
   sort: ListingsSort = ListingsSort.Newest;
 
+  @ApiPropertyOptional({ description: '1 pour format legacy' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

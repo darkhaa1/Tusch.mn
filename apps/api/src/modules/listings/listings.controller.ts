@@ -18,9 +18,17 @@ import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { GetListingsQueryDto } from './dto/get-listings-query.dto';
-import { ListingsSort } from '@repo/shared';
 import { GetUser } from '../../common/decorators/get-user.decorator';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiConsumes,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { listingImagesMulterOptions } from '../../common/multer/image-options';
 import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
@@ -31,59 +39,61 @@ import { ReorderImagesDto } from './dto/reorder-images.dto';
 export class ListingsController {
   constructor(private readonly service: ListingsService) {}
 
-  // Création REQUIERT d'être connecté
   @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard)
   @Post()
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Create a listing' })
+  @ApiBody({ type: CreateListingDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Listing created',
+    schema: {
+      example: {
+        id: 'lst_1',
+        description: 'Math tutoring',
+        price: 60000,
+        location: 'UB',
+        category: 'tutoring',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   create(@Body() dto: CreateListingDto, @GetUser() user: { id: string }) {
     return this.service.create(dto, user.id);
   }
 
-  // Lister : public (ou protège si tu veux)
   @Get()
-  @ApiQuery({ name: 'category', required: false, type: String })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Keyword search (max 100 chars)',
+  @ApiOperation({ summary: 'List listings (public)' })
+  @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'minPrice', required: false, type: Number })
+  @ApiQuery({ name: 'maxPrice', required: false, type: Number })
+  @ApiQuery({ name: 'location', required: false })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'sort', required: false })
+  @ApiQuery({ name: 'legacy', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated listings',
+    schema: {
+      example: {
+        items: [
+          { id: 'lst_1', description: 'Math tutoring', price: 60000 },
+        ],
+        total: 1,
+        page: 1,
+        limit: 12,
+      },
+    },
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: '>= 1',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: '1..50',
-  })
-  @ApiQuery({ name: 'sort', required: false, enum: ListingsSort })
-  @ApiQuery({
-    name: 'minPrice',
-    required: false,
-    type: Number,
-    description: 'Minimum price (>= 0)',
-  })
-  @ApiQuery({
-    name: 'maxPrice',
-    required: false,
-    type: Number,
-    description: 'Maximum price (>= 0, must be >= minPrice)',
-  })
-  @ApiQuery({
-    name: 'location',
-    required: false,
-    type: String,
-    description: 'Location filter (case-insensitive)',
-  })
-  @ApiQuery({
-    name: 'legacy',
-    required: false,
-    type: Number,
-    description: '1 to return legacy format',
-  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   async findAll(@Query() q: GetListingsQueryDto) {
     const result = await this.service.findAll(q);
     if (q.legacy === 1) {
@@ -98,26 +108,78 @@ export class ListingsController {
     }
     return result;
   }
+
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'List my listings' })
+  @ApiResponse({
+    status: 200,
+    description: 'My listings',
+    schema: { example: [{ id: 'lst_1', description: 'Math tutoring' }] },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   getMyListings(@GetUser() user: { id: string }) {
     return this.service.getListingsByUser(user.id);
   }
 
   @Get('locations')
+  @ApiOperation({ summary: 'List available locations' })
+  @ApiResponse({
+    status: 200,
+    description: 'Locations',
+    schema: { example: ['UB', 'Darkhan'] },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Not found' })
   getDistinctLocations() {
     return this.service.getDistinctLocations();
   }
 
-  // Détail : public (ou protège si tu veux)
   @Get(':id')
+  @ApiOperation({ summary: 'Get listing details (public)' })
+  @ApiParam({ name: 'id', description: 'Listing ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Listing details',
+    schema: {
+      example: {
+        id: 'lst_1',
+        description: 'Math tutoring',
+        price: 60000,
+        location: 'UB',
+        category: 'tutoring',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Listing not found' })
   findOne(@Param('id') id: string) {
     return this.service.findPublicById(id);
   }
 
-  // Update/Delete : protégé + ownership en service
   @UseGuards(AuthGuard('jwt'))
   @Put(':id')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update a listing' })
+  @ApiParam({ name: 'id', description: 'Listing ID' })
+  @ApiBody({ type: UpdateListingDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Listing updated',
+    schema: { example: { id: 'lst_1', description: 'Updated description' } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Listing not found' })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateListingDto,
@@ -131,25 +193,78 @@ export class ListingsController {
   @UseInterceptors(
     FilesInterceptor('files', undefined, listingImagesMulterOptions),
   )
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Upload listing images' })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', description: 'Listing ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Images uploaded',
+    schema: {
+      example: [
+        { id: 'img_1', url: '/uploads/listings/img_1.jpg' },
+      ],
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Listing not found' })
   async uploadImages(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
     @GetUser() user: { id: string },
   ) {
     if (!files || files.length === 0) {
-      throw new BadRequestException('Aucun fichier envoye');
+      throw new BadRequestException('No files provided');
     }
     return this.service.addImages(id, files, user.id);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Delete a listing' })
+  @ApiParam({ name: 'id', description: 'Listing ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Listing deleted',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Listing not found' })
   remove(@Param('id') id: string, @GetUser() user: { id: string }) {
     return this.service.remove(id, user.id);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id/images/:imageId')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Delete a listing image' })
+  @ApiParam({ name: 'id', description: 'Listing ID' })
+  @ApiParam({ name: 'imageId', description: 'Image ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Image deleted',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Listing or image not found' })
   deleteImage(
     @Param('id') id: string,
     @Param('imageId') imageId: string,
@@ -160,6 +275,19 @@ export class ListingsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id/images/reorder')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Reorder listing images' })
+  @ApiParam({ name: 'id', description: 'Listing ID' })
+  @ApiBody({ type: ReorderImagesDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Images reordered',
+    schema: { example: { success: true } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Listing not found' })
   reorderImages(
     @Param('id') id: string,
     @Body() dto: ReorderImagesDto,
