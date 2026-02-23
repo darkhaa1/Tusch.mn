@@ -115,7 +115,7 @@ export function OffersList({
             size="sm"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
-            className="min-w-[120px]"
+            className="min-w-30"
           >
             {t("actions.previous")}
           </Button>
@@ -131,7 +131,7 @@ export function OffersList({
             size="sm"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
-            className="min-w-[120px]"
+            className="min-w-30"
           >
             {t("actions.next")}
           </Button>
