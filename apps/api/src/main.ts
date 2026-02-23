@@ -6,6 +6,9 @@ import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
 import { join } from 'path';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { MetricsService } from './modules/metrics/metrics.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -19,12 +22,15 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   app.enableCors({
-    origin: process.env.CORS_ORIGIN, // 🌐 Autorise les requêtes depuis le frontend
-    credentials: true, // ✅ Permet l'envoi de cookies
-  }); // 🔓 Active les requêtes cross-origin
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // ✅ Swagger config
+  const metricsService = app.get(MetricsService);
+  app.useGlobalInterceptors(new LoggingInterceptor(metricsService));
+
   const config = new DocumentBuilder()
     .setTitle('Tusch API')
     .setDescription('API documentation for tusch.mn')
@@ -36,6 +42,6 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   await app.listen(3310);
-  console.log(`🚀 Server running on http://localhost:3310`);
+  console.log(`Server running on http://localhost:3310`);
 }
 bootstrap();

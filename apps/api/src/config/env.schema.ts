@@ -5,6 +5,7 @@ const envSchema = z.object({
     .string({ required_error: 'JWT_SECRET is required' })
     .min(16, 'JWT_SECRET must be at least 16 characters'),
   JWT_EXPIRES_IN: z.string().optional(),
+  METRICS_API_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
