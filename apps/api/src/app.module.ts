@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ListingsModule } from './modules/listings/listings.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { OffersModule } from './modules/offers/offers.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { UserModule } from './modules/user/user.module';
@@ -39,6 +40,7 @@ import { UserModule } from './modules/user/user.module';
     AdminModule,
     ReviewsModule,
     NotificationsModule,
+    OffersModule,
     ReportsModule,
   ],
   providers: [

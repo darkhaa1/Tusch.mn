@@ -1,0 +1,183 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { NotificationType, UserRole } from '@repo/shared';
+import { PrismaService } from '../../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { CreateOfferDto } from './dto/create-offer.dto';
+
+const offerInclude = {
+  provider: {
+    select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+  },
+  listing: {
+    select: {
+      id: true,
+      description: true,
+      price: true,
+      userId: true,
+      category: true,
+      location: true,
+    },
+  },
+} as const;
+
+@Injectable()
+export class OffersService {
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
+
+  async create(listingId: string, dto: CreateOfferDto, userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true, firstName: true, lastName: true },
+    });
+
+    if (
+      !user ||
+      (user.role !== UserRole.PROVIDER && user.role !== UserRole.BOTH)
+    ) {
+      throw new ForbiddenException(
+        'Only providers can create offers',
+      );
+    }
+
+    const listing = await this.prisma.listing.findFirst({
+      where: { id: listingId, deletedAt: null },
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+
+    if (listing.userId === userId) {
+      throw new BadRequestException(
+        'Cannot create an offer on your own listing',
+      );
+    }
+
+    const existing = await (this.prisma as any).offer.findFirst({
+      where: { listingId, providerId: userId, status: 'PENDING' },
+    });
+    if (existing) {
+      throw new ConflictException(
+        'You already have a pending offer on this listing',
+      );
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    const offer = await (this.prisma as any).offer.create({
+      data: {
+        listingId,
+        providerId: userId,
+        price: dto.price,
+        message: dto.message,
+        estimatedDays: dto.estimatedDays,
+        expiresAt,
+      },
+      include: offerInclude,
+    });
+
+    await this.notifications.create({
+      userId: listing.userId,
+      type: NotificationType.NEW_OFFER as any,
+      title: 'Nouvelle offre',
+      body: `${user.firstName} ${user.lastName} a fait une offre sur votre annonce`,
+    });
+
+    return offer;
+  }
+
+  async findSent(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const where = { providerId: userId };
+
+    const [items, total] = await this.prisma.$transaction([
+      (this.prisma as any).offer.findMany({
+        where,
+        include: offerInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      (this.prisma as any).offer.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  async findReceived(userId: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+    const where = { listing: { userId, deletedAt: null } };
+
+    const [items, total] = await this.prisma.$transaction([
+      (this.prisma as any).offer.findMany({
+        where,
+        include: offerInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      (this.prisma as any).offer.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  async findByListing(listingId: string, userId: string) {
+    const listing = await this.prisma.listing.findFirst({
+      where: { id: listingId, deletedAt: null },
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+
+    if (listing.userId !== userId) {
+      throw new ForbiddenException('Not your listing');
+    }
+
+    return (this.prisma as any).offer.findMany({
+      where: { listingId },
+      include: offerInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findOne(id: string, userId: string) {
+    const offer = await (this.prisma as any).offer.findUnique({
+      where: { id },
+      include: offerInclude,
+    });
+    if (!offer) throw new NotFoundException('Offer not found');
+
+    if (offer.providerId !== userId && offer.listing.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    return offer;
+  }
+
+  async cancel(id: string, userId: string) {
+    const offer = await (this.prisma as any).offer.findUnique({
+      where: { id },
+    });
+    if (!offer) throw new NotFoundException('Offer not found');
+
+    if (offer.providerId !== userId) {
+      throw new ForbiddenException('Not your offer');
+    }
+
+    if (offer.status !== 'PENDING') {
+      throw new BadRequestException('Only pending offers can be cancelled');
+    }
+
+    return (this.prisma as any).offer.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+      include: offerInclude,
+    });
+  }
+}

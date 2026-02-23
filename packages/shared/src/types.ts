@@ -1,6 +1,7 @@
 import type {
   ListingStatus,
   NotificationType,
+  OfferStatus,
   ReportReason,
   ReportStatus,
   ReportTargetType,
@@ -223,6 +224,31 @@ export type AdminReport = Report & {
     | null;
 };
 
+// ─── Offer ──────────────────────────────────────────────────────────────────
+
+export type Offer = {
+  id: string;
+  listingId: string;
+  providerId: string;
+  price: number;
+  message: string;
+  estimatedDays: number | null;
+  status: OfferStatus;
+  expiresAt: string;
+  respondedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  provider?: ListingUser;
+  listing?: {
+    id: string;
+    description: string;
+    price: number;
+    userId: string;
+    category: string | null;
+    location: string | null;
+  };
+};
+
 // ─── Admin ───────────────────────────────────────────────────────────────────
 
 export type AdminStats = {
@@ -243,6 +269,8 @@ export type AdminUsersPage = PaginatedResponse<AdminUser>;
 export type AdminListingsPage = PaginatedResponse<AdminListing>;
 export type AdminReportsPage = PaginatedResponse<AdminReport>;
 export type ReviewsPage = PaginatedResponse<Review>;
+
+export type OffersPage = PaginatedResponse<Offer>;
 
 export type ConversationPage = PaginatedResponse<Message> & {
   hasMore: boolean;
