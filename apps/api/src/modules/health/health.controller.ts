@@ -23,10 +23,6 @@ export class HealthController {
     description: 'Service is alive',
     schema: { example: { status: 'ok' } },
   })
-  @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'Not found' })
   liveness() {
     return { status: 'ok' };
   }
@@ -44,10 +40,7 @@ export class HealthController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 503, description: 'Service unavailable' })
   readiness() {
     return this.health.check([
       // Database check

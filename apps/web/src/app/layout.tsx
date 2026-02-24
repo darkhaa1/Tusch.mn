@@ -1,4 +1,5 @@
 import '../styles/globals.css';
+import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Providers } from './Providers';
 import { IntlProvider } from './IntlProvider';
@@ -6,16 +7,35 @@ import Header from '@web/features/home/components/Header';
 import Footer from '@web/features/home/components/Footer';
 import BottomNav from '@web/components/nav/BottomNav';
 import VerificationBanner from '@web/components/common/VerificationBanner';
+import { OrganizationJsonLd } from '@web/components/seo/JsonLd';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
 });
 
-export const metadata = {
-  title: 'Tusch.mn',
-  description: 'Ton site de services en Mongolie',
+export const metadata: Metadata = {
+  metadataBase: new URL('https://tusch.mn'),
+  title: {
+    default: 'Tusch.mn - Үйлчилгээний зах зээл',
+    template: '%s | Tusch.mn',
+  },
+  description:
+    'Монголын найдвартай үйлчилгээ үзүүлэгчдийг олоорой: сантехник, барилга, зөөвөрлөлт, цэвэрлэгээ болон бусад.',
+  keywords: ['үйлчилгээ', 'сантехник', 'барилга', 'зөөвөрлөлт', 'цэвэрлэгээ', 'мужаан', 'Улаанбаатар', 'Монгол'],
   icons: { icon: '/favicon.ico' },
+  openGraph: {
+    type: 'website',
+    locale: 'mn_MN',
+    siteName: 'Tusch.mn',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,9 +44,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body className={`${inter.variable} font-sans max-w-[1240px] mx-auto px-4`}>
+      <body className={`${inter.variable} font-sans max-w-310 mx-auto px-4`}>
+        <OrganizationJsonLd />
         <IntlProvider>
-          {/* Providers englobe tout le contenu qui peut utiliser session/react-query */}
+          {/* Providers wraps all content that uses session/react-query */}
           <Providers>
             <Header />
             <VerificationBanner />

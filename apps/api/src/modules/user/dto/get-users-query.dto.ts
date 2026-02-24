@@ -18,7 +18,7 @@ export class GetUsersQueryDto {
   @Max(50)
   limit: number = 20;
 
-  @ApiPropertyOptional({ description: 'Recherche par nom ou email' })
+  @ApiPropertyOptional({ description: 'Search by name or email' })
   @IsOptional()
   @IsString()
   @MaxLength(100)

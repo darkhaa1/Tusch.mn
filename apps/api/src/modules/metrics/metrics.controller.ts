@@ -15,8 +15,18 @@ export class MetricsController {
   @ApiOperation({ summary: 'Get metrics (admin)' })
   @ApiResponse({
     status: 200,
-    description: 'Prometheus metrics',
-    schema: { example: '# HELP http_requests_total Total HTTP requests' },
+    description: 'Application metrics (JSON)',
+    schema: {
+      example: {
+        requestsTotal: 1500,
+        requestsByStatus: { '200': 1200, '404': 50, '500': 10 },
+        activeUsersCount: 120,
+        listingsCount: 85,
+        offersPendingCount: 40,
+        uptimeSeconds: 86400,
+        memoryUsage: { heapUsed: 52428800, heapTotal: 104857600 },
+      },
+    },
   })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

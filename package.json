@@ -6,10 +6,10 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "echo \"No tests configured\"",
+    "test": "pnpm --filter api test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check:i18n": "node scripts/check-utf8-and-questionmarks.mjs",
-    "smoke": "pnpm -w build && pnpm --filter api test:e2e"
+    "smoke": "pnpm -w build && pnpm --filter api test:e2e && pnpm --filter api test"
   },
   "devDependencies": {
     "prettier": "^3.8.0",
