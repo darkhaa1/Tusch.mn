@@ -27,7 +27,7 @@ export class QueryListingDto {
   @Max(100)
   take?: number = 20;
 
-  @ApiPropertyOptional({ description: 'Recherche par mot-clé' })
+  @ApiPropertyOptional({ description: 'Search by keyword' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
@@ -43,12 +43,12 @@ export class QueryListingDto {
   @IsIn(['asc', 'desc'])
   order?: 'asc' | 'desc' = 'desc';
 
-  @ApiPropertyOptional({ description: 'Filtrer par userId' })
+  @ApiPropertyOptional({ description: 'Filter by userId' })
   @IsOptional()
   @IsString()
   userId?: string;
 
-  @ApiPropertyOptional({ description: 'Slug de catégorie' })
+  @ApiPropertyOptional({ description: 'Category slug' })
   @IsOptional()
   @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category?: string;

@@ -1,542 +1,119 @@
-"use client";
+import type { Metadata } from 'next';
+import { CATEGORY_LABEL_MAP } from '@repo/shared';
+import ListingDetailClient from './ListingDetailClient';
+import { ServiceJsonLd, BreadcrumbJsonLd } from '@web/components/seo/JsonLd';
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { EllipsisVertical } from "lucide-react";
-import {
-  useCurrentUser,
-  useDeleteListing,
-  useListing,
-  useOffersByListing,
-  useAcceptOffer,
-  useRejectOffer,
-  useReorderListingImages,
-  useSendMessage,
-  useUpdateListing,
-} from "@web/lib/hooks/useApi";
-import { deleteListingImage, uploadListingImages } from "@web/lib/api/listings";
-import type { Listing, Offer } from "@web/lib/api/types";
-import resolveImageUrl from "@web/lib/resolveImageUrl";
-import {
-  Button,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Textarea,
-} from "@web/components/ui";
-import { ListingGallery } from "@web/features/listings/components/ListingGallery";
-import { ListingDetailsCard } from "@web/features/listings/components/ListingDetailsCard";
-import { ListingSidebar } from "@web/features/listings/components/ListingSidebar";
-import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "@web/lib/categories";
-import { ReportDialogButton } from "@web/components/report/ReportDialogButton";
-import { CreateOfferModal } from "@web/features/offers/CreateOfferModal";
-import { OffersList } from "@web/features/offers/OffersList";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3310';
 
-export default function ListingDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const t = useTranslations("offers");
-  const listingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
+interface ListingData {
+  id: string;
+  description?: string;
+  category?: string;
+  price?: number;
+  location?: string;
+  images?: { url?: string }[];
+  user?: { firstName?: string; lastName?: string };
+}
 
-  const { data: listing, isLoading, error, refetch } = useListing(listingId);
-  const { data: currentUser } = useCurrentUser();
-  const acceptOffer = useAcceptOffer();
-  const rejectOffer = useRejectOffer();
-  const updateListing = useUpdateListing();
-  const deleteListing = useDeleteListing();
-  const reorderListingImages = useReorderListingImages();
-  const sendMessage = useSendMessage();
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [isUploadingImages, setIsUploadingImages] = useState(false);
-  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
-  const [messageContent, setMessageContent] = useState("");
-  const [messageFeedback, setMessageFeedback] = useState<string | null>(null);
-  const [offerModalOpen, setOfferModalOpen] = useState(false);
-  const [offerToast, setOfferToast] = useState<string | null>(null);
-  const [offerToastVariant, setOfferToastVariant] = useState<"success" | "error">("success");
-  const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
-  const [formState, setFormState] = useState({
-    description: "",
-    price: "",
-    location: "",
-    category: "",
-  });
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [images, setImages] = useState<NonNullable<Listing["images"]>>([]);
-
-  const isOwner = useMemo(() => {
-    if (!listing || !currentUser) return false;
-    return listing.userId === currentUser.id;
-  }, [listing, currentUser]);
-  const canReport = Boolean(currentUser) && !isOwner && Boolean(listingId);
-  const canMakeOffer = Boolean(currentUser) &&
-    !isOwner &&
-    ["PROVIDER", "BOTH"].includes(String(currentUser?.role || ""));
-
-  const { data: offersByListing, isLoading: offersLoading, error: offersError, refetch: refetchOffers } =
-    useOffersByListing(listingId as string, isOwner);
-
-  useEffect(() => {
-    if (!listing) return;
-    setFormState({
-      description: listing.description || "",
-      price: listing.price?.toString() || "",
-      location: listing.location || "",
-      category: listing.category || "",
+async function fetchListing(id: string): Promise<ListingData | null> {
+  try {
+    const res = await fetch(`${API_URL}/listings/${id}`, {
+      next: { revalidate: 60 },
     });
-    setImages(listing.images || []);
-    setSelectedIndex(0);
-  }, [listing]);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
-  useEffect(() => {
-    if (!offerToast) return;
-    const timeout = setTimeout(() => setOfferToast(null), 3000);
-    return () => clearTimeout(timeout);
-  }, [offerToast]);
+function resolveImage(url?: string): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+}
 
-  const handleSave = async () => {
-    if (!listingId) return;
-    if (!formState.description.trim()) {
-      setFormError("Тайлбар хоосон байна.");
-      return;
-    }
-    const priceNumber = Number(formState.price);
-    if (Number.isNaN(priceNumber) || priceNumber < 0) {
-      setFormError("Үнэ 0-ээс их эерэг тоо байх ёстой.");
-      return;
-    }
-    setFormError(null);
-    try {
-      await updateListing.mutateAsync({
-        id: listingId,
-        data: {
-          description: formState.description.trim(),
-          price: priceNumber,
-          location: formState.location.trim() || undefined,
-          category: formState.category || undefined,
-        },
-      });
-      setIsEditing(false);
-      await refetch();
-    } catch (err: any) {
-      setFormError(err?.message || "Хадгалах үед алдаа гарлаа.");
-    }
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const listing = await fetchListing(id);
+
+  if (!listing) {
+    return { title: 'Зар олдсонгүй' };
+  }
+
+  const categoryLabel = listing.category
+    ? CATEGORY_LABEL_MAP.get(listing.category) || listing.category
+    : 'Зар';
+  const locationPart = listing.location ? ` - ${listing.location}` : '';
+  const title = `${categoryLabel}${locationPart}`;
+  const description = listing.description?.slice(0, 160) || '';
+  const resolvedImage = resolveImage(listing.images?.[0]?.url);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: `https://tusch.mn/listings/${id}`,
+      ...(resolvedImage && { images: [{ url: resolvedImage }] }),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(resolvedImage && { images: [resolvedImage] }),
+    },
+    alternates: {
+      canonical: `https://tusch.mn/listings/${id}`,
+    },
   };
+}
 
-  const handleCancelEdit = () => {
-    if (listing) {
-      setFormState({
-        description: listing.description || "",
-        price: listing.price?.toString() || "",
-        location: listing.location || "",
-        category: listing.category || "",
-      });
-    }
-    setIsEditing(false);
-    setFormError(null);
-  };
+export default async function ListingDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const listing = await fetchListing(id);
 
-  const handleDeleteConfirmed = async () => {
-    if (!listingId) return;
-    setFormError(null);
-    try {
-      await deleteListing.mutateAsync(listingId);
-      router.push("/");
-    } catch (err: any) {
-      setFormError(err?.message || "Устгах үед алдаа гарлаа.");
-    } finally {
-      setConfirmDeleteOpen(false);
-    }
-  };
-
-  const handleImagesUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    if (!listingId) return;
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-    const currentCount = listing?.images?.length || 0;
-    const remaining = Math.max(0, 3 - currentCount);
-    const toUpload = files.slice(0, remaining);
-    if (!toUpload.length) return;
-    setIsUploadingImages(true);
-    try {
-      await uploadListingImages(listingId, toUpload);
-      await refetch();
-    } catch (err: any) {
-      setFormError(err?.message || "Зураг нэмэх үед алдаа гарлаа.");
-    } finally {
-      setIsUploadingImages(false);
-      event.target.value = "";
-    }
-  };
-
-  const handleDeleteImage = async (imageId: string) => {
-    if (!listingId) return;
-    setDeletingImageId(imageId);
-    try {
-      await deleteListingImage(listingId, imageId);
-      await refetch();
-    } catch (err: any) {
-      setFormError(err?.message || "Зураг устгах үед алдаа гарлаа.");
-    } finally {
-      setDeletingImageId(null);
-    }
-  };
-
-  const handleReorderImages = async (nextImageIds: string[]) => {
-    if (!listingId || images.length === 0) return;
-
-    const previousImages = images;
-    const selectedImageId = previousImages[selectedIndex]?.id;
-    const reorderedImages = nextImageIds
-      .map((id) => previousImages.find((image) => image.id === id))
-      .filter((image): image is NonNullable<Listing["images"]>[number] => Boolean(image));
-
-    if (reorderedImages.length !== previousImages.length) {
-      setFormError("Зургийн дараалал буруу байна.");
-      return;
-    }
-
-    setFormError(null);
-    setImages(reorderedImages);
-
-    if (selectedImageId) {
-      const newSelectedIndex = reorderedImages.findIndex((image) => image.id === selectedImageId);
-      if (newSelectedIndex >= 0) {
-        setSelectedIndex(newSelectedIndex);
-      }
-    }
-
-    try {
-      await reorderListingImages.mutateAsync({
-        listingId,
-        imageIds: nextImageIds,
-      });
-    } catch (err: any) {
-      setImages(previousImages);
-      if (selectedImageId) {
-        const previousIndex = previousImages.findIndex((image) => image.id === selectedImageId);
-        if (previousIndex >= 0) {
-          setSelectedIndex(previousIndex);
-        }
-      }
-      setFormError(err?.message || "Зургийн дараалал хадгалахад алдаа гарлаа.");
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!listing || !listingId || !listing.userId) return;
-    if (!currentUser) {
-      setMessageFeedback("Мессеж илгээхийн тулд нэвтэрнэ үү.");
-      return;
-    }
-    const content = messageContent.trim();
-    if (!content) {
-      setMessageFeedback("Мессеж хоосон байна.");
-      return;
-    }
-    setMessageFeedback(null);
-    try {
-      await sendMessage.mutateAsync({
-        recipientId: listing.userId,
-        listingId,
-        content,
-      });
-      setMessageContent("");
-      setMessageDialogOpen(false);
-      setMessageFeedback("Мессеж илгээлээ.");
-    } catch (err: any) {
-      setMessageFeedback(err?.message || "Мессеж илгээхэд алдаа гарлаа.");
-    }
-  };
-
-  const handleAcceptOffer = async (offer: Offer) => {
-    setBusyOfferId(offer.id);
-    setOfferToastVariant("success");
-    try {
-      await acceptOffer.mutateAsync({ offerId: offer.id });
-      setOfferToast(t("toast.accepted"));
-      await refetchOffers();
-    } catch (err) {
-      setOfferToastVariant("error");
-      setOfferToast(err instanceof Error ? err.message : t("errors.generic"));
-    } finally {
-      setBusyOfferId(null);
-    }
-  };
-
-  const handleRejectOffer = async (offer: Offer) => {
-    setBusyOfferId(offer.id);
-    setOfferToastVariant("success");
-    try {
-      await rejectOffer.mutateAsync({ offerId: offer.id });
-      setOfferToast(t("toast.rejected"));
-      await refetchOffers();
-    } catch (err) {
-      setOfferToastVariant("error");
-      setOfferToast(err instanceof Error ? err.message : t("errors.generic"));
-    } finally {
-      setBusyOfferId(null);
-    }
-  };
-
-  if (isLoading) return <p className="py-10 text-center text-muted-foreground">Уншиж байна...</p>;
-  if (error) return <p className="py-10 text-center text-destructive">Алдаа гарлаа.</p>;
-  if (!listing) return <p className="py-10 text-center text-muted-foreground">Зар олдсонгүй</p>;
-
-  const author = listing.user;
-  const authorName = author ? `${author.firstName || ""} ${author.lastName || ""}`.trim() || author.email : "Хэрэглэгч";
-  const authorAvatar = resolveImageUrl(author?.avatarUrl);
-  const imageUrls = images.map((img) => resolveImageUrl(img.url) || "/placeholder.jpg");
-  const displayedMain = imageUrls[selectedIndex] || resolveImageUrl(images[0]?.url) || "/placeholder.jpg";
-  const categoryValue = isEditing ? formState.category : listing.category;
-  const categoryLabel = categoryValue ? CATEGORY_LABEL_MAP.get(categoryValue) || categoryValue : null;
-  const heading = categoryLabel || "Зар";
-  const priceLabel =
-    typeof listing.price === "number" && listing.price > 0 ? `${listing.price.toLocaleString()} ₮` : "Тохиролцоно";
-  const contactHref = author?.phone ? `tel:${author.phone}` : author?.email ? `mailto:${author.email}` : null;
-  const locationLabel = listing.location || "Байршил оруулаагүй";
+  const categoryLabel = listing?.category
+    ? CATEGORY_LABEL_MAP.get(listing.category) || listing.category
+    : 'Үйлчилгээ';
+  const providerName = listing?.user
+    ? [listing.user.firstName, listing.user.lastName].filter(Boolean).join(' ')
+    : '';
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
-          Буцах
-        </Button>
-        <div className="flex items-center gap-2">
-          {canReport ? (
-            <ReportDialogButton
-              targetType="LISTING"
-              targetId={listingId as string}
-              variant="outline"
-              size="sm"
-            />
-          ) : null}
-          {isOwner ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger className="rounded-full border border-border bg-background p-2 hover:bg-muted">
-                <EllipsisVertical className="h-5 w-5" aria-hidden="true" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="min-w-45">
-                {!isEditing ? (
-                  <DropdownMenuItem onClick={() => setIsEditing(true)}>Засах</DropdownMenuItem>
-                ) : null}
-                <DropdownMenuItem onClick={() => setConfirmDeleteOpen(true)} className="text-destructive">
-                  Устгах
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/listings")}>Бүх зарууд</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="space-y-4 md:col-span-2">
-          <ListingGallery
-            heading={heading}
-            categoryLabel={categoryLabel}
-            imageUrls={imageUrls}
-            displayedMain={displayedMain}
-            selectedIndex={selectedIndex}
-            onSelect={setSelectedIndex}
+    <>
+      {listing && (
+        <>
+          <ServiceJsonLd
+            name={categoryLabel}
+            description={listing.description || ''}
+            providerName={providerName || 'Үйлчилгээ үзүүлэгч'}
+            areaServed={listing.location}
+            price={listing.price}
           />
-
-          {isOwner ? (
-            <Tabs defaultValue="details" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger
-                  value="details"
-                  className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
-                >
-                  {t("listing.detailsTab")}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="offers"
-                  className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
-                >
-                  {t("listing.offersTab")}
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="details">
-                <ListingDetailsCard
-                  heading={heading}
-                  categoryLabel={categoryLabel}
-                  listingDescription={listing.description}
-                  isEditing={isEditing}
-                  formState={formState}
-                  onFieldChange={(field, value) =>
-                    setFormState((prev) => ({ ...prev, [field]: value }))
-                  }
-                  onSave={handleSave}
-                  onCancel={handleCancelEdit}
-                  isSaving={updateListing.isPending}
-                  categories={CATEGORY_OPTIONS}
-                  formError={formError}
-                />
-              </TabsContent>
-              <TabsContent value="offers">
-                <OffersList
-                  items={offersByListing ?? []}
-                  isLoading={offersLoading}
-                  error={offersError}
-                  onRetry={() => refetchOffers()}
-                  showProvider
-                  onAccept={handleAcceptOffer}
-                  onReject={handleRejectOffer}
-                  busyOfferId={busyOfferId}
-                  emptyTitle={t("listing.emptyTitle")}
-                  emptyDescription={t("listing.emptyDescription")}
-                />
-              </TabsContent>
-            </Tabs>
-          ) : (
-            <ListingDetailsCard
-              heading={heading}
-              categoryLabel={categoryLabel}
-              listingDescription={listing.description}
-              isEditing={isEditing}
-              formState={formState}
-              onFieldChange={(field, value) =>
-                setFormState((prev) => ({ ...prev, [field]: value }))
-              }
-              onSave={handleSave}
-              onCancel={handleCancelEdit}
-              isSaving={updateListing.isPending}
-              categories={CATEGORY_OPTIONS}
-              formError={formError}
-            />
-          )}
-        </div>
-
-        <ListingSidebar
-          priceLabel={priceLabel}
-          locationLabel={locationLabel}
-          categoryLabel={categoryLabel}
-          authorName={authorName || "Хэрэглэгч"}
-          authorEmail={author?.email}
-          authorPhone={author?.phone}
-          authorAvatar={authorAvatar}
-          profileHref={author?.id ? `/u/${author.id}` : null}
-          images={images}
-          heading={heading}
-          isOwner={isOwner}
-          deletingImageId={deletingImageId}
-          isUploadingImages={isUploadingImages}
-          isReorderingImages={reorderListingImages.isPending}
-          onDeleteImage={handleDeleteImage}
-          onUploadImages={handleImagesUpload}
-          onReorderImages={handleReorderImages}
-          onOpenMessage={() => {
-            setMessageDialogOpen(true);
-            setMessageFeedback(null);
-          }}
-          messageFeedback={messageFeedback}
-          showMessageCta={!isOwner}
-          showOfferCta={canMakeOffer}
-          offerCtaLabel={t("actions.makeOffer")}
-          onOpenOffer={() => setOfferModalOpen(true)}
-        />
-      </div>
-
-      {contactHref ? (
-        <a
-          href={contactHref}
-          className="fixed bottom-5 left-4 right-4 z-40 sm:hidden"
-        >
-          <Button className="w-full py-6 text-base shadow-lg shadow-primary/30">Холбогдох</Button>
-        </a>
-      ) : (
-        <Button
-          className="fixed bottom-5 left-4 right-4 z-40 py-6 text-base shadow-lg shadow-primary/30 sm:hidden"
-          disabled
-        >
-          Холбогдох
-        </Button>
+          <BreadcrumbJsonLd
+            items={[
+              { name: 'Tusch.mn', url: 'https://tusch.mn' },
+              { name: 'Зарууд', url: 'https://tusch.mn/listings' },
+              {
+                name: listing.description?.slice(0, 40) || 'Зар',
+                url: `https://tusch.mn/listings/${id}`,
+              },
+            ]}
+          />
+        </>
       )}
-
-      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Устгах уу?</DialogTitle>
-            <DialogDescription>Энэ зарыг устгавал буцаах боломжгүй. Та итгэлтэй байна уу?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <DialogClose asChild>
-              <Button variant="outline">Цуцлах</Button>
-            </DialogClose>
-            <Button variant="destructive" onClick={handleDeleteConfirmed} disabled={deleteListing.isPending}>
-              Устгах
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Мессеж илгээх</DialogTitle>
-            <DialogDescription>Энэ зарын эзэмшигч рүү шууд мессеж илгээнэ.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Textarea
-              rows={5}
-              value={messageContent}
-              onChange={(event) => setMessageContent(event.target.value)}
-              placeholder="Мессежээ бичнэ үү..."
-              disabled={sendMessage.isPending}
-            />
-            {messageFeedback ? <p className="text-sm text-muted-foreground">{messageFeedback}</p> : null}
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setMessageDialogOpen(false)} disabled={sendMessage.isPending}>
-                Цуцлах
-              </Button>
-              <Button onClick={handleSendMessage} disabled={sendMessage.isPending}>
-                {sendMessage.isPending ? "Илгээж байна..." : "Илгээх"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {listingId ? (
-        <CreateOfferModal
-          listingId={listingId as string}
-          open={offerModalOpen}
-          onOpenChange={setOfferModalOpen}
-        />
-      ) : null}
-
-      {offerToast ? (
-        <div
-          role="status"
-          className={`fixed right-4 top-4 z-50 rounded-lg border px-4 py-2 text-sm shadow ${
-            offerToastVariant === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-rose-200 bg-rose-50 text-rose-700"
-          }`}
-        >
-          {offerToast}
-        </div>
-      ) : null}
-    </div>
+      <ListingDetailClient />
+    </>
   );
 }

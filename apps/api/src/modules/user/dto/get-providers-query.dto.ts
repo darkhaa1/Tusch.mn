@@ -3,12 +3,12 @@ import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class GetProvidersQueryDto {
-  @ApiPropertyOptional({ description: 'Recherche par nom' })
+  @ApiPropertyOptional({ description: 'Search by name' })
   @IsOptional()
   @IsString()
   q?: string;
 
-  @ApiPropertyOptional({ description: 'Filtrer par catégorie' })
+  @ApiPropertyOptional({ description: 'Filter by category' })
   @IsOptional()
   @IsString()
   category?: string;

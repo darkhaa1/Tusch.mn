@@ -30,25 +30,25 @@ class MaxPriceGteMinPrice implements ValidatorConstraintInterface {
 }
 
 export class GetListingsQueryDto {
-  @ApiPropertyOptional({ description: 'Slug de catégorie' })
+  @ApiPropertyOptional({ description: 'Category slug' })
   @IsOptional()
   @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category?: string;
 
-  @ApiPropertyOptional({ description: 'Recherche par mot-clé' })
+  @ApiPropertyOptional({ description: 'Search by keyword' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Prix minimum', minimum: 0 })
+  @ApiPropertyOptional({ description: 'Minimum price', minimum: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
   minPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Prix maximum', minimum: 0 })
+  @ApiPropertyOptional({ description: 'Maximum price', minimum: 0 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
@@ -56,7 +56,7 @@ export class GetListingsQueryDto {
   @Validate(MaxPriceGteMinPrice)
   maxPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Filtrer par ville' })
+  @ApiPropertyOptional({ description: 'Filter by city' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
@@ -82,7 +82,7 @@ export class GetListingsQueryDto {
   @IsEnum(ListingsSort)
   sort: ListingsSort = ListingsSort.Newest;
 
-  @ApiPropertyOptional({ description: '1 pour format legacy' })
+  @ApiPropertyOptional({ description: '1 for legacy format' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

@@ -12,14 +12,14 @@ import {
 import { CATEGORY_SLUGS } from '@repo/shared';
 
 export class CreateListingDto {
-  @ApiProperty({ example: 'Je propose des cours de mathématiques', minLength: 10, maxLength: 5000 })
+  @ApiProperty({ example: 'I offer math tutoring sessions', minLength: 10, maxLength: 5000 })
   @IsString()
   @IsNotEmpty()
   @MinLength(10)
   @MaxLength(5000)
   description!: string;
 
-  @ApiProperty({ example: 50000, minimum: 0, description: 'Prix en MNT' })
+  @ApiProperty({ example: 50000, minimum: 0, description: 'Price in MNT' })
   @IsInt()
   @Min(0)
   price!: number;
@@ -30,7 +30,7 @@ export class CreateListingDto {
   @MaxLength(255)
   location?: string;
 
-  @ApiProperty({ example: 'tutoring', description: 'Slug de catégorie' })
+  @ApiProperty({ example: 'tutoring', description: 'Category slug' })
   @IsNotEmpty()
   @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category!: string;

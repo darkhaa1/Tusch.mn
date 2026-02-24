@@ -13,7 +13,7 @@ import { CATEGORY_SLUGS } from '@repo/shared';
 import { CreateListingDto } from './create-listing.dto';
 
 export class UpdateListingDto extends PartialType(CreateListingDto) {
-  @ApiPropertyOptional({ example: 'Description mise à jour', minLength: 10, maxLength: 5000 })
+  @ApiPropertyOptional({ example: 'Updated listing description', minLength: 10, maxLength: 5000 })
   @IsOptional()
   @IsString()
   @MinLength(10)
