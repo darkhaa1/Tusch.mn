@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { GetUser } from '../../common/decorators/get-user.decorator';
 import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
+import { CompleteOfferDto } from './dto/complete-offer.dto';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { GetOffersQueryDto } from './dto/get-offers-query.dto';
 import { OffersService } from './offers.service';
@@ -173,6 +174,63 @@ export class OffersController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('history')
+  @ApiOperation({ summary: 'List my completed offers history' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated history',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  history(@Query() q: GetOffersQueryDto, @GetUser() user: { id: string }) {
+    return this.service.findHistory(user.id, q.page, q.limit);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('history/as-client')
+  @ApiOperation({ summary: 'List my completed offers as client' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated history as client',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  historyAsClient(
+    @Query() q: GetOffersQueryDto,
+    @GetUser() user: { id: string },
+  ) {
+    return this.service.findHistoryAsClient(user.id, q.page, q.limit);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('history/as-provider')
+  @ApiOperation({ summary: 'List my completed offers as provider' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated history as provider',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  historyAsProvider(
+    @Query() q: GetOffersQueryDto,
+    @GetUser() user: { id: string },
+  ) {
+    return this.service.findHistoryAsProvider(user.id, q.page, q.limit);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('stats')
+  @ApiOperation({ summary: 'Get completed offers stats' })
+  @ApiResponse({ status: 200, description: 'Stats' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  stats(@GetUser() user: { id: string }) {
+    return this.service.getStats(user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Get(':id')
   @ApiOperation({ summary: 'Get an offer by id' })
   @ApiParam({ name: 'id', description: 'Offer ID' })
@@ -222,6 +280,34 @@ export class OffersController {
     @GetUser() user: { id: string },
   ) {
     return this.service.cancel(id, user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/complete')
+  @ApiOperation({ summary: 'Complete an accepted offer' })
+  @ApiParam({ name: 'id', description: 'Offer ID' })
+  @ApiBody({ type: CompleteOfferDto, required: false })
+  @ApiResponse({
+    status: 200,
+    description: 'Offer completed',
+    schema: {
+      example: {
+        id: 'offer_123',
+        status: 'COMPLETED',
+        completedAt: '2026-02-24T12:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Only accepted offers can be completed' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Offer not found' })
+  complete(
+    @Param('id') id: string,
+    @Body() dto: CompleteOfferDto,
+    @GetUser() user: { id: string },
+  ) {
+    return this.service.complete(id, user.id, dto);
   }
 
   @UseGuards(AuthGuard('jwt'))

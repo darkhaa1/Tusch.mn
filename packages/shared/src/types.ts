@@ -242,6 +242,8 @@ export type Offer = {
   status: OfferStatus;
   expiresAt: string;
   respondedAt: string | null;
+  completedAt?: string | null;
+  clientNote?: string | null;
   createdAt: string;
   updatedAt: string;
   provider?: ListingUser;

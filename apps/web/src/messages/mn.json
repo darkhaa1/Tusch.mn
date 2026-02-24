@@ -147,7 +147,8 @@
       "ACCEPTED": "Зөвшөөрсөн",
       "REJECTED": "Татгалзсан",
       "EXPIRED": "Хугацаа дууссан",
-      "CANCELLED": "Цуцлагдсан"
+      "CANCELLED": "Цуцлагдсан",
+      "COMPLETED": "Дууссан"
     },
     "actions": {
       "accept": "Зөвшөөрөх",

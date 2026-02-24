@@ -57,6 +57,7 @@ export const OfferStatus = {
   REJECTED: "REJECTED",
   EXPIRED: "EXPIRED",
   CANCELLED: "CANCELLED",
+  COMPLETED: "COMPLETED",
 } as const;
 export type OfferStatus = (typeof OfferStatus)[keyof typeof OfferStatus];
 

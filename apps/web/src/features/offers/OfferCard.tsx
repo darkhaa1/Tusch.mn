@@ -27,6 +27,7 @@ const statusStyles: Record<string, string> = {
   REJECTED: "border-rose-200 bg-rose-50 text-rose-700",
   EXPIRED: "border-slate-200 bg-slate-100 text-slate-600",
   CANCELLED: "border-slate-200 bg-slate-100 text-slate-600",
+  COMPLETED: "border-sky-200 bg-sky-50 text-sky-700",
 };
 
 type OfferAction = "accept" | "reject" | "cancel";
@@ -80,6 +81,7 @@ export function OfferCard({
     REJECTED: t("status.REJECTED"),
     EXPIRED: t("status.EXPIRED"),
     CANCELLED: t("status.CANCELLED"),
+    COMPLETED: t("status.COMPLETED"),
   } as const;
   const statusLabel = statusLabelMap[offer.status] || offer.status;
   const statusClass = statusStyles[offer.status] || statusStyles.PENDING;
