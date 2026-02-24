@@ -18,39 +18,61 @@ import {
 } from '../../common/image/image-processor';
 import { LISTING_UPLOAD_DIR } from '../../common/multer/constants';
 
-const listingPublicInclude = {
-  user: {
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      avatarUrl: true,
-    },
-  },
-  images: {
-    orderBy: { position: 'asc' as const },
-  },
+const listingUserSelectPublic = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  avatarUrl: true,
 } as const;
 
-const listingPrivateInclude = {
-  user: {
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-      avatarUrl: true,
-    },
-  },
-  images: {
-    orderBy: { position: 'asc' as const },
-  },
+const listingUserSelectPrivate = {
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  phone: true,
+  avatarUrl: true,
 } as const;
+
+const listingImagesInclude = {
+  orderBy: { position: 'asc' as const },
+} as const;
+
+const buildListingInclude = (userId?: string, includePrivateUser = false) => ({
+  user: {
+    select: includePrivateUser
+      ? listingUserSelectPrivate
+      : listingUserSelectPublic,
+  },
+  images: listingImagesInclude,
+  _count: {
+    select: { favoritedBy: true },
+  },
+  ...(userId
+    ? {
+        favoritedBy: {
+          where: { userId },
+          select: { id: true },
+        },
+      }
+    : {}),
+});
 
 @Injectable()
 export class ListingsService {
   constructor(private prisma: PrismaService) {}
+
+  private withFavorites(listing: any, userId?: string) {
+    if (!listing) return listing;
+    const { _count, favoritedBy, ...rest } = listing;
+    const favoritesCount = _count?.favoritedBy ?? 0;
+    const isFavorited = userId ? (favoritedBy?.length ?? 0) > 0 : false;
+    return { ...rest, favoritesCount, isFavorited };
+  }
+
+  private mapListings(items: any[], userId?: string) {
+    return items.map((item) => this.withFavorites(item, userId));
+  }
 
   async create(dto: CreateListingDto, userId: string) {
     return this.prisma.listing.create({
@@ -58,7 +80,7 @@ export class ListingsService {
     });
   }
 
-  async findAll(q: GetListingsQueryDto) {
+  async findAll(q: GetListingsQueryDto, userId?: string) {
     const search = q.search?.trim();
     const filters: Prisma.ListingWhereInput[] = [
       { status: ListingStatus.ACTIVE },
@@ -100,7 +122,7 @@ export class ListingsService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.listing.findMany({
         where,
-        include: listingPublicInclude as any,
+        include: buildListingInclude(userId) as any,
         skip,
         take: q.limit,
         orderBy: { createdAt: orderBy },
@@ -109,14 +131,14 @@ export class ListingsService {
     ]);
 
     return {
-      items: data,
+      items: this.mapListings(data, userId),
       total,
       page: q.page,
       limit: q.limit,
     };
   }
 
-  async findPublicById(id: string) {
+  async findPublicById(id: string, userId?: string) {
     const item = await this.prisma.listing.findFirst({
       where: {
         id,
@@ -124,19 +146,19 @@ export class ListingsService {
         deletedAt: null,
         user: { deletedAt: null },
       },
-      include: listingPublicInclude as any,
+      include: buildListingInclude(userId) as any,
     });
     if (!item) throw new NotFoundException('Listing not found');
-    return item;
+    return this.withFavorites(item, userId);
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
     const item = await this.prisma.listing.findFirst({
       where: { id, deletedAt: null },
-      include: listingPrivateInclude as any,
+      include: buildListingInclude(userId, true) as any,
     });
     if (!item) throw new NotFoundException('Listing not found');
-    return item;
+    return this.withFavorites(item, userId);
   }
 
   private ensureOwnership(listing: Listing, userId: string) {
@@ -233,7 +255,7 @@ export class ListingsService {
 
     await (this.prisma as any).listingImage.createMany({ data });
 
-    return this.findOne(listingId);
+    return this.findOne(listingId, userId);
   }
 
   async deleteImage(listingId: string, imageId: string, userId: string) {
@@ -274,7 +296,7 @@ export class ListingsService {
 
     await (this.prisma as any).listingImage.delete({ where: { id: imageId } });
 
-    return this.findOne(listingId);
+    return this.findOne(listingId, userId);
   }
 
   async reorderImages(listingId: string, imageIds: string[], userId: string) {
@@ -324,15 +346,16 @@ export class ListingsService {
       }
     });
 
-    return this.findOne(listingId);
+    return this.findOne(listingId, userId);
   }
 
   async getListingsByUser(userId: string) {
-    return this.prisma.listing.findMany({
+    const items = await this.prisma.listing.findMany({
       where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
-      include: listingPrivateInclude as any,
+      include: buildListingInclude(userId, true) as any,
     });
+    return this.mapListings(items, userId);
   }
 
   async getDistinctLocations(): Promise<string[]> {

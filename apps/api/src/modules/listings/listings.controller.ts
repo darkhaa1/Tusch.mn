@@ -33,6 +33,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { listingImagesMulterOptions } from '../../common/multer/image-options';
 import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
 import { ReorderImagesDto } from './dto/reorder-images.dto';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 
 @Controller('listings')
 @ApiTags('listings')
@@ -65,6 +66,7 @@ export class ListingsController {
     return this.service.create(dto, user.id);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
   @ApiOperation({ summary: 'List listings (public)' })
   @ApiQuery({ name: 'category', required: false })
@@ -94,8 +96,12 @@ export class ListingsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async findAll(@Query() q: GetListingsQueryDto) {
-    const result = await this.service.findAll(q);
+  async findAll(
+    @Query() q: GetListingsQueryDto,
+    @GetUser() user?: { id?: string; sub?: string },
+  ) {
+    const userId = user?.id ?? user?.sub;
+    const result = await this.service.findAll(q, userId);
     if (q.legacy === 1) {
       return {
         data: result.items,
@@ -141,6 +147,7 @@ export class ListingsController {
     return this.service.getDistinctLocations();
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
   @ApiOperation({ summary: 'Get listing details (public)' })
   @ApiParam({ name: 'id', description: 'Listing ID' })
@@ -161,8 +168,12 @@ export class ListingsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Listing not found' })
-  findOne(@Param('id') id: string) {
-    return this.service.findPublicById(id);
+  findOne(
+    @Param('id') id: string,
+    @GetUser() user?: { id?: string; sub?: string },
+  ) {
+    const userId = user?.id ?? user?.sub;
+    return this.service.findPublicById(id, userId);
   }
 
   @UseGuards(AuthGuard('jwt'))

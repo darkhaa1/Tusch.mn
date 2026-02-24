@@ -92,6 +92,9 @@ model User {
   notifications    Notification[]
   reports          Report[]
   offers           Offer[]        @relation("UserOffers")
+  favoriteListings  FavoriteListing[]  @relation("UserFavoriteListings")
+  favoriteProviders FavoriteProvider[] @relation("UserFavoriteProviders")
+  favoritedBy       FavoriteProvider[] @relation("FavoritedByUsers")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -112,6 +115,7 @@ model Listing {
   images      ListingImage[]
   message     Message[]
   offers      Offer[]
+  favoritedBy FavoriteListing[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -232,4 +236,28 @@ model Offer {
   @@unique([listingId, providerId])
   @@index([providerId])
   @@index([listingId, status])
+}
+
+model FavoriteListing {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserFavoriteListings", fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model FavoriteProvider {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("UserFavoriteProviders", fields: [userId], references: [id], onDelete: Cascade)
+  providerId String
+  provider   User     @relation("FavoritedByUsers", fields: [providerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, providerId])
+  @@index([userId])
 }

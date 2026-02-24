@@ -63,7 +63,7 @@ describe('ListingsService', () => {
 
   describe('findAll', () => {
     it('should return paginated listings', async () => {
-      const items = [{ id: 'l1' }];
+      const items = [{ id: 'l1', _count: { favoritedBy: 2 } }];
       prisma.$transaction.mockResolvedValue([items, 1]);
 
       const result = await service.findAll({
@@ -71,7 +71,13 @@ describe('ListingsService', () => {
         limit: 10,
       } as any);
 
-      expect(result.items).toEqual(items);
+      expect(result.items[0]).toEqual(
+        expect.objectContaining({
+          id: 'l1',
+          favoritesCount: 2,
+          isFavorited: false,
+        }),
+      );
       expect(result.total).toBe(1);
     });
 
@@ -129,11 +135,16 @@ describe('ListingsService', () => {
 
   describe('findPublicById', () => {
     it('should return listing when found', async () => {
-      prisma.listing.findFirst.mockResolvedValue({ id: 'l1' });
+      prisma.listing.findFirst.mockResolvedValue({
+        id: 'l1',
+        _count: { favoritedBy: 0 },
+      });
 
       const result = await service.findPublicById('l1');
 
-      expect(result.id).toBe('l1');
+      expect(result).toEqual(
+        expect.objectContaining({ id: 'l1', favoritesCount: 0 }),
+      );
     });
 
     it('should throw NotFoundException when not found', async () => {

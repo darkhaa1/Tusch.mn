@@ -9,6 +9,7 @@ import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
 import { ListingsModule } from './modules/listings/listings.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
@@ -41,6 +42,7 @@ import { UserModule } from './modules/user/user.module';
     AuthModule,
     UserModule,
     ListingsModule,
+    FavoritesModule,
     MessagesModule,
     AdminModule,
     ReviewsModule,

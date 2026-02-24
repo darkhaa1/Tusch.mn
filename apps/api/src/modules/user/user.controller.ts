@@ -19,10 +19,12 @@ import {
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { UpdateMyRoleDto } from './dto/update-my-role.dto';
 import { UserRole } from '@repo/shared';
 import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
+import { GetUser } from '../../common/decorators/get-user.decorator';
 
 @Controller('users')
 @ApiTags('users')
@@ -104,6 +106,7 @@ export class UserController {
     return { user: updated };
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('providers')
   @ApiOperation({ summary: 'List providers' })
   @ApiQuery({ name: 'q', required: false })
@@ -128,10 +131,15 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async getProviders(@Query() query: GetProvidersQueryDto) {
-    return this.userService.getProviders(query);
+  async getProviders(
+    @Query() query: GetProvidersQueryDto,
+    @GetUser() user?: { id?: string; sub?: string },
+  ) {
+    const userId = user?.id ?? user?.sub;
+    return this.userService.getProviders(query, userId);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/public')
   @ApiOperation({ summary: 'Get public profile for a user' })
   @ApiParam({ name: 'id', description: 'User ID' })
@@ -156,12 +164,15 @@ export class UserController {
     @Param('id') id: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @GetUser() user?: { id?: string; sub?: string },
   ) {
     const pageNumber = page ? Number(page) : undefined;
     const limitNumber = limit ? Number(limit) : undefined;
+    const userId = user?.id ?? user?.sub;
     return this.userService.getPublicProfile(id, {
       page: pageNumber,
       limit: limitNumber,
+      viewerId: userId,
     });
   }
 }

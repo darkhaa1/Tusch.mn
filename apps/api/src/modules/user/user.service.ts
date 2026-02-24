@@ -11,6 +11,8 @@ export type PublicUserProfile = {
     lastName: string;
     avatarUrl: string | null;
     createdAt: Date;
+    favoritesCount: number;
+    isFavorited: boolean;
     verification: {
       emailVerified: boolean;
       phoneVerified: boolean;
@@ -193,12 +195,15 @@ export class UserService {
     return topCategory;
   }
 
-  async getProviders(params?: {
-    q?: string;
-    category?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<ProvidersResponseDto> {
+  async getProviders(
+    params?: {
+      q?: string;
+      category?: string;
+      page?: number;
+      limit?: number;
+    },
+    viewerId?: string,
+  ): Promise<ProvidersResponseDto> {
     const page = Math.max(1, params?.page ?? 1);
     const limit = Math.min(50, Math.max(1, params?.limit ?? 12));
     const skip = (page - 1) * limit;
@@ -249,7 +254,20 @@ export class UserService {
               ? { category, status: ListingStatus.ACTIVE, deletedAt: null }
               : activeListingFilter,
           },
-          _count: { select: { listing: { where: activeListingFilter } } },
+          ...(viewerId
+            ? {
+                favoritedBy: {
+                  where: { userId: viewerId },
+                  select: { id: true },
+                },
+              }
+            : {}),
+          _count: {
+            select: {
+              listing: { where: activeListingFilter },
+              favoritedBy: true,
+            },
+          },
         },
       }),
     ]);
@@ -278,6 +296,10 @@ export class UserService {
 
     const items: ProviderCardDto[] = users.map((user) => {
       const stats = reviewStats.get(user.id);
+      const favoritesCount = user._count?.favoritedBy ?? 0;
+      const isFavorited = viewerId
+        ? (user.favoritedBy?.length ?? 0) > 0
+        : false;
       return {
         id: user.id,
         firstName: user.firstName,
@@ -288,6 +310,8 @@ export class UserService {
         listingsCount: user._count.listing,
         ratingAvg: stats?.ratingAvg ?? null,
         reviewsCount: stats?.reviewsCount ?? 0,
+        favoritesCount,
+        isFavorited,
       };
     });
 
@@ -301,8 +325,9 @@ export class UserService {
 
   async getPublicProfile(
     userId: string,
-    params?: { page?: number; limit?: number },
+    params?: { page?: number; limit?: number; viewerId?: string },
   ): Promise<PublicUserProfile> {
+    const viewerId = params?.viewerId;
     const safeUser = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
       select: {
@@ -312,6 +337,15 @@ export class UserService {
         avatarUrl: true,
         createdAt: true,
         emailVerified: true,
+        _count: { select: { favoritedBy: true } },
+        ...(viewerId
+          ? {
+              favoritedBy: {
+                where: { userId: viewerId },
+                select: { id: true },
+              },
+            }
+          : {}),
       },
     });
 
@@ -384,12 +418,22 @@ export class UserService {
       thumbnailUrl: listing.images?.[0]?.thumbnailUrl || null,
     }));
 
+    const favoritesCount = safeUser._count?.favoritedBy ?? 0;
+    const isFavorited = viewerId
+      ? (safeUser.favoritedBy?.length ?? 0) > 0
+      : false;
+    const { _count, favoritedBy, ...safeUserBase } = safeUser;
+    void _count;
+    void favoritedBy;
+
     return {
       user: {
-        ...safeUser,
-        avatarUrl: safeUser.avatarUrl || null,
+        ...safeUserBase,
+        avatarUrl: safeUserBase.avatarUrl || null,
+        favoritesCount,
+        isFavorited,
         verification: {
-          emailVerified: safeUser.emailVerified,
+          emailVerified: safeUserBase.emailVerified,
           phoneVerified: false,
           idVerified: false,
         },

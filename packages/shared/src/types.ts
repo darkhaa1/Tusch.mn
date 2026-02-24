@@ -42,6 +42,8 @@ export type PublicUserProfile = {
     lastName: string;
     avatarUrl: string | null;
     createdAt: string;
+    favoritesCount: number;
+    isFavorited: boolean;
     verification: {
       emailVerified: boolean;
       phoneVerified: boolean;
@@ -89,6 +91,8 @@ export type ProviderCard = {
   listingsCount: number;
   ratingAvg?: number | null;
   reviewsCount: number;
+  favoritesCount: number;
+  isFavorited: boolean;
 };
 
 export type AdminUser = {
@@ -115,6 +119,8 @@ export type Listing = {
   userId: string;
   user?: ListingUser;
   images?: Array<{ id: string; url: string; thumbnailUrl?: string | null; position: number }>;
+  favoritesCount: number;
+  isFavorited: boolean;
   createdAt: string;
   updatedAt: string;
 };

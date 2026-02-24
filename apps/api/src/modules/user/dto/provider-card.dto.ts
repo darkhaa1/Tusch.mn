@@ -27,6 +27,12 @@ export class ProviderCardDto {
 
   @ApiProperty({ example: 12 })
   reviewsCount!: number;
+
+  @ApiProperty({ example: 5 })
+  favoritesCount!: number;
+
+  @ApiProperty({ example: false })
+  isFavorited!: boolean;
 }
 
 export class ProvidersResponseDto {
