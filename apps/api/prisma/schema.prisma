@@ -46,6 +46,7 @@ enum OfferStatus {
   REJECTED
   EXPIRED
   CANCELLED
+  COMPLETED
 }
 
 enum ReportTargetType {
@@ -227,6 +228,8 @@ model Offer {
   status        OfferStatus @default(PENDING)
   expiresAt     DateTime
   respondedAt   DateTime?
+  completedAt  DateTime?
+  clientNote   String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 

@@ -147,7 +147,8 @@
       "ACCEPTED": "Accepted",
       "REJECTED": "Rejected",
       "EXPIRED": "Expired",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "COMPLETED": "Completed"
     },
     "actions": {
       "accept": "Accept",

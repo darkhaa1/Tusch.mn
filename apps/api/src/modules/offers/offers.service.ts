@@ -5,10 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { NotificationType, UserRole } from '@repo/shared';
+import { NotificationType, OfferStatus, UserRole } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
+import { CompleteOfferDto } from './dto/complete-offer.dto';
 
 const offerInclude = {
   provider: {
@@ -264,5 +265,107 @@ export class OffersService {
     });
 
     return updatedOffer;
+  }
+
+  async complete(id: string, userId: string, dto?: CompleteOfferDto) {
+    const offer = await (this.prisma as any).offer.findUnique({
+      where: { id },
+      include: { listing: { select: { userId: true } } },
+    });
+    if (!offer) throw new NotFoundException('Offer not found');
+
+    if (offer.listing.userId !== userId) {
+      throw new ForbiddenException('Not your listing');
+    }
+
+    if (offer.status !== OfferStatus.ACCEPTED) {
+      throw new BadRequestException('Only accepted offers can be completed');
+    }
+
+    return (this.prisma as any).offer.update({
+      where: { id },
+      data: {
+        status: OfferStatus.COMPLETED,
+        completedAt: new Date(),
+        clientNote: dto?.clientNote ?? null,
+      },
+      include: offerInclude,
+    });
+  }
+
+  private async listHistory(where: any, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await this.prisma.$transaction([
+      (this.prisma as any).offer.findMany({
+        where,
+        include: offerInclude,
+        orderBy: { completedAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      (this.prisma as any).offer.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  async findHistory(userId: string, page: number, limit: number) {
+    return this.listHistory(
+      {
+        status: OfferStatus.COMPLETED,
+        OR: [{ providerId: userId }, { listing: { userId } }],
+      },
+      page,
+      limit,
+    );
+  }
+
+  async findHistoryAsClient(userId: string, page: number, limit: number) {
+    return this.listHistory(
+      { status: OfferStatus.COMPLETED, listing: { userId } },
+      page,
+      limit,
+    );
+  }
+
+  async findHistoryAsProvider(userId: string, page: number, limit: number) {
+    return this.listHistory(
+      { status: OfferStatus.COMPLETED, providerId: userId },
+      page,
+      limit,
+    );
+  }
+
+  async getStats(userId: string) {
+    const [clientAgg, providerAgg] = await Promise.all([
+      (this.prisma as any).offer.aggregate({
+        where: { status: OfferStatus.COMPLETED, listing: { userId } },
+        _count: { _all: true },
+        _sum: { price: true },
+      }),
+      (this.prisma as any).offer.aggregate({
+        where: { status: OfferStatus.COMPLETED, providerId: userId },
+        _count: { _all: true },
+        _sum: { price: true },
+        _avg: { price: true },
+      }),
+    ]);
+
+    const averagePrice = providerAgg._avg?.price
+      ? Math.round(providerAgg._avg.price)
+      : 0;
+
+    return {
+      asClient: {
+        totalCompleted: clientAgg._count?._all ?? 0,
+        totalSpent: clientAgg._sum?.price ?? 0,
+      },
+      asProvider: {
+        totalCompleted: providerAgg._count?._all ?? 0,
+        totalEarned: providerAgg._sum?.price ?? 0,
+        averagePrice,
+      },
+    };
   }
 }

@@ -66,8 +66,12 @@ describe('Offers (e2e)', () => {
     body: Record<string, unknown>,
   ) => request(app.getHttpServer()).post(path).set('Cookie', cookie).send(body);
 
-  const authedPatch = (path: string, cookie: string) =>
-    request(app.getHttpServer()).patch(path).set('Cookie', cookie);
+  const authedPatch = (
+    path: string,
+    cookie: string,
+    body: Record<string, unknown> = {},
+  ) =>
+    request(app.getHttpServer()).patch(path).set('Cookie', cookie).send(body);
 
   const setup = async () => {
     const suffix = `${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
@@ -378,6 +382,91 @@ describe('Offers (e2e)', () => {
       `/offers/${offerRes.body.id}/reject`,
       ctx.providerCookie,
     ).expect(403);
+  });
+
+  it('client completes an accepted offer', async () => {
+    const ctx = await setup();
+
+    const offerRes = await authedPost(
+      `/offers/listing/${ctx.listingId}`,
+      ctx.providerCookie,
+      { price: 3200, message: 'Please complete' },
+    ).expect(201);
+
+    await authedPatch(
+      `/offers/${offerRes.body.id}/accept`,
+      ctx.clientCookie,
+    ).expect(200);
+
+    await authedPatch(
+      `/offers/${offerRes.body.id}/complete`,
+      ctx.providerCookie,
+    ).expect(403);
+
+    const completeRes = await authedPatch(
+      `/offers/${offerRes.body.id}/complete`,
+      ctx.clientCookie,
+      { clientNote: 'Great work' },
+    ).expect(200);
+
+    expect(completeRes.body.status).toBe('COMPLETED');
+    expect(completeRes.body.completedAt).toBeTruthy();
+    expect(completeRes.body.clientNote).toBe('Great work');
+  });
+
+  it('returns history and stats for completed offers', async () => {
+    const ctx = await setup();
+
+    const offerRes = await authedPost(
+      `/offers/listing/${ctx.listingId}`,
+      ctx.providerCookie,
+      { price: 4100, message: 'History test' },
+    ).expect(201);
+
+    await authedPatch(
+      `/offers/${offerRes.body.id}/accept`,
+      ctx.clientCookie,
+    ).expect(200);
+
+    await authedPatch(
+      `/offers/${offerRes.body.id}/complete`,
+      ctx.clientCookie,
+    ).expect(200);
+
+    const history = await authedGet(
+      '/offers/history',
+      ctx.clientCookie,
+    ).expect(200);
+    expect(history.body.total).toBe(1);
+    expect(history.body.items[0].status).toBe('COMPLETED');
+
+    const historyClient = await authedGet(
+      '/offers/history/as-client',
+      ctx.clientCookie,
+    ).expect(200);
+    expect(historyClient.body.total).toBe(1);
+
+    const historyProvider = await authedGet(
+      '/offers/history/as-provider',
+      ctx.providerCookie,
+    ).expect(200);
+    expect(historyProvider.body.total).toBe(1);
+
+    const clientStats = await authedGet(
+      '/offers/stats',
+      ctx.clientCookie,
+    ).expect(200);
+    expect(clientStats.body.asClient.totalCompleted).toBe(1);
+    expect(clientStats.body.asClient.totalSpent).toBe(4100);
+    expect(clientStats.body.asProvider.totalCompleted).toBe(0);
+
+    const providerStats = await authedGet(
+      '/offers/stats',
+      ctx.providerCookie,
+    ).expect(200);
+    expect(providerStats.body.asProvider.totalCompleted).toBe(1);
+    expect(providerStats.body.asProvider.totalEarned).toBe(4100);
+    expect(providerStats.body.asProvider.averagePrice).toBe(4100);
   });
 
   it('creates a notification for the listing owner', async () => {
