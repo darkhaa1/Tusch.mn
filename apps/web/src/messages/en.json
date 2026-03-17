@@ -123,7 +123,8 @@
     "tabs": {
       "offers": "Offers",
       "sent": "Sent",
-      "received": "Received"
+      "received": "Received",
+      "history": "History"
     },
     "listing": {
       "detailsTab": "Details",
@@ -182,6 +183,31 @@
       "accepted": "Offer accepted.",
       "rejected": "Offer rejected.",
       "cancelled": "Offer cancelled."
+    },
+    "history": {
+      "tabs": {
+        "asClient": "As client",
+        "asProvider": "As provider"
+      },
+      "stats": {
+        "totalCompleted": "Completed",
+        "totalSpent": "Total spent",
+        "totalEarned": "Total earned",
+        "avgPrice": "Avg. price (client)"
+      },
+      "complete": {
+        "title": "Mark offer as completed",
+        "description": "Confirm that the service has been delivered. You can leave an optional note.",
+        "notePlaceholder": "Optional note for the provider...",
+        "confirm": "Complete"
+      },
+      "empty": {
+        "title": "No completed offers",
+        "description": "Your completed offers will appear here."
+      },
+      "toast": {
+        "completed": "Offer marked as completed."
+      }
     },
     "empty": {
       "title": "No offers yet",

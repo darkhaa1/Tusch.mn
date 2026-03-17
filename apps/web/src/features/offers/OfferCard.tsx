@@ -39,6 +39,7 @@ type OfferCardProps = {
   onAccept?: (offer: Offer) => Promise<void>;
   onReject?: (offer: Offer) => Promise<void>;
   onCancel?: (offer: Offer) => Promise<void>;
+  onComplete?: (offer: Offer) => void;
   isBusy?: boolean;
 };
 
@@ -49,6 +50,7 @@ export function OfferCard({
   onAccept,
   onReject,
   onCancel,
+  onComplete,
   isBusy = false,
 }: OfferCardProps) {
   const t = useTranslations("offers");
@@ -89,7 +91,8 @@ export function OfferCard({
   const canAccept = offer.status === "PENDING" && Boolean(onAccept);
   const canReject = offer.status === "PENDING" && Boolean(onReject);
   const canCancel = offer.status === "PENDING" && Boolean(onCancel);
-  const hasActions = canAccept || canReject || canCancel;
+  const canComplete = offer.status === "ACCEPTED" && Boolean(onComplete);
+  const hasActions = canAccept || canReject || canCancel || canComplete;
 
   const actionConfig = useMemo(() => {
     if (!confirmAction) return null;
@@ -228,6 +231,16 @@ export function OfferCard({
                 disabled={isBusy}
               >
                 {t("actions.cancel")}
+              </Button>
+            ) : null}
+            {canComplete ? (
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => onComplete!(offer)}
+                disabled={isBusy}
+              >
+                {t("history.complete.confirm")}
               </Button>
             ) : null}
           </div>

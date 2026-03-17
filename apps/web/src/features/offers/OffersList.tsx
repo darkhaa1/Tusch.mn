@@ -20,6 +20,7 @@ type OffersListProps = {
   onAccept?: (offer: Offer) => Promise<void>;
   onReject?: (offer: Offer) => Promise<void>;
   onCancel?: (offer: Offer) => Promise<void>;
+  onComplete?: (offer: Offer) => void;
   busyOfferId?: string | null;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -39,6 +40,7 @@ export function OffersList({
   onAccept,
   onReject,
   onCancel,
+  onComplete,
   busyOfferId,
   emptyTitle,
   emptyDescription,
@@ -102,6 +104,7 @@ export function OffersList({
             onAccept={onAccept}
             onReject={onReject}
             onCancel={onCancel}
+            onComplete={onComplete}
             isBusy={busyOfferId === offer.id}
           />
         ))}

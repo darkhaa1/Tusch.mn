@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger, Card, CardContent } from "@we
 import type { CurrentUser } from "@web/lib/api/types";
 import { OffersReceivedTab } from "@web/features/offers/OffersReceivedTab";
 import { OffersSentTab } from "@web/features/offers/OffersSentTab";
+import { OffersHistoryTab } from "@web/features/offers/OffersHistoryTab";
 
 type ProfileTabsProps = {
   user: CurrentUser | null | undefined;
@@ -124,7 +125,7 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
         <Card className="border border-border/80">
           <CardContent className="p-4">
             <Tabs defaultValue="received" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger
                   value="received"
                   className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
@@ -137,12 +138,21 @@ export function ProfileTabs({ user }: ProfileTabsProps) {
                 >
                   {t("tabs.sent")}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="history"
+                  className="w-full transition hover:bg-muted data-[state=active]:border-b-2 data-[state=active]:border-primary"
+                >
+                  {t("tabs.history")}
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="received">
                 <OffersReceivedTab />
               </TabsContent>
               <TabsContent value="sent">
                 <OffersSentTab />
+              </TabsContent>
+              <TabsContent value="history">
+                <OffersHistoryTab />
               </TabsContent>
             </Tabs>
           </CardContent>

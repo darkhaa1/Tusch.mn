@@ -89,3 +89,52 @@ export async function rejectOffer(id: string) {
 export async function cancelOffer(id: string) {
   return apiFetch<Offer>(`/offers/${id}/cancel`, { method: "PATCH" });
 }
+
+export async function completeOffer(id: string, clientNote?: string) {
+  return apiFetch<Offer>(`/offers/${id}/complete`, {
+    method: "PATCH",
+    body: JSON.stringify({ clientNote }),
+  });
+}
+
+export async function getOffersHistory(params?: OffersQuery): Promise<OffersPage> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 12;
+  const data = await apiFetch<OffersPage | Offer[]>(
+    `/offers/history${buildOffersQuery({ page, limit })}`,
+    { method: "GET" }
+  );
+  return normalizeOffersPage(data, page, limit);
+}
+
+export async function getOffersHistoryAsClient(params?: OffersQuery): Promise<OffersPage> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 12;
+  const data = await apiFetch<OffersPage | Offer[]>(
+    `/offers/history/as-client${buildOffersQuery({ page, limit })}`,
+    { method: "GET" }
+  );
+  return normalizeOffersPage(data, page, limit);
+}
+
+export async function getOffersHistoryAsProvider(params?: OffersQuery): Promise<OffersPage> {
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 12;
+  const data = await apiFetch<OffersPage | Offer[]>(
+    `/offers/history/as-provider${buildOffersQuery({ page, limit })}`,
+    { method: "GET" }
+  );
+  return normalizeOffersPage(data, page, limit);
+}
+
+export type OffersStats = {
+  totalCompleted: number;
+  totalSpentAsClient: number | null;
+  totalEarnedAsProvider: number | null;
+  averagePriceAsClient: number | null;
+  averagePriceAsProvider: number | null;
+};
+
+export async function getOffersStats(): Promise<OffersStats> {
+  return apiFetch<OffersStats>("/offers/stats", { method: "GET" });
+}

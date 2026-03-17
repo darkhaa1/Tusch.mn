@@ -84,12 +84,18 @@ import {
 import {
   acceptOffer,
   cancelOffer,
+  completeOffer,
   createOffer,
   getOffersByListing,
+  getOffersHistory,
+  getOffersHistoryAsClient,
+  getOffersHistoryAsProvider,
   getOffersReceived,
   getOffersSent,
+  getOffersStats,
   rejectOffer,
 } from "@web/lib/api/offers";
+import type { OffersStats } from "@web/lib/api/offers";
 
 export function useCurrentUser() {
   return useQuery({
@@ -723,5 +729,55 @@ export function useCancelOffer() {
       queryClient.invalidateQueries({ queryKey: ['offers-by-listing'] });
       queryClient.invalidateQueries({ queryKey: ['offers-sent'] });
     },
+  });
+}
+
+export function useCompleteOffer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ offerId, clientNote }: { offerId: string; clientNote?: string }) =>
+      completeOffer(offerId, clientNote),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['offers-received'] });
+      queryClient.invalidateQueries({ queryKey: ['offers-sent'] });
+      queryClient.invalidateQueries({ queryKey: ['offers-history'] });
+      queryClient.invalidateQueries({ queryKey: ['offers-stats'] });
+    },
+  });
+}
+
+export function useOffersHistory(params?: { page?: number; limit?: number }) {
+  const { data: user } = useCurrentUser();
+  return useQuery<OffersPage>({
+    queryKey: ['offers-history', params?.page || 1, params?.limit || 10],
+    queryFn: () => getOffersHistory(params),
+    enabled: !!user,
+  });
+}
+
+export function useOffersHistoryAsClient(params?: { page?: number; limit?: number }) {
+  const { data: user } = useCurrentUser();
+  return useQuery<OffersPage>({
+    queryKey: ['offers-history-client', params?.page || 1, params?.limit || 10],
+    queryFn: () => getOffersHistoryAsClient(params),
+    enabled: !!user,
+  });
+}
+
+export function useOffersHistoryAsProvider(params?: { page?: number; limit?: number }) {
+  const { data: user } = useCurrentUser();
+  return useQuery<OffersPage>({
+    queryKey: ['offers-history-provider', params?.page || 1, params?.limit || 10],
+    queryFn: () => getOffersHistoryAsProvider(params),
+    enabled: !!user,
+  });
+}
+
+export function useOffersStats() {
+  const { data: user } = useCurrentUser();
+  return useQuery<OffersStats>({
+    queryKey: ['offers-stats'],
+    queryFn: getOffersStats,
+    enabled: !!user,
   });
 }
