@@ -3,8 +3,18 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { Offer } from "@web/lib/api/types";
-import { useAcceptOffer, useOffersReceived, useRejectOffer } from "@web/lib/hooks/useApi";
+import { useAcceptOffer, useCompleteOffer, useOffersReceived, useRejectOffer } from "@web/lib/hooks/useApi";
 import { OffersList } from "./OffersList";
+import {
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@web/components/ui";
 
 const DEFAULT_LIMIT = 8;
 
@@ -16,6 +26,8 @@ export function OffersReceivedTab() {
   const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastVariant, setToastVariant] = useState<ToastVariant>("success");
+  const [completeTarget, setCompleteTarget] = useState<Offer | null>(null);
+  const [clientNote, setClientNote] = useState("");
 
   const { data, isLoading, error, refetch } = useOffersReceived({
     page,
@@ -23,6 +35,7 @@ export function OffersReceivedTab() {
   });
   const acceptOffer = useAcceptOffer();
   const rejectOffer = useRejectOffer();
+  const completeOffer = useCompleteOffer();
 
   useEffect(() => {
     if (!toastMessage) return;
@@ -58,6 +71,24 @@ export function OffersReceivedTab() {
     }
   };
 
+  const handleConfirmComplete = async () => {
+    if (!completeTarget) return;
+    try {
+      await completeOffer.mutateAsync({
+        offerId: completeTarget.id,
+        clientNote: clientNote.trim() || undefined,
+      });
+      setToastVariant("success");
+      setToastMessage(t("history.toast.completed"));
+    } catch (err) {
+      setToastVariant("error");
+      setToastMessage(err instanceof Error ? err.message : t("errors.generic"));
+    } finally {
+      setCompleteTarget(null);
+      setClientNote("");
+    }
+  };
+
   return (
     <>
       <OffersList
@@ -73,10 +104,45 @@ export function OffersReceivedTab() {
         showProvider
         onAccept={handleAccept}
         onReject={handleReject}
+        onComplete={setCompleteTarget}
         busyOfferId={busyOfferId}
         emptyTitle={t("empty.receivedTitle")}
         emptyDescription={t("empty.receivedDescription")}
       />
+
+      <Dialog
+        open={completeTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCompleteTarget(null);
+            setClientNote("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("history.complete.title")}</DialogTitle>
+            <DialogDescription>{t("history.complete.description")}</DialogDescription>
+          </DialogHeader>
+          <textarea
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            rows={3}
+            placeholder={t("history.complete.notePlaceholder")}
+            value={clientNote}
+            onChange={(e) => setClientNote(e.target.value)}
+          />
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <DialogClose asChild>
+              <Button variant="outline" disabled={completeOffer.isPending}>
+                {t("actions.close")}
+              </Button>
+            </DialogClose>
+            <Button onClick={handleConfirmComplete} disabled={completeOffer.isPending}>
+              {completeOffer.isPending ? t("actions.processing") : t("history.complete.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {toastMessage ? (
         <div
