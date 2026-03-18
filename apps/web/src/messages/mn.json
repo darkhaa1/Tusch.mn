@@ -104,6 +104,48 @@
       "priceUpTo": "{value} хүртэл",
       "pricePlus": "{value}+",
       "priceRangeCompact": "{min} - {max}"
+    },
+    "detail": {
+      "loading": "Уншиж байна...",
+      "error": "Алдаа гарлаа.",
+      "notFound": "Зар олдсонгүй",
+      "back": "Буцах",
+      "edit": "Засах",
+      "delete": "Устгах",
+      "allListings": "Бүх зарууд",
+      "contact": "Холбогдох",
+      "unknownUser": "Хэрэглэгч",
+      "priceOnRequest": "Тохиролцоно",
+      "noLocation": "Байршил оруулаагүй",
+      "listingFallback": "Зар",
+      "errors": {
+        "emptyDescription": "Тайлбар хоосон байна.",
+        "invalidPrice": "Үнэ 0-ээс их эерэг тоо байх ёстой.",
+        "saveError": "Хадгалах үед алдаа гарлаа.",
+        "deleteError": "Устгах үед алдаа гарлаа.",
+        "imageUpload": "Зураг нэмэх үед алдаа гарлаа.",
+        "imageDelete": "Зураг устгах үед алдаа гарлаа.",
+        "imageOrder": "Зургийн дараалал буруу байна.",
+        "imageReorder": "Зургийн дараалал хадгалахад алдаа гарлаа.",
+        "messageLogin": "Мессеж илгээхийн тулд нэвтэрнэ үү.",
+        "messageEmpty": "Мессеж хоосон байна.",
+        "messageSent": "Мессеж илгээлээ.",
+        "messageError": "Мессеж илгээхэд алдаа гарлаа."
+      },
+      "deleteDialog": {
+        "title": "Устгах уу?",
+        "description": "Энэ зарыг устгавал буцаах боломжгүй. Та итгэлтэй байна уу?",
+        "cancel": "Цуцлах",
+        "confirm": "Устгах"
+      },
+      "messageDialog": {
+        "title": "Мессеж илгээх",
+        "description": "Энэ зарын эзэмшигч рүү шууд мессеж илгээнэ.",
+        "placeholder": "Мессежээ бичнэ үү...",
+        "cancel": "Цуцлах",
+        "submit": "Илгээх",
+        "submitting": "Илгээж байна..."
+      }
     }
   },
   "messages": {
@@ -228,8 +270,78 @@
       "estimatedDays": "Тооцоот хоног эерэг тоо байх ёстой."
     }
   },
-  "profile": {},
-  "admin": {},
+  "profile": {
+    "title": "Нийтийн профиль",
+    "description": "Хэрэглэгчийн нийтэд харагдах мэдээлэл.",
+    "back": "Буцах",
+    "notFound": "Профайл олдсонгүй.",
+    "label": "Профайл",
+    "memberSince": "{months} сар",
+    "newMember": "Шинэ гишүүн",
+    "unknownUser": "Хэрэглэгч",
+    "contact": "Холбогдох",
+    "badges": {
+      "emailVerified": "Имэйл баталгаажсан",
+      "phoneVerified": "Утас баталгаажсан",
+      "idVerified": "ID баталгаажуулалт"
+    },
+    "stats": {
+      "rating": "Үнэлгээ",
+      "reviewsCount": "Сэтгэгдэл",
+      "totalPublished": "Нийт нийтэлсэн",
+      "listings": "Зарууд",
+      "response": "Хариу",
+      "noResponseData": "Дундаж хариу (одоогоор мэдээлэлгүй)"
+    },
+    "review": {
+      "title": "Үнэлгээ өгөх",
+      "ratingLabel": "Үнэлгээ (1-5 од)",
+      "commentLabel": "Сэтгэгдэл (заавал биш)",
+      "placeholder": "Өөрийн туршлагаа хуваалцана уу...",
+      "submit": "Үнэлгээ өгөх",
+      "submitting": "Илгээж байна...",
+      "success": "Сэтгэгдэл амжилттай нэмэгдлээ!",
+      "noComment": "Сэтгэгдэл үлдээгүй.",
+      "noReviews": "Одоогоор сэтгэгдэл алга.",
+      "errors": {
+        "ratingRequired": "Үнэлгээ сонгоно уу",
+        "userNotFound": "Хэрэглэгч олдсонгүй",
+        "generic": "Сэтгэгдэл үлдээхэд алдаа гарлаа"
+      }
+    },
+    "tabs": {
+      "overview": "Товч",
+      "reviews": "Сэтгэгдэл"
+    },
+    "noListings": "Одоогоор нийтэлсэн зар байхгүй.",
+    "noLocation": "Байршил оруулаагүй"
+  },
+  "admin": {
+    "title": "Админ",
+    "description": "Модераци ба удирдлага",
+    "nav": {
+      "dashboard": "Хянах самбар",
+      "users": "Хэрэглэгчид",
+      "listings": "Зарууд",
+      "reports": "Мэдэгдлүүд"
+    },
+    "loading": "Ачааллаж байна...",
+    "loginRequired": "Нэвтрээд үргэлжлүүлнэ үү",
+    "loginRequiredMessage": "Админ хэсэгт орохын тулд нэвтрэх шаардлагатай.",
+    "loginButton": "Нэвтрэх",
+    "accessDenied": "Хандах эрхгүй",
+    "accessDeniedMessage": "Хандах эрхгүй.",
+    "backHome": "Нүүр рүү буцах",
+    "stats": {
+      "usersTotal": "Нийт хэрэглэгч",
+      "usersSuspended": "Түр хаагдсан хэрэглэгч",
+      "listingsTotal": "Нийт зар",
+      "listingsHidden": "Нуусан зар",
+      "messagesTotal": "Мессеж",
+      "reviewsTotal": "Сэтгэгдэл",
+      "loadError": "Статистик ачааллахад алдаа гарлаа."
+    }
+  },
   "errors": {
     "generic": "Түр зуурын алдаа гарлаа."
   }
