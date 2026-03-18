@@ -38,15 +38,15 @@
       "passwordPlaceholder": "Password",
       "forgotPassword": "Forgot password?",
       "submit": "Log in",
-      "submitting": "Please waitâ€¦",
-      "goBack": "â† Back",
+      "submitting": "Please wait\u2026",
+      "goBack": "\u2190 Back",
       "defaultError": "Failed to log in"
     },
     "signUpModal": {
       "title": "Create your account!",
       "close": "Close",
       "description": "Find services and professionals that match your needs.",
-      "goBack": "â† Back",
+      "goBack": "\u2190 Back",
       "google": "Continue with Google",
       "facebook": "Continue with Facebook",
       "or": "or",
@@ -63,7 +63,7 @@
       "passwordPlaceholder": "Password",
       "confirmPasswordPlaceholder": "Confirm password",
       "submit": "Sign up",
-      "submitting": "Please waitâ€¦",
+      "submitting": "Please wait\u2026",
       "passwordMismatch": "Passwords do not match",
       "success": "Registration successful!"
     }
@@ -104,6 +104,48 @@
       "priceUpTo": "Up to {value}",
       "pricePlus": "{value}+",
       "priceRangeCompact": "{min} - {max}"
+    },
+    "detail": {
+      "loading": "Loading...",
+      "error": "An error occurred.",
+      "notFound": "Listing not found",
+      "back": "Back",
+      "edit": "Edit",
+      "delete": "Delete",
+      "allListings": "All listings",
+      "contact": "Contact",
+      "unknownUser": "User",
+      "priceOnRequest": "Price on request",
+      "noLocation": "No location",
+      "listingFallback": "Listing",
+      "errors": {
+        "emptyDescription": "Description cannot be empty.",
+        "invalidPrice": "Price must be a positive number.",
+        "saveError": "Failed to save.",
+        "deleteError": "Failed to delete.",
+        "imageUpload": "Failed to upload image.",
+        "imageDelete": "Failed to delete image.",
+        "imageOrder": "Invalid image order.",
+        "imageReorder": "Failed to save image order.",
+        "messageLogin": "Please log in to send a message.",
+        "messageEmpty": "Message cannot be empty.",
+        "messageSent": "Message sent.",
+        "messageError": "Failed to send message."
+      },
+      "deleteDialog": {
+        "title": "Delete listing?",
+        "description": "This listing will be permanently deleted. Are you sure?",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "messageDialog": {
+        "title": "Send message",
+        "description": "Send a direct message to the listing owner.",
+        "placeholder": "Write your message...",
+        "cancel": "Cancel",
+        "submit": "Send",
+        "submitting": "Sending..."
+      }
     }
   },
   "messages": {
@@ -228,8 +270,78 @@
       "estimatedDays": "Estimated days must be a positive number."
     }
   },
-  "profile": {},
-  "admin": {},
+  "profile": {
+    "title": "Public Profile",
+    "description": "User's public information.",
+    "back": "Back",
+    "notFound": "Profile not found.",
+    "label": "Profile",
+    "memberSince": "{months} months",
+    "newMember": "New member",
+    "unknownUser": "User",
+    "contact": "Contact",
+    "badges": {
+      "emailVerified": "Email verified",
+      "phoneVerified": "Phone verified",
+      "idVerified": "ID verified"
+    },
+    "stats": {
+      "rating": "Rating",
+      "reviewsCount": "Reviews",
+      "totalPublished": "Total published",
+      "listings": "Listings",
+      "response": "Response",
+      "noResponseData": "Avg. response (no data yet)"
+    },
+    "review": {
+      "title": "Leave a review",
+      "ratingLabel": "Rating (1-5 stars)",
+      "commentLabel": "Comment (optional)",
+      "placeholder": "Share your experience...",
+      "submit": "Submit review",
+      "submitting": "Submitting...",
+      "success": "Review submitted successfully!",
+      "noComment": "No comment left.",
+      "noReviews": "No reviews yet.",
+      "errors": {
+        "ratingRequired": "Please select a rating",
+        "userNotFound": "User not found",
+        "generic": "Failed to submit review"
+      }
+    },
+    "tabs": {
+      "overview": "Overview",
+      "reviews": "Reviews"
+    },
+    "noListings": "No listings published yet.",
+    "noLocation": "No location"
+  },
+  "admin": {
+    "title": "Admin",
+    "description": "Moderation and management",
+    "nav": {
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "listings": "Listings",
+      "reports": "Reports"
+    },
+    "loading": "Loading...",
+    "loginRequired": "Please log in to continue",
+    "loginRequiredMessage": "You must be logged in to access the admin panel.",
+    "loginButton": "Log in",
+    "accessDenied": "Access denied",
+    "accessDeniedMessage": "You do not have permission to access this page.",
+    "backHome": "Back to home",
+    "stats": {
+      "usersTotal": "Total users",
+      "usersSuspended": "Suspended users",
+      "listingsTotal": "Total listings",
+      "listingsHidden": "Hidden listings",
+      "messagesTotal": "Messages",
+      "reviewsTotal": "Reviews",
+      "loadError": "Failed to load statistics."
+    }
+  },
   "errors": {
     "generic": "Something went wrong."
   }

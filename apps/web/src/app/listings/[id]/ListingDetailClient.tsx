@@ -50,6 +50,7 @@ export default function ListingDetailClient() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("offers");
+  const tl = useTranslations("listings");
   const listingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
   const { data: listing, isLoading, error, refetch } = useListing(listingId);
@@ -115,12 +116,12 @@ export default function ListingDetailClient() {
   const handleSave = async () => {
     if (!listingId) return;
     if (!formState.description.trim()) {
-      setFormError("Тайлбар хоосон байна.");
+      setFormError(tl("detail.errors.emptyDescription"));
       return;
     }
     const priceNumber = Number(formState.price);
     if (Number.isNaN(priceNumber) || priceNumber < 0) {
-      setFormError("Үнэ 0-ээс их эерэг тоо байх ёстой.");
+      setFormError(tl("detail.errors.invalidPrice"));
       return;
     }
     setFormError(null);
@@ -136,8 +137,9 @@ export default function ListingDetailClient() {
       });
       setIsEditing(false);
       await refetch();
-    } catch (err: any) {
-      setFormError(err?.message || "Хадгалах үед алдаа гарлаа.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? (err as Error & { message: string }).message : "";
+      setFormError(message || tl("detail.errors.saveError"));
     }
   };
 
@@ -160,8 +162,9 @@ export default function ListingDetailClient() {
     try {
       await deleteListing.mutateAsync(listingId);
       router.push("/");
-    } catch (err: any) {
-      setFormError(err?.message || "Устгах үед алдаа гарлаа.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? (err as Error & { message: string }).message : "";
+      setFormError(message || tl("detail.errors.deleteError"));
     } finally {
       setConfirmDeleteOpen(false);
     }
@@ -179,8 +182,9 @@ export default function ListingDetailClient() {
     try {
       await uploadListingImages(listingId, toUpload);
       await refetch();
-    } catch (err: any) {
-      setFormError(err?.message || "Зураг нэмэх үед алдаа гарлаа.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? (err as Error & { message: string }).message : "";
+      setFormError(message || tl("detail.errors.imageUpload"));
     } finally {
       setIsUploadingImages(false);
       event.target.value = "";
@@ -193,8 +197,9 @@ export default function ListingDetailClient() {
     try {
       await deleteListingImage(listingId, imageId);
       await refetch();
-    } catch (err: any) {
-      setFormError(err?.message || "Зураг устгах үед алдаа гарлаа.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? (err as Error & { message: string }).message : "";
+      setFormError(message || tl("detail.errors.imageDelete"));
     } finally {
       setDeletingImageId(null);
     }
@@ -210,7 +215,7 @@ export default function ListingDetailClient() {
       .filter((image): image is NonNullable<Listing["images"]>[number] => Boolean(image));
 
     if (reorderedImages.length !== previousImages.length) {
-      setFormError("Зургийн дараалал буруу байна.");
+      setFormError(tl("detail.errors.imageOrder"));
       return;
     }
 
@@ -229,7 +234,7 @@ export default function ListingDetailClient() {
         listingId,
         imageIds: nextImageIds,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setImages(previousImages);
       if (selectedImageId) {
         const previousIndex = previousImages.findIndex((image) => image.id === selectedImageId);
@@ -237,19 +242,20 @@ export default function ListingDetailClient() {
           setSelectedIndex(previousIndex);
         }
       }
-      setFormError(err?.message || "Зургийн дараалал хадгалахад алдаа гарлаа.");
+      const message = err instanceof Error ? (err as Error & { message: string }).message : "";
+      setFormError(message || tl("detail.errors.imageReorder"));
     }
   };
 
   const handleSendMessage = async () => {
     if (!listing || !listingId || !listing.userId) return;
     if (!currentUser) {
-      setMessageFeedback("Мессеж илгээхийн тулд нэвтэрнэ үү.");
+      setMessageFeedback(tl("detail.errors.messageLogin"));
       return;
     }
     const content = messageContent.trim();
     if (!content) {
-      setMessageFeedback("Мессеж хоосон байна.");
+      setMessageFeedback(tl("detail.errors.messageEmpty"));
       return;
     }
     setMessageFeedback(null);
@@ -261,9 +267,10 @@ export default function ListingDetailClient() {
       });
       setMessageContent("");
       setMessageDialogOpen(false);
-      setMessageFeedback("Мессеж илгээлээ.");
-    } catch (err: any) {
-      setMessageFeedback(err?.message || "Мессеж илгээхэд алдаа гарлаа.");
+      setMessageFeedback(tl("detail.errors.messageSent"));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? (err as Error & { message: string }).message : "";
+      setMessageFeedback(message || tl("detail.errors.messageError"));
     }
   };
 
@@ -297,28 +304,32 @@ export default function ListingDetailClient() {
     }
   };
 
-  if (isLoading) return <p className="py-10 text-center text-muted-foreground">Уншиж байна...</p>;
-  if (error) return <p className="py-10 text-center text-destructive">Алдаа гарлаа.</p>;
-  if (!listing) return <p className="py-10 text-center text-muted-foreground">Зар олдсонгүй</p>;
+  if (isLoading) return <p className="py-10 text-center text-muted-foreground">{tl("detail.loading")}</p>;
+  if (error) return <p className="py-10 text-center text-destructive">{tl("detail.error")}</p>;
+  if (!listing) return <p className="py-10 text-center text-muted-foreground">{tl("detail.notFound")}</p>;
 
   const author = listing.user;
-  const authorName = author ? `${author.firstName || ""} ${author.lastName || ""}`.trim() || author.email : "Хэрэглэгч";
+  const authorName = author
+    ? `${author.firstName || ""} ${author.lastName || ""}`.trim() || author.email
+    : tl("detail.unknownUser");
   const authorAvatar = resolveImageUrl(author?.avatarUrl);
   const imageUrls = images.map((img) => resolveImageUrl(img.url) || "/placeholder.jpg");
   const displayedMain = imageUrls[selectedIndex] || resolveImageUrl(images[0]?.url) || "/placeholder.jpg";
   const categoryValue = isEditing ? formState.category : listing.category;
   const categoryLabel = categoryValue ? CATEGORY_LABEL_MAP.get(categoryValue) || categoryValue : null;
-  const heading = categoryLabel || "Зар";
+  const heading = categoryLabel || tl("detail.listingFallback");
   const priceLabel =
-    typeof listing.price === "number" && listing.price > 0 ? `${listing.price.toLocaleString()} ₮` : "Тохиролцоно";
+    typeof listing.price === "number" && listing.price > 0
+      ? `${listing.price.toLocaleString()} ₮`
+      : tl("detail.priceOnRequest");
   const contactHref = author?.phone ? `tel:${author.phone}` : author?.email ? `mailto:${author.email}` : null;
-  const locationLabel = listing.location || "Байршил оруулаагүй";
+  const locationLabel = listing.location || tl("detail.noLocation");
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6">
       <div className="mb-4 flex items-center justify-between">
         <Button variant="outline" size="sm" onClick={() => router.back()}>
-          Буцах
+          {tl("detail.back")}
         </Button>
         <div className="flex items-center gap-2">
           {canReport ? (
@@ -336,13 +347,13 @@ export default function ListingDetailClient() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="min-w-45">
                 {!isEditing ? (
-                  <DropdownMenuItem onClick={() => setIsEditing(true)}>Засах</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEditing(true)}>{tl("detail.edit")}</DropdownMenuItem>
                 ) : null}
                 <DropdownMenuItem onClick={() => setConfirmDeleteOpen(true)} className="text-destructive">
-                  Устгах
+                  {tl("detail.delete")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/listings")}>Бүх зарууд</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/listings")}>{tl("detail.allListings")}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
@@ -431,7 +442,7 @@ export default function ListingDetailClient() {
           priceLabel={priceLabel}
           locationLabel={locationLabel}
           categoryLabel={categoryLabel}
-          authorName={authorName || "Хэрэглэгч"}
+          authorName={authorName || tl("detail.unknownUser")}
           authorEmail={author?.email}
           authorPhone={author?.phone}
           authorAvatar={authorAvatar}
@@ -462,29 +473,29 @@ export default function ListingDetailClient() {
           href={contactHref}
           className="fixed bottom-5 left-4 right-4 z-40 sm:hidden"
         >
-          <Button className="w-full py-6 text-base shadow-lg shadow-primary/30">Холбогдох</Button>
+          <Button className="w-full py-6 text-base shadow-lg shadow-primary/30">{tl("detail.contact")}</Button>
         </a>
       ) : (
         <Button
           className="fixed bottom-5 left-4 right-4 z-40 py-6 text-base shadow-lg shadow-primary/30 sm:hidden"
           disabled
         >
-          Холбогдох
+          {tl("detail.contact")}
         </Button>
       )}
 
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Устгах уу?</DialogTitle>
-            <DialogDescription>Энэ зарыг устгавал буцаах боломжгүй. Та итгэлтэй байна уу?</DialogDescription>
+            <DialogTitle>{tl("detail.deleteDialog.title")}</DialogTitle>
+            <DialogDescription>{tl("detail.deleteDialog.description")}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <DialogClose asChild>
-              <Button variant="outline">Цуцлах</Button>
+              <Button variant="outline">{tl("detail.deleteDialog.cancel")}</Button>
             </DialogClose>
             <Button variant="destructive" onClick={handleDeleteConfirmed} disabled={deleteListing.isPending}>
-              Устгах
+              {tl("detail.deleteDialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -493,24 +504,24 @@ export default function ListingDetailClient() {
       <Dialog open={messageDialogOpen} onOpenChange={setMessageDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Мессеж илгээх</DialogTitle>
-            <DialogDescription>Энэ зарын эзэмшигч рүү шууд мессеж илгээнэ.</DialogDescription>
+            <DialogTitle>{tl("detail.messageDialog.title")}</DialogTitle>
+            <DialogDescription>{tl("detail.messageDialog.description")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <Textarea
               rows={5}
               value={messageContent}
               onChange={(event) => setMessageContent(event.target.value)}
-              placeholder="Мессежээ бичнэ үү..."
+              placeholder={tl("detail.messageDialog.placeholder")}
               disabled={sendMessage.isPending}
             />
             {messageFeedback ? <p className="text-sm text-muted-foreground">{messageFeedback}</p> : null}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setMessageDialogOpen(false)} disabled={sendMessage.isPending}>
-                Цуцлах
+                {tl("detail.messageDialog.cancel")}
               </Button>
               <Button onClick={handleSendMessage} disabled={sendMessage.isPending}>
-                {sendMessage.isPending ? "Илгээж байна..." : "Илгээх"}
+                {sendMessage.isPending ? tl("detail.messageDialog.submitting") : tl("detail.messageDialog.submit")}
               </Button>
             </div>
           </div>

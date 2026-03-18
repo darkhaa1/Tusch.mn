@@ -20,6 +20,10 @@ async function bootstrap() {
   app.use(bodyParser.json({ limit: '10mb' }));
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
   app.use(cookieParser());
+  app.use((_req: any, res: any, next: any) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    next();
+  });
   app
     .getHttpAdapter()
     .get('/', (_req: any, res: any) =>

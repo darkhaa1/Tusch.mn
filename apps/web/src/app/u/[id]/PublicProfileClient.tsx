@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Star, ShieldCheck, Phone, Mail } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Avatar,
   Badge,
@@ -23,16 +24,6 @@ import resolveImageUrl from "@web/lib/resolveImageUrl";
 import { cn } from "@web/lib/utils";
 import { ReportDialogButton } from "@web/components/report/ReportDialogButton";
 
-function formatMemberSince(iso?: string) {
-  if (!iso) return "";
-  const date = new Date(iso);
-  const now = new Date();
-  const months = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
-  if (months <= 0) return "Шинэ гишүүн";
-  if (months === 1) return "1 сар";
-  return `${months} сар`;
-}
-
 function RatingBadge({ rating, count }: { rating: number | null; count: number }) {
   return (
     <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -42,9 +33,11 @@ function RatingBadge({ rating, count }: { rating: number | null; count: number }
     </div>
   );
 }
+
 export default function PublicProfileClient() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations("profile");
   const userId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const { data, isLoading, error } = usePublicUserProfile(userId);
   const { data: currentUser } = useCurrentUser();
@@ -55,7 +48,16 @@ export default function PublicProfileClient() {
   const [reviewError, setReviewError] = useState<string>("");
   const [reviewSuccess, setReviewSuccess] = useState<boolean>(false);
 
-  const memberSince = formatMemberSince(data?.user.createdAt);
+  const memberSince = useMemo(() => {
+    const iso = data?.user.createdAt;
+    if (!iso) return "";
+    const date = new Date(iso);
+    const now = new Date();
+    const months =
+      (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
+    if (months <= 0) return t("newMember");
+    return t("memberSince", { months });
+  }, [data?.user.createdAt, t]);
   const avatarUrl = resolveImageUrl(data?.user.avatarUrl || undefined) || undefined;
 
   const contactHref = `/messages?partnerId=${userId || ""}`;
@@ -64,9 +66,9 @@ export default function PublicProfileClient() {
   const reviews = data?.reviews || [];
 
   const trustBadges = [
-    { label: "Имэйл баталгаажсан", icon: Mail, active: data?.user.verification.emailVerified },
-    { label: "Утас баталгаажсан", icon: Phone, active: data?.user.verification.phoneVerified },
-    { label: "ID баталгаажуулалт", icon: ShieldCheck, active: data?.user.verification.idVerified },
+    { labelKey: "badges.emailVerified" as const, icon: Mail, active: data?.user.verification.emailVerified },
+    { labelKey: "badges.phoneVerified" as const, icon: Phone, active: data?.user.verification.phoneVerified },
+    { labelKey: "badges.idVerified" as const, icon: ShieldCheck, active: data?.user.verification.idVerified },
   ];
 
   const isError = !!error;
@@ -78,12 +80,12 @@ export default function PublicProfileClient() {
     setReviewSuccess(false);
 
     if (reviewRating === 0) {
-      setReviewError("Үнэлгээ сонгоно уу");
+      setReviewError(t("review.errors.ratingRequired"));
       return;
     }
 
     if (!userId) {
-      setReviewError("Хэрэглэгч олдсонгүй");
+      setReviewError(t("review.errors.userNotFound"));
       return;
     }
 
@@ -96,18 +98,19 @@ export default function PublicProfileClient() {
       setReviewSuccess(true);
       setReviewRating(0);
       setReviewComment("");
-    } catch (error: any) {
-      setReviewError(error.message || "Сэтгэгдэл үлдээхэд алдаа гарлаа");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "";
+      setReviewError(message || t("review.errors.generic"));
     }
   };
 
   return (
     <AppShell
-      title="Нийтийн профиль"
-      description="Хэрэглэгчийн нийтэд харагдах мэдээлэл."
+      title={t("title")}
+      description={t("description")}
       actions={
         <Button variant="secondary" onClick={() => router.back()}>
-          Буцах
+          {t("back")}
         </Button>
       }
     >
@@ -124,7 +127,7 @@ export default function PublicProfileClient() {
         </div>
       ) : isError ? (
         <Card>
-          <CardContent className="p-6 text-sm text-destructive">Профайл олдсонгүй.</CardContent>
+          <CardContent className="p-6 text-sm text-destructive">{t("notFound")}</CardContent>
         </Card>
       ) : data ? (
         <div className="space-y-4">
@@ -134,21 +137,21 @@ export default function PublicProfileClient() {
                 <Avatar src={avatarUrl} alt={`${data.user.firstName} ${data.user.lastName}`} className="h-20 w-20" />
                 <div className="space-y-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Профайл</p>
+                    <p className="text-sm text-muted-foreground">{t("label")}</p>
                     <h2 className="text-2xl font-semibold text-foreground">
-                      {[data.user.firstName, data.user.lastName].filter(Boolean).join(" ") || "Хэрэглэгч"}
+                      {[data.user.firstName, data.user.lastName].filter(Boolean).join(" ") || t("unknownUser")}
                     </h2>
-                    <p className="text-xs text-muted-foreground">Профайл: {memberSince}</p>
+                    <p className="text-xs text-muted-foreground">{t("label")}: {memberSince}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     {trustBadges.map((badge) => (
                       <Badge
-                        key={badge.label}
+                        key={badge.labelKey}
                         variant={badge.active ? "secondary" : "outline"}
                         className={cn("gap-1", badge.active ? "border-primary/30" : "")}
                       >
                         <badge.icon className="h-4 w-4" />
-                        {badge.label}
+                        {t(badge.labelKey)}
                       </Badge>
                     ))}
                   </div>
@@ -157,7 +160,7 @@ export default function PublicProfileClient() {
               <div className="flex gap-2">
                 <Link href={contactHref} prefetch={false}>
                   <Button variant="default" size="sm">
-                    Холбогдох
+                    {t("contact")}
                   </Button>
                 </Link>
                 {canReportProfile ? (
@@ -175,23 +178,23 @@ export default function PublicProfileClient() {
           <div className="grid gap-3 sm:grid-cols-3">
             <Card>
               <CardContent className="space-y-1 p-4">
-                <p className="text-xs uppercase text-muted-foreground">Үнэлгээ</p>
+                <p className="text-xs uppercase text-muted-foreground">{t("stats.rating")}</p>
                 <RatingBadge rating={data.stats.ratingAvg} count={data.stats.reviewsCount} />
-                <p className="text-xs text-muted-foreground">Сэтгэгдэл: {data.stats.reviewsCount}</p>
+                <p className="text-xs text-muted-foreground">{t("stats.reviewsCount")}: {data.stats.reviewsCount}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="space-y-1 p-4">
-                <p className="text-xs uppercase text-muted-foreground">Зарууд</p>
+                <p className="text-xs uppercase text-muted-foreground">{t("stats.listings")}</p>
                 <p className="text-lg font-semibold text-foreground">{data.stats.listingsCount}</p>
-                <p className="text-xs text-muted-foreground">Нийт нийтэлсэн</p>
+                <p className="text-xs text-muted-foreground">{t("stats.totalPublished")}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="space-y-1 p-4">
-                <p className="text-xs uppercase text-muted-foreground">Хариу</p>
+                <p className="text-xs uppercase text-muted-foreground">{t("stats.response")}</p>
                 <p className="text-lg font-semibold text-foreground">{data.stats.responseRate ? `${data.stats.responseRate}%` : "—"}</p>
-                <p className="text-xs text-muted-foreground">Дундаж хариу (одоогоор мэдээлэлгүй)</p>
+                <p className="text-xs text-muted-foreground">{t("stats.noResponseData")}</p>
               </CardContent>
             </Card>
           </div>
@@ -199,10 +202,10 @@ export default function PublicProfileClient() {
           {canWriteReview && (
             <Card className="border border-border/80">
               <CardContent className="space-y-4 p-6">
-                <h3 className="text-lg font-semibold text-foreground">Үнэлгээ өгөх</h3>
+                <h3 className="text-lg font-semibold text-foreground">{t("review.title")}</h3>
 
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Үнэлгээ (1-5 од)</p>
+                  <p className="text-sm text-muted-foreground">{t("review.ratingLabel")}</p>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -225,11 +228,11 @@ export default function PublicProfileClient() {
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Сэтгэгдэл (заавал биш)</p>
+                  <p className="text-sm text-muted-foreground">{t("review.commentLabel")}</p>
                   <Textarea
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Өөрийн туршлагаа хуваалцана уу..."
+                    placeholder={t("review.placeholder")}
                     maxLength={2000}
                     rows={4}
                   />
@@ -240,14 +243,14 @@ export default function PublicProfileClient() {
                 )}
 
                 {reviewSuccess && (
-                  <p className="text-sm text-green-600">Сэтгэгдэл амжилттай нэмэгдлээ!</p>
+                  <p className="text-sm text-green-600">{t("review.success")}</p>
                 )}
 
                 <Button
                   onClick={handleSubmitReview}
                   disabled={createReviewMutation.isPending}
                 >
-                  {createReviewMutation.isPending ? "Илгээж байна..." : "Үнэлгээ өгөх"}
+                  {createReviewMutation.isPending ? t("review.submitting") : t("review.submit")}
                 </Button>
               </CardContent>
             </Card>
@@ -255,8 +258,8 @@ export default function PublicProfileClient() {
 
           <Tabs defaultValue="overview" className="w-full">
             <TabsList>
-              <TabsTrigger value="overview">Товч</TabsTrigger>
-              <TabsTrigger value="reviews">Сэтгэгдэл</TabsTrigger>
+              <TabsTrigger value="overview">{t("tabs.overview")}</TabsTrigger>
+              <TabsTrigger value="reviews">{t("tabs.reviews")}</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-3">
               {overviewList.length ? (
@@ -274,7 +277,7 @@ export default function PublicProfileClient() {
                       <CardContent className="space-y-2 p-4">
                         <div className="flex items-center justify-between text-sm">
                           <p className="font-semibold text-foreground">{listing.price.toLocaleString()} ₮</p>
-                          <p className="text-muted-foreground text-xs">{listing.location || "Байршил оруулаагүй"}</p>
+                          <p className="text-muted-foreground text-xs">{listing.location || t("noLocation")}</p>
                         </div>
                         <p className="text-sm text-foreground line-clamp-2">{listing.description}</p>
                       </CardContent>
@@ -283,7 +286,7 @@ export default function PublicProfileClient() {
                 </div>
               ) : (
                 <Card>
-                  <CardContent className="p-6 text-sm text-muted-foreground">Одоогоор нийтэлсэн зар байхгүй.</CardContent>
+                  <CardContent className="p-6 text-sm text-muted-foreground">{t("noListings")}</CardContent>
                 </Card>
               )}
             </TabsContent>
@@ -303,7 +306,7 @@ export default function PublicProfileClient() {
                           </p>
                           <RatingBadge rating={review.rating} count={1} />
                         </div>
-                        <p className="text-sm text-foreground">{review.comment || "Сэтгэгдэл үлдээгүй."}</p>
+                        <p className="text-sm text-foreground">{review.comment || t("review.noComment")}</p>
                         <p className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</p>
                       </div>
                     </CardContent>
@@ -311,7 +314,7 @@ export default function PublicProfileClient() {
                 ))
               ) : (
                 <Card>
-                  <CardContent className="p-6 text-sm text-muted-foreground">Одоогоор сэтгэгдэл алга.</CardContent>
+                  <CardContent className="p-6 text-sm text-muted-foreground">{t("review.noReviews")}</CardContent>
                 </Card>
               )}
             </TabsContent>

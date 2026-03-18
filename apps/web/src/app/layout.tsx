@@ -1,6 +1,6 @@
 import '../styles/globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Noto_Sans } from 'next/font/google';
 import { Providers } from './Providers';
 import { IntlProvider } from './IntlProvider';
 import Header from '@web/features/home/components/Header';
@@ -9,8 +9,9 @@ import BottomNav from '@web/components/nav/BottomNav';
 import VerificationBanner from '@web/components/common/VerificationBanner';
 import { OrganizationJsonLd } from '@web/components/seo/JsonLd';
 
-const inter = Inter({
-  subsets: ['latin'],
+const notoSans = Noto_Sans({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
 });
 
@@ -42,9 +43,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="mn">
       <head>
+        <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body className={`${inter.variable} font-sans max-w-310 mx-auto px-4`}>
+      <body className={`${notoSans.variable} font-sans max-w-310 mx-auto px-4`}>
         <OrganizationJsonLd />
         <IntlProvider>
           {/* Providers wraps all content that uses session/react-query */}

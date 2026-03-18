@@ -2,28 +2,32 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, Button } from "@web/components/ui";
 import AppShell from "@web/components/layout/AppShell";
 import { useCurrentUser } from "@web/lib/hooks/useApi";
 import { cn } from "@web/lib/utils";
 
-const navItems = [
-  { href: "/admin", label: "Хянах самбар" },
-  { href: "/admin/users", label: "Хэрэглэгчид" },
-  { href: "/admin/listings", label: "Зарууд" },
-  { href: "/admin/reports", label: "Мэдэгдлүүд" },
+type NavKey = "dashboard" | "users" | "listings" | "reports";
+
+const NAV_ITEMS: { href: string; key: NavKey }[] = [
+  { href: "/admin", key: "dashboard" },
+  { href: "/admin/users", key: "users" },
+  { href: "/admin/listings", key: "listings" },
+  { href: "/admin/reports", key: "reports" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("admin");
   const { data: currentUser, isLoading } = useCurrentUser();
   const pathname = usePathname();
   const router = useRouter();
 
   if (isLoading) {
     return (
-      <AppShell title="Админ" description="Модераци ба удирдлага">
+      <AppShell title={t("title")} description={t("description")}>
         <Card className="border border-border/80">
-          <CardContent className="p-6 text-sm text-muted-foreground">Ачааллаж байна...</CardContent>
+          <CardContent className="p-6 text-sm text-muted-foreground">{t("loading")}</CardContent>
         </Card>
       </AppShell>
     );
@@ -31,14 +35,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!currentUser) {
     return (
-      <AppShell title="Админ" description="Нэвтрээд үргэлжлүүлнэ үү">
+      <AppShell title={t("title")} description={t("loginRequired")}>
         <Card className="border border-border/80">
           <CardContent className="flex flex-col gap-3 p-6">
             <p className="text-sm text-muted-foreground">
-              Админ хэсэгт орохын тулд нэвтрэх шаардлагатай.
+              {t("loginRequiredMessage")}
             </p>
             <Button className="w-fit" onClick={() => router.push("/")}>
-              Нэвтрэх
+              {t("loginButton")}
             </Button>
           </CardContent>
         </Card>
@@ -48,10 +52,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!currentUser.isAdmin) {
     return (
-      <AppShell title="Админ" description="Хандах эрхгүй">
+      <AppShell title={t("title")} description={t("accessDenied")}>
         <Card className="border border-border/80">
           <CardContent className="flex flex-col gap-3 p-6">
-            <p className="text-sm text-muted-foreground">Хандах эрхгүй.</p>
+            <p className="text-sm text-muted-foreground">{t("accessDeniedMessage")}</p>
             <Link
               href="/"
               className={cn(
@@ -59,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               )}
             >
-              Нүүр рүү буцах
+              {t("backHome")}
             </Link>
           </CardContent>
         </Card>
@@ -68,11 +72,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <AppShell title="Админ" description="Модераци ба удирдлага">
+    <AppShell title={t("title")} description={t("description")}>
       <div className="grid gap-6 lg:grid-cols-[220px,1fr]">
         <aside className="space-y-2">
           <nav className="flex flex-col gap-2 rounded-xl border border-border/80 bg-background p-3">
-            {navItems.map((item) => {
+            {NAV_ITEMS.map((item) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/admin" && pathname?.startsWith(item.href));
@@ -88,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   )}
                 >
-                  {item.label}
+                  {t(`nav.${item.key}`)}
                 </Link>
               );
             })}
