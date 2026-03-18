@@ -12,7 +12,17 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { MetricsService } from './modules/metrics/metrics.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  let app: NestExpressApplication;
+  try {
+    app = await NestFactory.create<NestExpressApplication>(AppModule);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('Config validation error')) {
+      console.error(error.message);
+    } else {
+      console.error('Failed to start application:', error);
+    }
+    process.exit(1);
+  }
 
   // Trust the first proxy so ThrottlerGuard uses the real client IP
   // from X-Forwarded-For when behind a reverse proxy (e.g. Nginx, Cloudflare).
@@ -71,7 +81,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(3310);
-  console.log(`Server running on http://localhost:3310`);
+  const port = process.env.PORT ?? 3310;
+  await app.listen(port);
+  console.log(`Server running on http://localhost:${port} [${process.env.NODE_ENV}]`);
 }
 bootstrap();
