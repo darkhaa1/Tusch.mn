@@ -25,6 +25,7 @@ import { UserRole } from '@repo/shared';
 import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
 import { GetUser } from '../../common/decorators/get-user.decorator';
+import { AuthenticatedRequest } from '../../common/types/request.types';
 
 @Controller('users')
 @ApiTags('users')
@@ -78,8 +79,8 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async getProfile(@Req() req) {
-    const userId = req.user?.sub;
+  async getProfile(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.id;
     return this.userService.findById(userId);
   }
 
@@ -97,8 +98,8 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async updateMyRole(@Req() req, @Body() body: UpdateMyRoleDto) {
-    const userId = req.user?.sub;
+  async updateMyRole(@Req() req: AuthenticatedRequest, @Body() body: UpdateMyRoleDto) {
+    const userId = req.user.id;
     const updated = await this.userService.updateMyRole(
       userId,
       body.role as UserRole,

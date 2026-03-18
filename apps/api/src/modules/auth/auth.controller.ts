@@ -24,14 +24,17 @@ import {
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
+import { AuthenticatedRequest } from '../../common/types/request.types';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { avatarMulterOptions } from '../../common/multer/image-options';
 import { join } from 'path';
 import * as fs from 'fs';
 import { AVATAR_UPLOAD_DIR } from '../../common/multer/constants';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -39,7 +42,6 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 @Controller('auth')
 @ApiTags('auth')
 export class AuthController {
-  jwtService: any;
   constructor(private authService: AuthService) {}
 
   private get cookieOptions() {
@@ -95,7 +97,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async login(@Body() body, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(body);
 
     res.cookie('accessToken', result.accessToken, this.cookieOptions);
@@ -121,8 +123,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async getMe(@Req() req) {
-    const userId = req.user?.sub;
+  async getMe(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.id;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
     const user = await this.authService.getUserById(userId);
@@ -159,15 +161,14 @@ export class AuthController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
   async updateMe(
-    @Req() req,
-    @Body() body,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpdateProfileDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    const userId = req.user?.sub;
+    const userId = req.user.id;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
-    const removeAvatar =
-      body?.removeAvatar === 'true' || body?.removeAvatar === true;
+    const removeAvatar = body.removeAvatar === true;
     const avatarUrl = removeAvatar
       ? null
       : file
@@ -233,8 +234,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async changePassword(@Req() req, @Body() body: ChangePasswordDto) {
-    const userId = req.user?.sub;
+  async changePassword(@Req() req: AuthenticatedRequest, @Body() body: ChangePasswordDto) {
+    const userId = req.user.id;
     if (!userId) throw new UnauthorizedException('Unauthorized');
     await this.authService.changePassword(
       userId,
@@ -257,8 +258,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async deleteMe(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const userId = req.user?.sub;
+  async deleteMe(@Req() req: AuthenticatedRequest, @Res({ passthrough: true }) res: Response) {
+    const userId = req.user.id;
     if (!userId) throw new UnauthorizedException('Unauthorized');
 
     const currentUser = await this.authService.getUserById(userId);
@@ -343,8 +344,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Not found' })
-  async resendVerification(@Req() req) {
-    const userId = req.user?.sub;
+  async resendVerification(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.id;
     if (!userId) throw new UnauthorizedException('Unauthorized');
     return this.authService.resendVerification(userId);
   }

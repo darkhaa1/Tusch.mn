@@ -207,7 +207,7 @@ export class ListingsService {
       throw new BadRequestException('Maximum 3 images par annonce');
     }
 
-    const usedPositions = new Set(existingImages.map((img) => img.position));
+    const usedPositions = new Set(existingImages.map((img: { position: number }) => img.position));
     const availablePositions = [1, 2, 3].filter(
       (pos) => !usedPositions.has(pos),
     );
@@ -321,7 +321,7 @@ export class ListingsService {
       throw new BadRequestException('Duplicate image IDs are not allowed');
     }
 
-    const existingIds = new Set(images.map((image) => image.id));
+    const existingIds = new Set(images.map((image: { id: string }) => image.id));
     for (const imageId of imageIds) {
       if (!existingIds.has(imageId)) {
         throw new BadRequestException(
