@@ -6,6 +6,7 @@ import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
 import { join } from 'path';
+import { Request, Response, NextFunction } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { MetricsService } from './modules/metrics/metrics.service';
@@ -20,16 +21,21 @@ async function bootstrap() {
   app.use(bodyParser.json({ limit: '10mb' }));
   app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
   app.use(cookieParser());
-  app.use((_req: any, res: any, next: any) => {
+  app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     next();
   });
-  app
-    .getHttpAdapter()
-    .get('/', (_req: any, res: any) =>
-      res.status(302).set('Location', '/api/docs').end(),
-    );
-  app.use('/favicon.ico', (_req, res) => res.status(204).end());
+  app.use(
+    '/',
+    (_req: Request, res: Response, next: NextFunction): void => {
+      if (_req.path === '/') {
+        res.redirect(302, '/api/docs');
+      } else {
+        next();
+      }
+    },
+  );
+  app.use('/favicon.ico', (_req: Request, res: Response) => res.status(204).end());
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   app.enableCors({
     origin: process.env.CORS_ORIGIN,
