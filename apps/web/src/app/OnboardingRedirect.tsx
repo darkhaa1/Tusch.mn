@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCurrentUser } from "@web/lib/hooks/useApi";
 
 const ONBOARDING_PATH = "/onboarding";
-const EXCLUDED_PATHS = ["/onboarding", "/verify-email", "/reset-password"];
+const EXCLUDED_PATHS = ["/onboarding", "/verify-email", "/reset-password", "/admin"];
 
 export function OnboardingRedirect() {
   const router = useRouter();
@@ -15,6 +15,7 @@ export function OnboardingRedirect() {
   useEffect(() => {
     if (isLoading) return;
     if (!user) return;
+    if (user.isAdmin) return;
     if (EXCLUDED_PATHS.some((p) => pathname.startsWith(p))) return;
 
     if (user.onboardingCompletedAt === null || user.onboardingCompletedAt === undefined) {
