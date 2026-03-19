@@ -1,39 +1,59 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Dependencies
-node_modules
+node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
-# Local env files
+# Build outputs
+dist/
+build/
+.next/
+out/
+.codex/
+
+# Environment files
 .env
 .env.local
 .env.*.local
 .env.production
+.env.staging
+# Do NOT ignore .env.example — it must be versioned
 
-# Testing
-coverage
-
-# Turbo
-.turbo
-
-# Vercel
-.vercel
-
-# Build Outputs
-.next/
-out/
-build
-dist
-.codex/
-
-
-# Debug
+# Logs
+*.log
 npm-debug.log*
+pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Misc
+# OS
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vim/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Playwright
+apps/web/playwright-report/
+apps/web/test-results/
+
+# Vercel / Railway
+.vercel
+.railway
+
+# Misc
 *.pem
-apps/web/src/app/admin/listings/page.tsx
