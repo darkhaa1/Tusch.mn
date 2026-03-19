@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@web/components/ui";
+import { Skeleton } from "@web/components/ui/skeleton";
 import { useMarkAllRead, useMarkNotificationRead, useNotifications } from "@web/lib/hooks/useApi";
 import type { Notification, NotificationType } from "@web/lib/api/types";
 import { cn } from "@web/lib/utils";
@@ -77,7 +78,18 @@ export function NotificationsBell() {
 
         <div className="max-h-96 overflow-y-auto">
           {isLoading ? (
-            <p className="px-3 py-4 text-sm text-muted-foreground">Loading...</p>
+            <div className="space-y-0">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3 border-b px-3 py-3">
+                  <Skeleton className="mt-1 h-2 w-2 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <Skeleton className="h-3.5 w-3/4" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-2.5 w-1/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : null}
 
           {!isLoading && items.length === 0 ? (
@@ -106,6 +118,15 @@ export function NotificationsBell() {
                 </button>
               ))
             : null}
+        </div>
+
+        <div className="border-t px-3 py-2">
+          <a
+            href="/notifications"
+            className="block text-center text-xs font-medium text-primary hover:underline"
+          >
+            View all notifications
+          </a>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

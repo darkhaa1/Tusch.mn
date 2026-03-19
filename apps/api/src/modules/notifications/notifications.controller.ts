@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -11,6 +12,7 @@ import {
 import { GetUser } from '../../common/decorators/get-user.decorator';
 import { GetNotificationsQueryDto } from './dto/get-notifications-query.dto';
 import { NotificationsService } from './notifications.service';
+import { THROTTLE_CONFIGS } from '../../common/throttler';
 
 @ApiTags('notifications')
 @Controller('notifications')
@@ -20,6 +22,7 @@ export class NotificationsController {
   constructor(private readonly service: NotificationsService) {}
 
   @Get()
+  @Throttle({ default: THROTTLE_CONFIGS.NOTIFICATIONS_GET })
   @ApiOperation({ summary: 'List notifications' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
