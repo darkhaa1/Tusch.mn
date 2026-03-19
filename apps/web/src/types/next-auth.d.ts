@@ -5,10 +5,13 @@ declare module "next-auth" {
     provider?: string;
     firstname?: string;
     lastname?: string;
+    adminRole?: string;
   }
 
   interface Session extends DefaultSession {
-    user?: User;
+    user?: User & {
+      adminRole?: string;
+    };
   }
 }
 
@@ -19,5 +22,6 @@ declare module "next-auth/jwt" {
     firstname?: string;
     lastname?: string;
     picture?: string;
+    adminRole?: string;
   }
 }

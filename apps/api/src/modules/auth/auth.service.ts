@@ -70,6 +70,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
+      adminRole: user.adminRole,
     });
 
     return {
@@ -106,6 +107,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
+      adminRole: user.adminRole,
     });
 
     return {

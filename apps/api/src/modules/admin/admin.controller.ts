@@ -20,8 +20,12 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AdminGuard } from '../../common/guards/admin.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { AdminRole } from '@repo/shared';
 import { AuthenticatedRequest } from '../../common/types/request.types';
 import { AdminService } from './admin.service';
+import { AuditService } from '../audit/audit.service';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { AdminListingsQueryDto } from './dto/admin-listings-query.dto';
 import { AdminUpdateUserStatusDto } from './dto/admin-update-user-status.dto';
@@ -29,10 +33,14 @@ import { AdminUpdateListingStatusDto } from './dto/admin-update-listing-status.d
 
 @Controller('admin')
 @ApiTags('admin')
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(JwtAuthGuard, AdminGuard, RolesGuard)
+@Roles(AdminRole.ADMIN, AdminRole.MODERATOR)
 @ApiBearerAuth('JWT-auth')
 export class AdminController {
-  constructor(private readonly service: AdminService) {}
+  constructor(
+    private readonly service: AdminService,
+    private readonly auditService: AuditService,
+  ) {}
 
   private resolveAdminId(req: AuthenticatedRequest): string {
     const adminId = req.user.id;
@@ -106,13 +114,21 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  updateUserStatus(
+  async updateUserStatus(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: AdminUpdateUserStatusDto,
   ) {
     const adminId = this.resolveAdminId(req);
-    return this.service.updateUserStatus(adminId, id, dto.status);
+    const result = await this.service.updateUserStatus(adminId, id, dto.status);
+    void this.auditService.log({
+      actorId: adminId,
+      action: dto.status === 'SUSPENDED' ? 'ADMIN_BAN_USER' : 'ADMIN_UNBAN_USER',
+      targetType: 'USER',
+      targetId: id,
+      metadata: { status: dto.status },
+    });
+    return result;
   }
 
   @Patch('users/:id/restore')
@@ -127,9 +143,16 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  restoreUser(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  async restoreUser(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     const adminId = this.resolveAdminId(req);
-    return this.service.restoreUser(adminId, id);
+    const result = await this.service.restoreUser(adminId, id);
+    void this.auditService.log({
+      actorId: adminId,
+      action: 'ADMIN_RESTORE_USER',
+      targetType: 'USER',
+      targetId: id,
+    });
+    return result;
   }
 
   @Get('listings')
@@ -175,13 +198,21 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Listing not found' })
-  updateListingStatus(
+  async updateListingStatus(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() dto: AdminUpdateListingStatusDto,
   ) {
     const adminId = this.resolveAdminId(req);
-    return this.service.updateListingStatus(adminId, id, dto.status);
+    const result = await this.service.updateListingStatus(adminId, id, dto.status);
+    void this.auditService.log({
+      actorId: adminId,
+      action: dto.status === 'HIDDEN' ? 'ADMIN_HIDE_LISTING' : 'ADMIN_UPDATE_LISTING_STATUS',
+      targetType: 'LISTING',
+      targetId: id,
+      metadata: { status: dto.status },
+    });
+    return result;
   }
 
   @Patch('listings/:id/restore')
@@ -196,8 +227,18 @@ export class AdminController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Listing not found' })
-  restoreListing(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+  async restoreListing(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
     const adminId = this.resolveAdminId(req);
-    return this.service.restoreListing(adminId, id);
+    const result = await this.service.restoreListing(adminId, id);
+    void this.auditService.log({
+      actorId: adminId,
+      action: 'ADMIN_RESTORE_LISTING',
+      targetType: 'LISTING',
+      targetId: id,
+    });
+    return result;
   }
 }
