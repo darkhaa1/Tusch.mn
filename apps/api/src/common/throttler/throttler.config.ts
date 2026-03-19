@@ -23,6 +23,9 @@ export const THROTTLE_CONFIGS = {
   // Reports — très strict
   REPORTS: { ttl: 60_000, limit: 5 },
 
+  // Notifications — permissif (polling 30s)
+  NOTIFICATIONS_GET: { ttl: 60_000, limit: 120 },
+
   // Default global
   DEFAULT: { ttl: 60_000, limit: 100 },
 } as const
