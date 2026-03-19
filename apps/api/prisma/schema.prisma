@@ -91,6 +91,11 @@ model User {
   emailVerifyTokenExp DateTime?
   resetToken     String?   @unique
   resetTokenExp  DateTime?
+  onboardingCompletedAt DateTime?
+  bio           String?
+  city          String?
+  serviceCategories String[]
+  serviceZones      String[]
   listing     Listing[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")

@@ -46,6 +46,7 @@ import {
   updateListing,
 } from "@web/lib/api/listings";
 import {
+  completeOnboarding,
   fetchProviders,
   fetchPublicUserProfile,
   fetchUsers,
@@ -770,6 +771,17 @@ export function useOffersHistoryAsProvider(params?: { page?: number; limit?: num
     queryKey: ['offers-history-provider', params?.page || 1, params?.limit || 10],
     queryFn: () => getOffersHistoryAsProvider(params),
     enabled: !!user,
+  });
+}
+
+export function useCompleteOnboarding() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof completeOnboarding>[0]) =>
+      completeOnboarding(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['current-user'] });
+    },
   });
 }
 
