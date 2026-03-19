@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_CONFIGS } from '../../common/throttler';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -56,7 +57,7 @@ export class AuthController {
   }
 
   @Post('register')
-  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @Throttle({ default: THROTTLE_CONFIGS.AUTH_REGISTER })
   @ApiOperation({ summary: 'Create an account' })
   @ApiBody({ type: AuthDto })
   @ApiResponse({
@@ -74,7 +75,7 @@ export class AuthController {
   }
 
   @Post('login')
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: THROTTLE_CONFIGS.AUTH_LOGIN })
   @ApiOperation({ summary: 'Login' })
   @ApiBody({
     schema: {
@@ -281,7 +282,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  @Throttle({ default: { ttl: 60000, limit: 3 } })
+  @Throttle({ default: THROTTLE_CONFIGS.AUTH_RESET_PASSWORD })
   @ApiOperation({ summary: 'Request password reset email' })
   @ApiBody({ type: ForgotPasswordDto })
   @ApiResponse({
@@ -298,6 +299,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
+  @Throttle({ default: THROTTLE_CONFIGS.AUTH_RESET_PASSWORD })
   @ApiOperation({ summary: 'Reset password using token' })
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({
@@ -332,7 +334,7 @@ export class AuthController {
 
   @Post('resend-verification')
   @UseGuards(JwtAuthGuard)
-  @Throttle({ default: { ttl: 60000, limit: 2 } })
+  @Throttle({ default: { ttl: 60_000, limit: 2 } })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Resend verification email' })
   @ApiResponse({

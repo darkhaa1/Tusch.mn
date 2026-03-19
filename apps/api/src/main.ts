@@ -8,6 +8,7 @@ import * as bodyParser from 'body-parser';
 import { join } from 'path';
 import { Request, Response, NextFunction } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { ThrottlerExceptionFilter } from './common/filters/throttler-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { MetricsService } from './modules/metrics/metrics.service';
 
@@ -52,7 +53,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new ThrottlerExceptionFilter(), new GlobalExceptionFilter());
 
   const metricsService = app.get(MetricsService);
   app.useGlobalInterceptors(new LoggingInterceptor(metricsService));

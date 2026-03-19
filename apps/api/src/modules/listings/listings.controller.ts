@@ -14,6 +14,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_CONFIGS } from '../../common/throttler';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -42,6 +44,7 @@ export class ListingsController {
 
   @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard)
   @Post()
+  @Throttle({ default: THROTTLE_CONFIGS.LISTINGS_CREATE })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Create a listing' })
   @ApiBody({ type: CreateListingDto })
@@ -68,6 +71,7 @@ export class ListingsController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get()
+  @Throttle({ default: THROTTLE_CONFIGS.SEARCH })
   @ApiOperation({ summary: 'List listings (public)' })
   @ApiQuery({ name: 'category', required: false })
   @ApiQuery({ name: 'search', required: false })
@@ -178,6 +182,7 @@ export class ListingsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Put(':id')
+  @Throttle({ default: THROTTLE_CONFIGS.LISTINGS_UPDATE })
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update a listing' })
   @ApiParam({ name: 'id', description: 'Listing ID' })
@@ -201,6 +206,7 @@ export class ListingsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post(':id/images')
+  @Throttle({ default: THROTTLE_CONFIGS.UPLOAD })
   @UseInterceptors(
     FilesInterceptor('files', undefined, listingImagesMulterOptions),
   )

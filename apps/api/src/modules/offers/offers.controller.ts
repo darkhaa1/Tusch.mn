@@ -9,6 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_CONFIGS, ThrottleByUserGuard } from '../../common/throttler';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -31,8 +33,9 @@ import { OffersService } from './offers.service';
 export class OffersController {
   constructor(private readonly service: OffersService) {}
 
-  @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard)
+  @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard, ThrottleByUserGuard)
   @Post('listing/:listingId')
+  @Throttle({ default: THROTTLE_CONFIGS.OFFERS_CREATE })
   @ApiOperation({ summary: 'Create an offer for a listing' })
   @ApiParam({ name: 'listingId', description: 'Listing ID' })
   @ApiBody({ type: CreateOfferDto })
