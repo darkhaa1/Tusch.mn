@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AdminRole } from '@repo/shared';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -18,8 +19,16 @@ export class JwtAuthGuard implements CanActivate {
     if (!token) throw new UnauthorizedException('No token');
 
     try {
-      const decoded = this.jwtService.verify<{ sub: string; email: string }>(token);
-      request.user = { id: decoded.sub, email: decoded.email };
+      const decoded = this.jwtService.verify<{
+        sub: string;
+        email: string;
+        adminRole?: AdminRole;
+      }>(token);
+      request.user = {
+        id: decoded.sub,
+        email: decoded.email,
+        adminRole: decoded.adminRole ?? AdminRole.USER,
+      };
       return true;
     } catch {
       throw new UnauthorizedException('Invalid token');
