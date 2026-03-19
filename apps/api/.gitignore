@@ -2,9 +2,12 @@
 /dist
 /node_modules
 /uploads
+!/uploads/avatars/.gitkeep
+!/uploads/listings/.gitkeep
 
 # Logs
-logs
+/logs
+!/logs/.gitkeep
 *.log
 npm-debug.log*
 pnpm-debug.log*
