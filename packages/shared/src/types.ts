@@ -24,6 +24,11 @@ export type CurrentUser = {
   isAdmin?: boolean;
   status?: UserStatus;
   emailVerified: boolean;
+  onboardingCompletedAt?: string | null;
+  bio?: string | null;
+  city?: string | null;
+  serviceCategories?: string[];
+  serviceZones?: string[];
 };
 
 export type ListingUser = {

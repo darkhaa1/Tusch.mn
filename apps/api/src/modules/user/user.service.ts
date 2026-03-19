@@ -156,6 +156,26 @@ export class UserService {
     return this.sanitizeUser(updated);
   }
 
+  async completeOnboarding(
+    userId: string,
+    data: {
+      role?: UserRole;
+      city?: string;
+      bio?: string;
+      serviceCategories?: string[];
+      serviceZones?: string[];
+    },
+  ) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...data,
+        onboardingCompletedAt: new Date(),
+      },
+    });
+    return this.sanitizeUser(updated);
+  }
+
   sanitizeUser(user: any) {
     if (!user) return null;
     const {

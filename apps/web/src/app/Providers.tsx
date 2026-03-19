@@ -5,6 +5,7 @@ import * as React from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthSync } from './AuthSync';
+import { OnboardingRedirect } from './OnboardingRedirect';
 
 
 type Props = {
@@ -17,6 +18,7 @@ export function Providers({ children }: Props) {
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
         <AuthSync />
+        <OnboardingRedirect />
         {children}
         {/* <ReactQueryDevtools initialIsOpen={false} /> */}
       </QueryClientProvider>

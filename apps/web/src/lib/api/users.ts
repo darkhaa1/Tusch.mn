@@ -1,9 +1,24 @@
 import { apiFetch } from "./base";
 import type {
+  CurrentUser,
   ProvidersPage,
   PublicUserProfile,
   UsersPage,
 } from "./types";
+import type { UserRole } from "@repo/shared";
+
+export async function completeOnboarding(body: {
+  role?: UserRole;
+  city?: string;
+  bio?: string;
+  serviceCategories?: string[];
+  serviceZones?: string[];
+}): Promise<{ user: CurrentUser }> {
+  return apiFetch<{ user: CurrentUser }>("/users/onboarding", {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
 
 export async function fetchUsers(params?: {
   page?: number;

@@ -21,6 +21,7 @@ import { UserService } from './user.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { UpdateMyRoleDto } from './dto/update-my-role.dto';
+import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
 import { UserRole } from '@repo/shared';
 import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
@@ -105,6 +106,27 @@ export class UserController {
       body.role as UserRole,
     );
     return { user: updated };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('onboarding')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Complete onboarding wizard' })
+  @ApiBody({ type: CompleteOnboardingDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Onboarding completed',
+    schema: { example: { user: { id: 'usr_1', onboardingCompletedAt: '2026-03-19T00:00:00.000Z' } } },
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async completeOnboarding(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: CompleteOnboardingDto,
+  ) {
+    const userId = req.user.id;
+    const user = await this.userService.completeOnboarding(userId, body);
+    return { user };
   }
 
   @UseGuards(OptionalJwtAuthGuard)
