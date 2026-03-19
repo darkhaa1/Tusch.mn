@@ -1,11 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { join } from 'path';
 import { validateEnv } from './config/env.schema';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { CustomThrottlerGuard } from './common/throttler';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
@@ -26,13 +27,19 @@ import { UserModule } from './modules/user/user.module';
       envFilePath: ['apps/api/.env', '.env'],
       validate: validateEnv,
     }),
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60000,
-        limit: 60,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: config.get('THROTTLE_TTL', 60_000),
+            limit: config.get('THROTTLE_LIMIT', 100),
+          },
+        ],
+      }),
+    }),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
@@ -52,7 +59,7 @@ import { UserModule } from './modules/user/user.module';
   ],
   providers: [
     ...(process.env.NODE_ENV !== 'test'
-      ? [{ provide: APP_GUARD, useClass: ThrottlerGuard }]
+      ? [{ provide: APP_GUARD, useClass: CustomThrottlerGuard }]
       : []),
   ],
 })

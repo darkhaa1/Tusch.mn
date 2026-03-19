@@ -9,6 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_CONFIGS, ThrottleByUserGuard } from '../../common/throttler';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -47,8 +49,9 @@ export class MessagesController {
     return { count };
   }
 
-  @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard)
+  @UseGuards(AuthGuard('jwt'), EmailVerifiedGuard, ThrottleByUserGuard)
   @Post()
+  @Throttle({ default: THROTTLE_CONFIGS.MESSAGES_SEND })
   @ApiOperation({ summary: 'Send a message' })
   @ApiBody({ type: CreateMessageDto })
   @ApiResponse({

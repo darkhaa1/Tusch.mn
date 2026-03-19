@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_CONFIGS } from '../../common/throttler';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -33,7 +34,7 @@ export class ReportsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('reports')
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle({ default: THROTTLE_CONFIGS.REPORTS })
   @ApiOperation({ summary: 'Create a report' })
   @ApiBody({ type: CreateReportDto })
   @ApiResponse({
