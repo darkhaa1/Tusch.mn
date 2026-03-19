@@ -28,6 +28,7 @@ const authOptions: AuthOptions & { trustHost?: boolean } = {
         token.picture = (user as any)?.image ?? token.picture;
         token.firstname = (user as any)?.firstname ?? token.firstname;
         token.lastname = (user as any)?.lastname ?? token.lastname;
+        token.adminRole = (user as any)?.adminRole ?? token.adminRole ?? 'USER';
       }
 
       if (account?.provider) {
@@ -60,6 +61,7 @@ const authOptions: AuthOptions & { trustHost?: boolean } = {
           session.user.image ?? (typeof token.picture === "string" ? token.picture : undefined);
         session.user.email = session.user.email ?? (typeof token.email === "string" ? token.email : undefined);
         session.user.name = session.user.name ?? (typeof token.name === "string" ? token.name : undefined);
+        session.user.adminRole = typeof token.adminRole === "string" ? token.adminRole : 'USER';
       }
       return session;
     },

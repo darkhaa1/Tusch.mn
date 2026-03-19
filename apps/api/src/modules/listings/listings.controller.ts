@@ -36,6 +36,7 @@ import { listingImagesMulterOptions } from '../../common/multer/image-options';
 import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
 import { ReorderImagesDto } from './dto/reorder-images.dto';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
+import { ListingOwnershipGuard } from '../../common/guards/ownership.guard';
 
 @Controller('listings')
 @ApiTags('listings')
@@ -180,7 +181,7 @@ export class ListingsController {
     return this.service.findPublicById(id, userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), ListingOwnershipGuard)
   @Put(':id')
   @Throttle({ default: THROTTLE_CONFIGS.LISTINGS_UPDATE })
   @ApiBearerAuth('JWT-auth')
@@ -249,7 +250,7 @@ export class ListingsController {
     return this.service.addImages(id, files, user.id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), ListingOwnershipGuard)
   @Delete(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a listing' })

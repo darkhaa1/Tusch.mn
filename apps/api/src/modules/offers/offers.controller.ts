@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { GetUser } from '../../common/decorators/get-user.decorator';
 import { EmailVerifiedGuard } from '../../common/guards/email-verified.guard';
+import { OfferOwnershipGuard } from '../../common/guards/ownership.guard';
 import { CompleteOfferDto } from './dto/complete-offer.dto';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { GetOffersQueryDto } from './dto/get-offers-query.dto';
@@ -260,7 +261,7 @@ export class OffersController {
     return this.service.findOne(id, user.id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), OfferOwnershipGuard)
   @Patch(':id/cancel')
   @ApiOperation({ summary: 'Cancel a pending offer' })
   @ApiParam({ name: 'id', description: 'Offer ID' })
@@ -285,7 +286,7 @@ export class OffersController {
     return this.service.cancel(id, user.id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), OfferOwnershipGuard)
   @Patch(':id/complete')
   @ApiOperation({ summary: 'Complete an accepted offer' })
   @ApiParam({ name: 'id', description: 'Offer ID' })
@@ -313,7 +314,7 @@ export class OffersController {
     return this.service.complete(id, user.id, dto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), OfferOwnershipGuard)
   @Patch(':id/accept')
   @ApiOperation({ summary: 'Accept a pending offer' })
   @ApiParam({ name: 'id', description: 'Offer ID' })
@@ -339,7 +340,7 @@ export class OffersController {
     return this.service.accept(id, user.id);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'), OfferOwnershipGuard)
   @Patch(':id/reject')
   @ApiOperation({ summary: 'Reject a pending offer' })
   @ApiParam({ name: 'id', description: 'Offer ID' })

@@ -109,7 +109,7 @@ describe('Reports (e2e)', () => {
 
     await prisma.user.update({
       where: { email: adminEmail },
-      data: { isAdmin: true },
+      data: { isAdmin: true, adminRole: 'ADMIN' },
     });
 
     const ownerCookie = await login(ownerEmail, password);

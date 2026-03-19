@@ -344,13 +344,15 @@ describe('App (e2e)', () => {
       where: { email },
       data: {
         isAdmin: true,
+        adminRole: 'ADMIN',
         emailVerified: true,
         emailVerifyToken: null,
         emailVerifyTokenExp: null,
       },
     });
 
-    await authedGet('/admin/stats', cookie).expect(200);
+    const adminCookieStats = await login(email, password);
+    await authedGet('/admin/stats', adminCookieStats).expect(200);
   });
 
   it('hides listings from the public feed when marked hidden', async () => {
@@ -370,6 +372,7 @@ describe('App (e2e)', () => {
       where: { email },
       data: {
         isAdmin: true,
+        adminRole: 'ADMIN',
         emailVerified: true,
         emailVerifyToken: null,
         emailVerifyTokenExp: null,
@@ -937,7 +940,7 @@ describe('App (e2e)', () => {
 
     await prisma.user.update({
       where: { email: adminEmail },
-      data: { isAdmin: true },
+      data: { isAdmin: true, adminRole: 'ADMIN' },
     });
 
     const adminCookie = await login(adminEmail, password);

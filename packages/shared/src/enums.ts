@@ -5,6 +5,13 @@ export const UserRole = {
 } as const;
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
+export const AdminRole = {
+  USER: "USER",
+  MODERATOR: "MODERATOR",
+  ADMIN: "ADMIN",
+} as const;
+export type AdminRole = (typeof AdminRole)[keyof typeof AdminRole];
+
 export const UserStatus = {
   ACTIVE: "ACTIVE",
   SUSPENDED: "SUSPENDED",
