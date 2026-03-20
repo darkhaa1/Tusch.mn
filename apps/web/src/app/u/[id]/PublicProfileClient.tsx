@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Star, ShieldCheck, Phone, Mail } from "lucide-react";
@@ -16,10 +16,9 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  Textarea,
 } from "@web/components/ui";
 import AppShell from "@web/components/layout/AppShell";
-import { usePublicUserProfile, useCurrentUser, useCreateReview } from "@web/lib/hooks/useApi";
+import { usePublicUserProfile, useCurrentUser } from "@web/lib/hooks/useApi";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import { cn } from "@web/lib/utils";
 import { ReportDialogButton } from "@web/components/report/ReportDialogButton";
@@ -41,12 +40,6 @@ export default function PublicProfileClient() {
   const userId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const { data, isLoading, error } = usePublicUserProfile(userId);
   const { data: currentUser } = useCurrentUser();
-  const createReviewMutation = useCreateReview();
-
-  const [reviewRating, setReviewRating] = useState<number>(0);
-  const [reviewComment, setReviewComment] = useState<string>("");
-  const [reviewError, setReviewError] = useState<string>("");
-  const [reviewSuccess, setReviewSuccess] = useState<boolean>(false);
 
   const memberSince = useMemo(() => {
     const iso = data?.user.createdAt;
@@ -72,37 +65,7 @@ export default function PublicProfileClient() {
   ];
 
   const isError = !!error;
-  const canWriteReview = currentUser && currentUser.id !== userId;
   const canReportProfile = Boolean(currentUser?.id && userId && currentUser.id !== userId);
-
-  const handleSubmitReview = async () => {
-    setReviewError("");
-    setReviewSuccess(false);
-
-    if (reviewRating === 0) {
-      setReviewError(t("review.errors.ratingRequired"));
-      return;
-    }
-
-    if (!userId) {
-      setReviewError(t("review.errors.userNotFound"));
-      return;
-    }
-
-    try {
-      await createReviewMutation.mutateAsync({
-        targetUserId: userId,
-        rating: reviewRating,
-        comment: reviewComment.trim() || undefined,
-      });
-      setReviewSuccess(true);
-      setReviewRating(0);
-      setReviewComment("");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "";
-      setReviewError(message || t("review.errors.generic"));
-    }
-  };
 
   return (
     <AppShell
@@ -199,62 +162,6 @@ export default function PublicProfileClient() {
             </Card>
           </div>
 
-          {canWriteReview && (
-            <Card className="border border-border/80">
-              <CardContent className="space-y-4 p-6">
-                <h3 className="text-lg font-semibold text-foreground">{t("review.title")}</h3>
-
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{t("review.ratingLabel")}</p>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setReviewRating(star)}
-                        className="focus:outline-none"
-                      >
-                        <Star
-                          className={cn(
-                            "h-8 w-8 cursor-pointer transition-colors",
-                            star <= reviewRating
-                              ? "fill-amber-400 stroke-amber-400"
-                              : "stroke-muted-foreground hover:stroke-amber-400"
-                          )}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{t("review.commentLabel")}</p>
-                  <Textarea
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder={t("review.placeholder")}
-                    maxLength={2000}
-                    rows={4}
-                  />
-                </div>
-
-                {reviewError && (
-                  <p className="text-sm text-destructive">{reviewError}</p>
-                )}
-
-                {reviewSuccess && (
-                  <p className="text-sm text-green-600">{t("review.success")}</p>
-                )}
-
-                <Button
-                  onClick={handleSubmitReview}
-                  disabled={createReviewMutation.isPending}
-                >
-                  {createReviewMutation.isPending ? t("review.submitting") : t("review.submit")}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
 
           <Tabs defaultValue="overview" className="w-full">
             <TabsList>

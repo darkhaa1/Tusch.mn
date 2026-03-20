@@ -2,13 +2,19 @@ import { apiFetch } from "./base";
 import type { Review, ReviewsPage } from "./types";
 
 export async function createReview(body: {
-  targetUserId: string;
+  offerId: string;
   rating: number;
-  comment?: string;
+  comment: string;
 }): Promise<Review> {
   return apiFetch<Review>("/reviews", {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export async function checkReview(offerId: string): Promise<{ reviewed: boolean }> {
+  return apiFetch<{ reviewed: boolean }>(`/reviews/offer/${offerId}/mine`, {
+    method: "GET",
   });
 }
 

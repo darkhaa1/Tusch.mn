@@ -31,25 +31,14 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Create a review' })
+  @ApiOperation({ summary: 'Create a review for a completed offer' })
   @ApiBody({ type: CreateReviewDto })
-  @ApiResponse({
-    status: 201,
-    description: 'Review created',
-    schema: {
-      example: {
-        id: 'rev_1',
-        rating: 5,
-        comment: 'Great work!',
-        targetUserId: 'usr_2',
-        authorId: 'usr_1',
-      },
-    },
-  })
+  @ApiResponse({ status: 201, description: 'Review created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
-  @ApiResponse({ status: 404, description: 'Not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden (offer not COMPLETED or not a party)' })
+  @ApiResponse({ status: 404, description: 'Offer not found' })
+  @ApiResponse({ status: 409, description: 'Already reviewed this offer' })
   create(
     @Body() dto: CreateReviewDto,
     @GetUser() user: { id?: string; sub?: string },
@@ -58,28 +47,26 @@ export class ReviewsController {
     return this.service.create(dto, userId as string);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('offer/:offerId/mine')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Check if current user already reviewed this offer' })
+  @ApiParam({ name: 'offerId', description: 'Offer ID' })
+  @ApiResponse({ status: 200, schema: { example: { reviewed: false } } })
+  checkMine(
+    @Param('offerId') offerId: string,
+    @GetUser() user: { id?: string; sub?: string },
+  ) {
+    const userId = user.id ?? user.sub;
+    return this.service.checkReview(offerId, userId as string);
+  }
+
   @Get('user/:userId')
-  @ApiOperation({ summary: 'Get reviews for a user' })
+  @ApiOperation({ summary: 'Get reviews received by a user' })
   @ApiParam({ name: 'userId', description: 'Target user ID' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiResponse({
-    status: 200,
-    description: 'Paginated reviews',
-    schema: {
-      example: {
-        items: [
-          { id: 'rev_1', rating: 5, comment: 'Great!', authorId: 'usr_1' },
-        ],
-        total: 1,
-        page: 1,
-        limit: 10,
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 200, description: 'Paginated reviews' })
   @ApiResponse({ status: 404, description: 'User not found' })
   getReviews(
     @Param('userId') userId: string,
@@ -93,14 +80,8 @@ export class ReviewsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a review' })
   @ApiParam({ name: 'id', description: 'Review ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Review deleted',
-    schema: { example: { success: true } },
-  })
-  @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 200, description: 'Review deleted' })
+  @ApiResponse({ status: 403, description: 'Not your review' })
   @ApiResponse({ status: 404, description: 'Review not found' })
   delete(
     @Param('id') id: string,

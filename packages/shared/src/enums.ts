@@ -32,6 +32,7 @@ export const NotificationType = {
   OFFER_REJECTED: "OFFER_REJECTED",
   LISTING_HIDDEN: "LISTING_HIDDEN",
   ACCOUNT_SUSPENDED: "ACCOUNT_SUSPENDED",
+  REVIEW_REQUESTED: "REVIEW_REQUESTED",
 } as const;
 export type NotificationType =
   (typeof NotificationType)[keyof typeof NotificationType];

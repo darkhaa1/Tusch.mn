@@ -44,6 +44,7 @@ enum NotificationType {
   OFFER_REJECTED
   LISTING_HIDDEN
   ACCOUNT_SUSPENDED
+  REVIEW_REQUESTED
 }
 
 enum OfferStatus {
@@ -185,17 +186,20 @@ model ListingImage {
 
 model Review {
   id           String   @id @default(cuid())
+  offerId      String
   targetUserId String
   reviewerId   String
   rating       Int
-  comment      String?
+  comment      String
   createdAt    DateTime @default(now())
 
-  targetUser User @relation("UserReviewsReceived", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  reviewer   User @relation("UserReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  offer      Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  targetUser User  @relation("UserReviewsReceived", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewer   User  @relation("UserReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@index([targetUserId])
-  @@unique([targetUserId, reviewerId])
+  @@index([offerId])
+  @@unique([reviewerId, offerId])
 }
 
 model Notification {
@@ -245,8 +249,9 @@ model Offer {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  listing  Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  provider User    @relation("UserOffers", fields: [providerId], references: [id], onDelete: Cascade)
+  listing  Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  provider User     @relation("UserOffers", fields: [providerId], references: [id], onDelete: Cascade)
+  reviews  Review[]
 
   @@unique([listingId, providerId])
   @@index([providerId])

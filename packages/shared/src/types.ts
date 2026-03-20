@@ -177,10 +177,11 @@ export type Notification = {
 
 export type Review = {
   id: string;
+  offerId: string;
   targetUserId: string;
   reviewerId: string;
   rating: number;
-  comment: string | null;
+  comment: string;
   createdAt: string;
   reviewer: {
     id: string;

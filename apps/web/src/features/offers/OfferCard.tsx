@@ -36,6 +36,7 @@ type OfferCardProps = {
   offer: Offer;
   showListing?: boolean;
   showProvider?: boolean;
+  showReviewLink?: boolean;
   onAccept?: (offer: Offer) => Promise<void>;
   onReject?: (offer: Offer) => Promise<void>;
   onCancel?: (offer: Offer) => Promise<void>;
@@ -47,6 +48,7 @@ export function OfferCard({
   offer,
   showListing = false,
   showProvider = false,
+  showReviewLink = false,
   onAccept,
   onReject,
   onCancel,
@@ -200,6 +202,17 @@ export function OfferCard({
               <p className="text-xs text-muted-foreground">{listingMeta}</p>
             ) : null}
           </Link>
+        ) : null}
+
+        {showReviewLink && offer.status === "COMPLETED" ? (
+          <div className="pt-1">
+            <Link
+              href={`/reviews/create?offerId=${offer.id}`}
+              className="inline-flex items-center text-sm font-medium text-primary hover:underline"
+            >
+              {t("actions.leaveReview")}
+            </Link>
+          </div>
         ) : null}
 
         {hasActions ? (
