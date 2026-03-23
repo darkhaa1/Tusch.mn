@@ -964,59 +964,99 @@ describe('App (e2e)', () => {
     expect(recentListings.some((item) => item.id === listing2Id)).toBe(false);
   });
 
-  it('creates a review, prevents self-review and duplicate reviews', async () => {
-    const userAEmail = `reviewa-${Date.now()}@example.com`;
-    const userBEmail = `reviewb-${Date.now()}@example.com`;
+  // Helper: create a listing, have provider make offer, owner accepts + completes
+  const createCompletedOffer = async (
+    ownerEmail: string,
+    ownerCookie: string,
+    providerEmail: string,
+    providerCookie: string,
+  ): Promise<{ offerId: string; ownerId: string; providerId: string }> => {
+    // Email verification is required to create listings / offers
+    await prisma.user.updateMany({
+      where: { email: { in: [ownerEmail, providerEmail] } },
+      data: { emailVerified: true, emailVerifyToken: null, emailVerifyTokenExp: null },
+    });
+    // Provider role is required to create offers
+    await prisma.user.updateMany({
+      where: { email: providerEmail },
+      data: { role: 'PROVIDER' },
+    });
+
+    const listingRes = await authedPost('/listings', ownerCookie, {
+      description: 'Service listing for review e2e test.',
+      price: 5000,
+      location: 'UB',
+      category: 'tutoring',
+    }).expect(201);
+    const listingId = listingRes.body.id as string;
+
+    const offerRes = await authedPost(
+      `/offers/listing/${listingId}`,
+      providerCookie,
+      { price: 5000, message: 'I can complete this work.' },
+    ).expect(201);
+    const offerId = offerRes.body.id as string;
+
+    await authedPatch(`/offers/${offerId}/accept`, ownerCookie, {}).expect(200);
+    await authedPatch(`/offers/${offerId}/complete`, ownerCookie, {}).expect(200);
+
+    return {
+      offerId,
+      ownerId: listingRes.body.userId as string,
+      providerId: offerRes.body.providerId as string,
+    };
+  };
+
+  it('creates a review, prevents duplicate reviews', async () => {
+    const ts = Date.now();
     const password = 'password123';
 
-    // Register two users
     const userARes = await register({
-      email: userAEmail,
+      email: `reviewa-${ts}@example.com`,
       password,
       firstName: 'Reviewer',
       lastName: 'A',
-      phone: '50000000',
+      phone: `5${String(ts).slice(-7)}`,
       accountType: 'basic',
     }).expect(201);
     const userAId = userARes.body.id as string;
 
     const userBRes = await register({
-      email: userBEmail,
+      email: `reviewb-${ts}@example.com`,
       password,
       firstName: 'Target',
       lastName: 'B',
-      phone: '60000000',
+      phone: `6${String(ts).slice(-7)}`,
       accountType: 'basic',
     }).expect(201);
     const userBId = userBRes.body.id as string;
 
-    const cookieA = await login(userAEmail, password);
-    const cookieB = await login(userBEmail, password);
+    const cookieA = await login(`reviewa-${ts}@example.com`, password);
+    const cookieB = await login(`reviewb-${ts}@example.com`, password);
 
-    // Create a review from A to B
+    // B owns listing; A is provider
+    const { offerId } = await createCompletedOffer(
+      `reviewb-${ts}@example.com`, cookieB,
+      `reviewa-${ts}@example.com`, cookieA,
+    );
+
+    // Create a review from A (provider) to B (client)
     const reviewRes = await authedPost('/reviews', cookieA, {
-      targetUserId: userBId,
+      offerId,
       rating: 5,
-      comment: 'Excellent service!',
+      comment: 'Excellent service, highly recommended!',
     }).expect(201);
 
     const reviewId = reviewRes.body.id as string;
     expect(reviewRes.body.rating).toBe(5);
-    expect(reviewRes.body.comment).toBe('Excellent service!');
+    expect(reviewRes.body.comment).toBe('Excellent service, highly recommended!');
     expect(reviewRes.body.reviewer.id).toBe(userAId);
 
-    // Prevent self-review
-    await authedPost('/reviews', cookieB, {
-      targetUserId: userBId,
-      rating: 4,
-      comment: 'Self review attempt',
-    }).expect(400);
-
-    // Prevent duplicate review
+    // Prevent duplicate review for the same offer
     await authedPost('/reviews', cookieA, {
-      targetUserId: userBId,
+      offerId,
       rating: 3,
-      comment: 'Duplicate attempt',
+      comment: 'Duplicate attempt for the same offer.',
     }).expect(409);
 
     // Fetch reviews for user B
@@ -1040,38 +1080,44 @@ describe('App (e2e)', () => {
   });
 
   it('includes reviews in public profile', async () => {
-    const reviewerEmail = `reviewer-${Date.now()}@example.com`;
-    const targetEmail = `target-${Date.now()}@example.com`;
+    const ts = Date.now();
     const password = 'password123';
 
-    // Register reviewer
+    // Register reviewer (provider)
     await register({
-      email: reviewerEmail,
+      email: `reviewer-${ts}@example.com`,
       password,
       firstName: 'Reviewer',
       lastName: 'User',
-      phone: '70000000',
+      phone: `7${String(ts).slice(-7)}`,
       accountType: 'basic',
     }).expect(201);
 
-    // Register target
+    // Register target (listing owner / client)
     const targetRes = await register({
-      email: targetEmail,
+      email: `target-${ts}@example.com`,
       password,
       firstName: 'Target',
       lastName: 'User',
-      phone: '80000000',
+      phone: `8${String(ts).slice(-7)}`,
       accountType: 'basic',
     }).expect(201);
     const targetId = targetRes.body.id as string;
 
-    const reviewerCookie = await login(reviewerEmail, password);
+    const reviewerCookie = await login(`reviewer-${ts}@example.com`, password);
+    const targetCookie = await login(`target-${ts}@example.com`, password);
 
-    // Create review
+    // Target owns listing; reviewer is provider
+    const { offerId } = await createCompletedOffer(
+      `target-${ts}@example.com`, targetCookie,
+      `reviewer-${ts}@example.com`, reviewerCookie,
+    );
+
+    // Create review (reviewer → target)
     await authedPost('/reviews', reviewerCookie, {
-      targetUserId: targetId,
+      offerId,
       rating: 4,
-      comment: 'Great experience!',
+      comment: 'Great experience working on this project!',
     }).expect(201);
 
     // Fetch public profile
@@ -1083,42 +1129,45 @@ describe('App (e2e)', () => {
     expect(profileRes.body.stats.ratingAvg).toBe(4);
     expect(profileRes.body.reviews.length).toBe(1);
     expect(profileRes.body.reviews[0].rating).toBe(4);
-    expect(profileRes.body.reviews[0].comment).toBe('Great experience!');
+    expect(profileRes.body.reviews[0].comment).toBe('Great experience working on this project!');
   });
 
   it('prevents deleting another user\'s review', async () => {
-    const userAEmail = `usera-delete-${Date.now()}@example.com`;
-    const userBEmail = `userb-delete-${Date.now()}@example.com`;
+    const ts = Date.now();
     const password = 'password123';
 
-    // Register two users
     await register({
-      email: userAEmail,
+      email: `usera-del-${ts}@example.com`,
       password,
       firstName: 'User',
       lastName: 'A',
-      phone: '90000000',
+      phone: `9${String(ts).slice(-7)}`,
       accountType: 'basic',
     }).expect(201);
 
     const userBRes = await register({
-      email: userBEmail,
+      email: `userb-del-${ts}@example.com`,
       password,
       firstName: 'User',
       lastName: 'B',
-      phone: '91000000',
+      phone: `91${String(ts).slice(-6)}`,
       accountType: 'basic',
     }).expect(201);
     const userBId = userBRes.body.id as string;
 
-    const cookieA = await login(userAEmail, password);
-    const cookieB = await login(userBEmail, password);
+    const cookieA = await login(`usera-del-${ts}@example.com`, password);
+    const cookieB = await login(`userb-del-${ts}@example.com`, password);
 
-    // A reviews B
+    // B owns listing; A is provider
+    const { offerId } = await createCompletedOffer(
+      `userb-del-${ts}@example.com`, cookieB,
+      `usera-del-${ts}@example.com`, cookieA,
+    );
+
     const reviewRes = await authedPost('/reviews', cookieA, {
-      targetUserId: userBId,
+      offerId,
       rating: 3,
-      comment: 'OK service',
+      comment: 'The service was okay overall, met expectations.',
     }).expect(201);
     const reviewId = reviewRes.body.id as string;
 
@@ -1133,41 +1182,42 @@ describe('App (e2e)', () => {
   });
 
   it('handles pagination for reviews', async () => {
-    const reviewerEmail = `paginated-reviewer-${Date.now()}@example.com`;
-    const targetEmail = `paginated-target-${Date.now()}@example.com`;
+    const ts = Date.now();
     const password = 'password123';
 
-    // Register reviewer
     await register({
-      email: reviewerEmail,
+      email: `pag-reviewer-${ts}@example.com`,
       password,
       firstName: 'Paginated',
       lastName: 'Reviewer',
-      phone: '92000000',
+      phone: `92${String(ts).slice(-6)}`,
       accountType: 'basic',
     }).expect(201);
 
-    // Register target
     const targetRes = await register({
-      email: targetEmail,
+      email: `pag-target-${ts}@example.com`,
       password,
       firstName: 'Paginated',
       lastName: 'Target',
-      phone: '93000000',
+      phone: `93${String(ts).slice(-6)}`,
       accountType: 'basic',
     }).expect(201);
     const targetId = targetRes.body.id as string;
 
-    const reviewerCookie = await login(reviewerEmail, password);
+    const reviewerCookie = await login(`pag-reviewer-${ts}@example.com`, password);
+    const targetCookie = await login(`pag-target-${ts}@example.com`, password);
 
-    // Create review
+    const { offerId } = await createCompletedOffer(
+      `pag-target-${ts}@example.com`, targetCookie,
+      `pag-reviewer-${ts}@example.com`, reviewerCookie,
+    );
+
     await authedPost('/reviews', reviewerCookie, {
-      targetUserId: targetId,
+      offerId,
       rating: 5,
-      comment: 'Test pagination',
+      comment: 'Testing review pagination feature in e2e tests.',
     }).expect(201);
 
-    // Test pagination query params
     const page1 = await request(app.getHttpServer())
       .get(`/reviews/user/${targetId}?page=1&limit=10`)
       .expect(200);
