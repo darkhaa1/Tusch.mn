@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { Heart, MapPin, Share2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage, Badge, Button, Card } from "@web/components/ui";
 import { cn } from "@web/lib/utils";
 import resolveAvatarUrl from "@web/lib/resolveImageUrl";
 import type { CurrentUser } from "@web/lib/api/types";
+import { useFavoritesCount } from "@web/lib/hooks/useApi";
 
 type ProfileHeaderProps = {
   user: CurrentUser | null | undefined;
@@ -13,6 +15,7 @@ type ProfileHeaderProps = {
 const gradientBg = "bg-gradient-to-r from-secondary/80 via-primary/70 to-primary";
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
+  const favoritesCount = useFavoritesCount();
   const avatar = resolveAvatarUrl(user?.avatarUrl || null);
   const firstName = user?.firstName || (user as any)?.firstname || "—";
   const lastName = user?.lastName || (user as any)?.lastname || "";
@@ -73,6 +76,14 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
               <Share2 className="h-5 w-5" aria-hidden="true" />
             </Button>
           </div>
+          <Link
+            href="/dashboard/favorites"
+            className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/40 px-4 py-2 text-sm transition hover:bg-muted/70"
+          >
+            <Heart className="h-4 w-4 text-rose-500" aria-hidden="true" />
+            <span className="font-medium text-foreground">{favoritesCount}</span>
+            <span className="text-muted-foreground">дуртай</span>
+          </Link>
         </div>
       </div>
     </Card>

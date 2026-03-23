@@ -7,6 +7,7 @@ import { resolveCategoryLabel } from "./categoryLabels";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import { Card, CardContent, buttonVariants } from "@web/components/ui";
 import { cn } from "@web/lib/utils";
+import { FavoriteListingButton } from "./FavoriteListingButton";
 
 type ListingWithOptionalUser = Listing & {
   user?:
@@ -41,6 +42,7 @@ export default function ListingCard({ listing }: ListingCardProps) {
           />
         </div>
         <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/20 to-transparent" />
+        <FavoriteListingButton listingId={listing.id} />
         <div className="absolute left-3 top-3 flex items-center gap-2">
           {categoryLabel ? (
             <span className="rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-primary-foreground shadow-sm backdrop-blur">

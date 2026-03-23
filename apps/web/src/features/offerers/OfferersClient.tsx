@@ -20,11 +20,14 @@ import {
 } from "@web/components/ui";
 import AppShell from "@web/components/layout/AppShell";
 import { CATEGORY_LABEL_MAP, CATEGORY_OPTIONS } from "@web/lib/categories";
-import { useProviders } from "@web/lib/hooks/useApi";
+import {
+  useProviders,
+  useFavoriteProviderIds,
+  useToggleFavoriteProvider,
+} from "@web/lib/hooks/useApi";
 import { getNumberParam, setSearchParams } from "@web/lib/query";
 import { cn } from "@web/lib/utils";
 import { ProviderCard } from "./ProviderCard";
-import { useFavProviders } from "@web/lib/hooks/useFavProviders";
 import { EmptyState, ErrorState } from "@web/components/ui";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 
@@ -99,16 +102,14 @@ export default function OfferersClient() {
       : `${total} үйлчилгээ үзүүлэгч`;
   const titleLabel = categoryLabel || "Үйлчилгээ үзүүлэгчид";
 
-  const { ids: favoriteIds, add, remove, has } = useFavProviders();
+  const { data: favoriteIds = [] } = useFavoriteProviderIds();
+  const toggleMutation = useToggleFavoriteProvider();
   const toggleFavorite = useCallback(
     (id: string) => {
-      if (has(id)) {
-        remove(id);
-      } else {
-        add(id);
-      }
+      const isFavorited = favoriteIds.includes(id);
+      toggleMutation.mutate({ providerId: id, isFavorited });
     },
-    [add, has, remove]
+    [favoriteIds, toggleMutation]
   );
 
   const favoriteItems = useMemo(
@@ -484,7 +485,7 @@ export default function OfferersClient() {
                       provider.topCategory
                       : null
                   }
-                  isFavorite={has(provider.id)}
+                  isFavorite={favoriteIds.includes(provider.id)}
                   onToggleFavorite={toggleFavorite}
                 />
               ))}
