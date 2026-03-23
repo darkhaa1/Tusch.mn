@@ -270,11 +270,16 @@ export class OffersService {
   async complete(id: string, userId: string, dto?: CompleteOfferDto) {
     const offer = await (this.prisma as any).offer.findUnique({
       where: { id },
-      include: { listing: { select: { userId: true } } },
+      include: {
+        listing: { select: { userId: true, description: true } },
+        provider: { select: { id: true, firstName: true, lastName: true } },
+      },
     });
     if (!offer) throw new NotFoundException('Offer not found');
 
-    if (offer.listing.userId !== userId) {
+    const clientId: string = offer.listing.userId;
+
+    if (clientId !== userId) {
       throw new ForbiddenException('Not your listing');
     }
 
@@ -282,7 +287,7 @@ export class OffersService {
       throw new BadRequestException('Only accepted offers can be completed');
     }
 
-    return (this.prisma as any).offer.update({
+    const completedOffer = await (this.prisma as any).offer.update({
       where: { id },
       data: {
         status: OfferStatus.COMPLETED,
@@ -291,6 +296,45 @@ export class OffersService {
       },
       include: offerInclude,
     });
+
+    // Notify both parties to leave a review
+    const reviewLink = '/reviews/create?offerId=' + id;
+    const providerName = [offer.provider.firstName, offer.provider.lastName]
+      .filter(Boolean)
+      .join(' ');
+
+    const client = await this.prisma.user.findUnique({
+      where: { id: clientId },
+      select: { firstName: true, lastName: true },
+    });
+    const clientName = [client?.firstName, client?.lastName]
+      .filter(Boolean)
+      .join(' ');
+
+    await Promise.all([
+      this.notifications.create({
+        userId: clientId,
+        type: NotificationType.REVIEW_REQUESTED,
+        title: 'Laissez un avis',
+        body:
+          'La prestation avec ' +
+          providerName +
+          ' est terminee. Donnez votre avis : ' +
+          reviewLink,
+      }),
+      this.notifications.create({
+        userId: offer.providerId,
+        type: NotificationType.REVIEW_REQUESTED,
+        title: 'Laissez un avis',
+        body:
+          'La prestation avec ' +
+          clientName +
+          ' est terminee. Donnez votre avis : ' +
+          reviewLink,
+      }),
+    ]);
+
+    return completedOffer;
   }
 
   private async listHistory(where: any, page: number, limit: number) {

@@ -38,7 +38,7 @@ describe('Public profile (e2e)', () => {
       },
     });
 
-    await prisma.listing.create({
+    const listing = await prisma.listing.create({
       data: {
         description: 'Test listing',
         price: 1000,
@@ -48,12 +48,25 @@ describe('Public profile (e2e)', () => {
       },
     });
 
+    const offer = await prisma.offer.create({
+      data: {
+        listingId: listing.id,
+        providerId: reviewer.id,
+        price: 1000,
+        message: 'Test offer',
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        expiresAt: new Date(Date.now() + 86400000),
+      },
+    });
+
     await prisma.review.create({
       data: {
         targetUserId: user.id,
         reviewerId: reviewer.id,
+        offerId: offer.id,
         rating: 5,
-        comment: 'Great service.',
+        comment: 'Great service, very satisfied with the work done.',
       },
     });
 

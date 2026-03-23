@@ -74,6 +74,10 @@ export async function getOffersReceived(params?: OffersQuery): Promise<OffersPag
   return normalizeOffersPage(data, page, limit);
 }
 
+export async function getOffer(id: string): Promise<Offer> {
+  return apiFetch<Offer>(`/offers/${id}`, { method: "GET" });
+}
+
 export async function getOffersByListing(listingId: string): Promise<Offer[]> {
   return apiFetch<Offer[]>(`/offers/listing/${listingId}`, { method: "GET" });
 }

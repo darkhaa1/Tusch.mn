@@ -68,6 +68,7 @@ import {
   updateAdminUserStatus,
 } from "@web/lib/api/admin";
 import {
+  checkReview,
   createReview,
   deleteReview,
   fetchUserReviews,
@@ -87,6 +88,7 @@ import {
   cancelOffer,
   completeOffer,
   createOffer,
+  getOffer,
   getOffersByListing,
   getOffersHistory,
   getOffersHistoryAsClient,
@@ -409,6 +411,14 @@ export function useOffersReceived(params?: { page?: number; limit?: number }) {
   });
 }
 
+export function useOffer(offerId?: string) {
+  return useQuery<Offer>({
+    queryKey: ['offer', offerId],
+    queryFn: () => getOffer(offerId as string),
+    enabled: !!offerId,
+  });
+}
+
 export function useOffersByListing(listingId?: string, enabled = true) {
   return useQuery<Offer[]>({
     queryKey: ['offers-by-listing', listingId],
@@ -650,17 +660,22 @@ export function useUserReviews(
   });
 }
 
+export function useCheckReview(offerId?: string) {
+  const { data: user } = useCurrentUser();
+  return useQuery<{ reviewed: boolean }>({
+    queryKey: ['review-check', offerId],
+    queryFn: () => checkReview(offerId as string),
+    enabled: !!user && !!offerId,
+    staleTime: 60_000,
+  });
+}
+
 export function useCreateReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createReview,
     onSuccess: (_result, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ['user-reviews', variables.targetUserId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['public-user-profile', variables.targetUserId],
-      });
+      queryClient.invalidateQueries({ queryKey: ['review-check', variables.offerId] });
     },
   });
 }

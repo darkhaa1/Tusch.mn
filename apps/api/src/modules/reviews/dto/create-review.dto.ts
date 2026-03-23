@@ -1,19 +1,19 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
   Max,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 
 export class CreateReviewDto {
-  @ApiProperty({ description: 'Target user ID', example: 'usr_123' })
+  @ApiProperty({ description: 'Offer ID (must be COMPLETED)', example: 'off_123' })
   @IsString()
   @IsNotEmpty()
-  targetUserId!: string;
+  offerId!: string;
 
   @ApiProperty({ description: 'Rating from 1 to 5', minimum: 1, maximum: 5, example: 5 })
   @IsInt()
@@ -21,13 +21,15 @@ export class CreateReviewDto {
   @Max(5)
   rating!: number;
 
-  @ApiPropertyOptional({
-    description: 'Optional review comment',
+  @ApiProperty({
+    description: 'Review comment (min 20 chars)',
     example: 'Great communication and on-time delivery.',
+    minLength: 20,
     maxLength: 2000,
   })
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
+  @MinLength(20)
   @MaxLength(2000)
-  comment?: string;
+  comment!: string;
 }

@@ -5,10 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { NotificationType } from '@repo/shared';
+import { NotificationType, OfferStatus } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+
+const REVIEW_WINDOW_DAYS = 30;
 
 @Injectable()
 export class ReviewsService {
@@ -29,66 +31,87 @@ export class ReviewsService {
   } as const;
 
   async create(dto: CreateReviewDto, reviewerId: string) {
-    // Business rule: Prevent self-review
-    if (dto.targetUserId === reviewerId) {
-      throw new BadRequestException('Cannot review yourself');
-    }
-
-    // Validate: Both users exist
-    const [targetUser, reviewer] = await Promise.all([
-      this.prisma.user.findFirst({
-        where: { id: dto.targetUserId, deletedAt: null },
-        select: { id: true },
-      }),
-      this.prisma.user.findFirst({
-        where: { id: reviewerId, deletedAt: null },
-        select: { id: true, firstName: true, lastName: true },
-      }),
-    ]);
-
-    if (!targetUser) {
-      throw new NotFoundException('Target user not found');
-    }
-    if (!reviewer) {
-      throw new NotFoundException('Reviewer not found');
-    }
-
-    // Business rule: Check for duplicate review
-    const existingReview = await this.prisma.review.findUnique({
-      where: {
-        targetUserId_reviewerId: {
-          targetUserId: dto.targetUserId,
-          reviewerId: reviewerId,
-        },
+    const offer = await (this.prisma as any).offer.findUnique({
+      where: { id: dto.offerId },
+      include: {
+        listing: { select: { id: true, userId: true, description: true } },
+        provider: { select: { id: true, firstName: true, lastName: true } },
       },
     });
 
-    if (existingReview) {
-      throw new ConflictException('You have already reviewed this user');
+    if (!offer) {
+      throw new NotFoundException('Offer not found');
     }
 
-    // Create review
+    if (offer.status !== OfferStatus.COMPLETED) {
+      throw new ForbiddenException(
+        'Reviews can only be submitted for completed offers',
+      );
+    }
+
+    const clientId: string = offer.listing.userId;
+    const providerId: string = offer.providerId;
+    if (reviewerId !== clientId && reviewerId !== providerId) {
+      throw new ForbiddenException('You are not a party to this offer');
+    }
+
+    const targetUserId = reviewerId === clientId ? providerId : clientId;
+    if (targetUserId === reviewerId) {
+      throw new BadRequestException('Cannot review yourself');
+    }
+
+    if (offer.completedAt) {
+      const deadline = new Date(offer.completedAt);
+      deadline.setDate(deadline.getDate() + REVIEW_WINDOW_DAYS);
+      if (new Date() > deadline) {
+        throw new ForbiddenException(
+          'Reviews must be submitted within ' + REVIEW_WINDOW_DAYS + ' days of completion',
+        );
+      }
+    }
+
+    const existing = await this.prisma.review.findUnique({
+      where: { reviewerId_offerId: { reviewerId, offerId: dto.offerId } },
+    });
+    if (existing) {
+      throw new ConflictException('You have already reviewed this offer');
+    }
+
     const review = await this.prisma.review.create({
       data: {
-        targetUserId: dto.targetUserId,
-        reviewerId: reviewerId,
+        offerId: dto.offerId,
+        targetUserId,
+        reviewerId,
         rating: dto.rating,
-        comment: dto.comment || null,
+        comment: dto.comment,
       },
       include: this.reviewInclude as any,
     });
 
+    const reviewer = await this.prisma.user.findUnique({
+      where: { id: reviewerId },
+      select: { firstName: true, lastName: true },
+    });
     const reviewerName =
-      [reviewer.firstName, reviewer.lastName].filter(Boolean).join(' ').trim() ||
-      'A user';
+      [reviewer?.firstName, reviewer?.lastName].filter(Boolean).join(' ').trim() ||
+      'Someone';
+
     await this.notificationsService.create({
-      userId: dto.targetUserId,
+      userId: targetUserId,
       type: NotificationType.NEW_REVIEW,
-      title: 'New review',
-      body: `${reviewerName} left you a review.`,
+      title: 'Vous avez recu un avis',
+      body: reviewerName + ' vous a laisse un avis.',
     });
 
     return review;
+  }
+
+  async checkReview(offerId: string, reviewerId: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { reviewerId_offerId: { reviewerId, offerId } },
+      select: { id: true },
+    });
+    return { reviewed: !!review };
   }
 
   async findByTargetUser(targetUserId: string, page: number, limit: number) {
@@ -96,7 +119,6 @@ export class ReviewsService {
     const safeLimit = Math.min(50, Math.max(1, limit));
     const skip = (safePage - 1) * safeLimit;
 
-    // Validate target user exists
     const targetUser = await this.prisma.user.findFirst({
       where: { id: targetUserId, deletedAt: null },
       select: { id: true },
@@ -106,7 +128,6 @@ export class ReviewsService {
       throw new NotFoundException('User not found');
     }
 
-    // Use $transaction for parallel queries
     const [items, total] = await this.prisma.$transaction([
       this.prisma.review.findMany({
         where: { targetUserId },
@@ -135,7 +156,6 @@ export class ReviewsService {
       throw new NotFoundException('Review not found');
     }
 
-    // Ownership check
     if (review.reviewerId !== userId) {
       throw new ForbiddenException('Not your review');
     }

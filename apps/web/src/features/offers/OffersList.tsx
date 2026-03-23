@@ -17,6 +17,7 @@ type OffersListProps = {
   onRetry?: () => void;
   showListing?: boolean;
   showProvider?: boolean;
+  showReviewLink?: boolean;
   onAccept?: (offer: Offer) => Promise<void>;
   onReject?: (offer: Offer) => Promise<void>;
   onCancel?: (offer: Offer) => Promise<void>;
@@ -37,6 +38,7 @@ export function OffersList({
   onRetry,
   showListing = false,
   showProvider = false,
+  showReviewLink = false,
   onAccept,
   onReject,
   onCancel,
@@ -101,6 +103,7 @@ export function OffersList({
             offer={offer}
             showListing={showListing}
             showProvider={showProvider}
+            showReviewLink={showReviewLink}
             onAccept={onAccept}
             onReject={onReject}
             onCancel={onCancel}

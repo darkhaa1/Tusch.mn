@@ -203,7 +203,8 @@
       "processing": "Processing...",
       "retry": "Retry",
       "previous": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "leaveReview": "Leave a review"
     },
     "confirm": {
       "acceptTitle": "Accept this offer?",
@@ -344,5 +345,25 @@
   },
   "errors": {
     "generic": "Something went wrong."
+  },
+  "reviews": {
+    "create": {
+      "title": "Leave a review",
+      "description": "Share your experience with the other party",
+      "context": "About this transaction",
+      "listing": "Listing",
+      "otherParty": "Reviewed person",
+      "ratingLabel": "Your rating (1–5 stars)",
+      "commentLabel": "Your comment",
+      "commentPlaceholder": "Describe your experience in at least 20 characters...",
+      "commentMinError": "Comment must be at least 20 characters",
+      "submit": "Submit review",
+      "submitting": "Submitting...",
+      "alreadyReviewed": "You have already reviewed this offer.",
+      "success": "Review submitted! Redirecting to profile...",
+      "offerNotFound": "Offer not found or not accessible.",
+      "loginRequired": "You must be logged in to leave a review.",
+      "back": "Back"
+    }
   }
 }

@@ -74,6 +74,7 @@ function HistorySubTab({ role }: { role: "client" | "provider" }) {
       onRetry={() => refetch()}
       showListing
       showProvider={role === "client"}
+      showReviewLink
       emptyTitle={t("history.empty.title")}
       emptyDescription={t("history.empty.description")}
     />
