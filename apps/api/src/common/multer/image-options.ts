@@ -4,9 +4,12 @@ import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import {
   ALLOWED_IMAGE_MIMES,
+  ALLOWED_KYC_MIMES,
   AVATAR_UPLOAD_DIR,
+  KYC_UPLOAD_DIR,
   LISTING_UPLOAD_DIR,
   MAX_AVATAR_SIZE,
+  MAX_KYC_FILE_SIZE,
   MAX_LISTING_FILES,
   MAX_LISTING_FILE_SIZE,
 } from './constants';
@@ -15,6 +18,7 @@ import { BadRequestException } from '@nestjs/common';
 // Ensure upload dirs exist
 fs.mkdirSync(AVATAR_UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(LISTING_UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(KYC_UPLOAD_DIR, { recursive: true });
 
 const baseStorage = (destination: string) =>
   diskStorage({
@@ -32,6 +36,16 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
   cb(null, true);
 };
 
+const kycFileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
+  if (!ALLOWED_KYC_MIMES.has(file.mimetype)) {
+    return cb(
+      new BadRequestException('Only jpg, png or pdf files are allowed'),
+      false,
+    );
+  }
+  cb(null, true);
+};
+
 export const avatarMulterOptions = {
   storage: baseStorage(AVATAR_UPLOAD_DIR),
   fileFilter,
@@ -42,4 +56,10 @@ export const listingImagesMulterOptions = {
   storage: baseStorage(LISTING_UPLOAD_DIR),
   fileFilter,
   limits: { fileSize: MAX_LISTING_FILE_SIZE, files: MAX_LISTING_FILES },
+};
+
+export const kycDocumentMulterOptions = {
+  storage: baseStorage(KYC_UPLOAD_DIR),
+  fileFilter: kycFileFilter,
+  limits: { fileSize: MAX_KYC_FILE_SIZE, files: 1 },
 };

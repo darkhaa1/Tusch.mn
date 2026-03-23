@@ -3,6 +3,7 @@ import type {
   AdminListingsPage,
   AdminStats,
   AdminUsersPage,
+  AdminVerificationsPage,
   ListingStatus,
   UserStatus,
 } from "./types";
@@ -76,4 +77,32 @@ export async function restoreAdminListing(listingId: string) {
   return apiFetch(`/admin/listings/${listingId}/restore`, {
     method: "PATCH",
   });
+}
+
+export async function fetchAdminVerifications(params?: {
+  page?: number;
+  limit?: number;
+}): Promise<AdminVerificationsPage> {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set("page", String(params.page));
+  if (params?.limit) searchParams.set("limit", String(params.limit));
+  const query = searchParams.toString();
+  const path = query ? `/admin/verification?${query}` : "/admin/verification";
+  return apiFetch<AdminVerificationsPage>(path, { method: "GET" });
+}
+
+export async function updateAdminVerification(
+  userId: string,
+  action: "APPROVE" | "REJECT",
+  reason?: string
+) {
+  return apiFetch(`/admin/users/${userId}/verification`, {
+    method: "PATCH",
+    body: JSON.stringify({ action, reason }),
+  });
+}
+
+export function getAdminKycDocumentUrl(userId: string): string {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+  return `${apiUrl}/admin/users/${userId}/verification/document`;
 }

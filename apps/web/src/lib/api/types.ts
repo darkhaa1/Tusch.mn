@@ -7,6 +7,7 @@ export type {
   ReportTargetType,
   ReportReason,
   ReportStatus,
+  VerificationStatus,
   // Types
   CurrentUser,
   ListingUser,
@@ -22,6 +23,9 @@ export type {
   Report,
   AdminReport,
   AdminStats,
+  VerificationStatusResponse,
+  AdminVerificationItem,
+  AdminVerificationsPage,
   // Paginated responses
   PaginatedResponse,
   ListingsPage,

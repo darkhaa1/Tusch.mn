@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, MapPin, Star, Layers } from "lucide-react";
+import { Heart, MapPin, ShieldCheck, Star, Layers } from "lucide-react";
 import { Avatar, Badge, Card, CardContent } from "@web/components/ui";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import { ProviderCard as ProviderCardType } from "@web/lib/api/types";
@@ -50,9 +50,14 @@ export function ProviderCard({
           <div className="flex items-start gap-3">
             <Avatar src={avatarUrl} alt={name} className="h-12 w-12" />
             <div className="space-y-1">
-              <p className="text-base font-semibold text-foreground transition group-hover:text-foreground group-hover:underline">
-                {name}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-base font-semibold text-foreground transition group-hover:text-foreground group-hover:underline">
+                  {name}
+                </p>
+                {provider.isVerified ? (
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-green-500" aria-label="Баталгаажсан" />
+                ) : null}
+              </div>
               {categoryLabel ? (
                 <Badge variant="secondary" className="text-xs">
                   {categoryLabel}

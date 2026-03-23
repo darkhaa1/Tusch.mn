@@ -45,6 +45,8 @@ enum NotificationType {
   LISTING_HIDDEN
   ACCOUNT_SUSPENDED
   REVIEW_REQUESTED
+  IDENTITY_VERIFIED
+  IDENTITY_REJECTED
 }
 
 enum OfferStatus {
@@ -74,6 +76,13 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum VerificationStatus {
+  NOT_SUBMITTED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
@@ -93,6 +102,10 @@ model User {
   resetToken     String?   @unique
   resetTokenExp  DateTime?
   onboardingCompletedAt DateTime?
+  verificationStatus         VerificationStatus @default(NOT_SUBMITTED)
+  verificationDocumentUrl    String?
+  verificationRejectedReason String?
+  verifiedAt                 DateTime?
   bio           String?
   city          String?
   serviceCategories String[]

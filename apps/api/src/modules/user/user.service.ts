@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { ListingStatus, UserRole } from '@repo/shared';
+import { ListingStatus, UserRole, VerificationStatus } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { ProviderCardDto, ProvidersResponseDto } from './dto/provider-card.dto';
 
@@ -184,6 +184,7 @@ export class UserService {
       resetTokenExp: _resetTokenExp,
       emailVerifyToken: _emailVerifyToken,
       emailVerifyTokenExp: _emailVerifyTokenExp,
+      verificationDocumentUrl: _verificationDocumentUrl,
       ...rest
     } = user;
     void _password;
@@ -191,7 +192,38 @@ export class UserService {
     void _resetTokenExp;
     void _emailVerifyToken;
     void _emailVerifyTokenExp;
+    void _verificationDocumentUrl;
     return rest;
+  }
+
+  async getVerificationStatus(userId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: {
+        verificationStatus: true,
+        verificationRejectedReason: true,
+        verifiedAt: true,
+      },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return {
+      status: user.verificationStatus,
+      rejectedReason: user.verificationRejectedReason,
+      verifiedAt: user.verifiedAt,
+    };
+  }
+
+  async submitVerification(userId: string, documentFilename: string) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        verificationStatus: VerificationStatus.PENDING,
+        verificationDocumentUrl: documentFilename,
+        verificationRejectedReason: null,
+      },
+      select: { verificationStatus: true },
+    });
+    return { status: updated.verificationStatus };
   }
 
   private getTopCategory(
@@ -219,6 +251,7 @@ export class UserService {
     params?: {
       q?: string;
       category?: string;
+      verified?: boolean;
       page?: number;
       limit?: number;
     },
@@ -254,6 +287,10 @@ export class UserService {
       });
     }
 
+    if (params?.verified) {
+      andFilters.push({ verificationStatus: VerificationStatus.VERIFIED });
+    }
+
     const where: Prisma.UserWhereInput = { AND: andFilters };
 
     const [total, users] = await Promise.all([
@@ -268,6 +305,7 @@ export class UserService {
           firstName: true,
           lastName: true,
           avatarUrl: true,
+          verificationStatus: true,
           listing: {
             select: { category: true },
             where: category
@@ -332,6 +370,7 @@ export class UserService {
         reviewsCount: stats?.reviewsCount ?? 0,
         favoritesCount,
         isFavorited,
+        isVerified: user.verificationStatus === VerificationStatus.VERIFIED,
       };
     });
 
@@ -357,6 +396,7 @@ export class UserService {
         avatarUrl: true,
         createdAt: true,
         emailVerified: true,
+        verificationStatus: true,
         _count: { select: { favoritedBy: true } },
         ...(viewerId
           ? {
@@ -442,7 +482,7 @@ export class UserService {
     const isFavorited = viewerId
       ? (safeUser.favoritedBy?.length ?? 0) > 0
       : false;
-    const { _count, favoritedBy, ...safeUserBase } = safeUser;
+    const { _count, favoritedBy, verificationStatus, ...safeUserBase } = safeUser;
     void _count;
     void favoritedBy;
 
@@ -455,7 +495,7 @@ export class UserService {
         verification: {
           emailVerified: safeUserBase.emailVerified,
           phoneVerified: false,
-          idVerified: false,
+          idVerified: verificationStatus === VerificationStatus.VERIFIED,
         },
       },
       stats: {

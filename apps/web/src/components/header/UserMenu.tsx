@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronDown, Heart, Info, KeyRound, List, Shield, User as UserIcon } from "lucide-react";
+import { ChevronDown, Heart, Info, KeyRound, List, Shield, ShieldCheck, User as UserIcon } from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
@@ -81,6 +81,10 @@ export function UserMenu({ firstName, avatarUrl, initials, onLogout, isAdmin }: 
         <DropdownMenuItem onClick={() => navigate("/dashboard/favorites")} className="gap-2">
           <Heart className="h-4 w-4" aria-hidden="true" />
           <span>Миний дуртай</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/dashboard/verification")} className="gap-2">
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+          <span>Баталгаажуулалт</span>
         </DropdownMenuItem>
         {isAdmin ? (
           <>

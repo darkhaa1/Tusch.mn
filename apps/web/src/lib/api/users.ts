@@ -37,12 +37,14 @@ export async function fetchUsers(params?: {
 export async function fetchProviders(params?: {
   q?: string;
   category?: string;
+  verified?: boolean;
   page?: number;
   limit?: number;
 }): Promise<ProvidersPage> {
   const searchParams = new URLSearchParams();
   if (params?.q) searchParams.set("q", params.q);
   if (params?.category) searchParams.set("category", params.category);
+  if (params?.verified) searchParams.set("verified", "true");
   if (params?.page) searchParams.set("page", String(params.page));
   if (params?.limit) searchParams.set("limit", String(params.limit));
   const query = searchParams.toString();
