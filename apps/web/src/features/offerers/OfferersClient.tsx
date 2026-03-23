@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, MapPin, Share2, Heart, FilterX, Star } from "lucide-react";
+import { Search, MapPin, Share2, Heart, FilterX, ShieldCheck, Star } from "lucide-react";
 import {
   Badge,
   Button,
@@ -65,6 +65,7 @@ export default function OfferersClient() {
   }, [qParam]);
 
   const category = normalizeText(searchParams.get("category")) || undefined;
+  const verifiedParam = searchParams.get("verified") === "true";
   const page = getNumberParam(searchParams, "page", DEFAULT_PAGE);
   const limit = getNumberParam(searchParams, "limit", DEFAULT_LIMIT);
 
@@ -81,6 +82,7 @@ export default function OfferersClient() {
   const { data, isLoading, error, refetch, isFetching } = useProviders({
     q: qParam || undefined,
     category,
+    verified: verifiedParam || undefined,
     page,
     limit,
   });
@@ -137,12 +139,24 @@ export default function OfferersClient() {
     router.push(`/offerers${query}`);
   };
 
+  const toggleVerified = () => {
+    const query = setSearchParams(searchParams, {
+      page: 1,
+      limit,
+      q: qParam || null,
+      category: category || null,
+      verified: verifiedParam ? null : "true",
+    });
+    router.push(`/offerers${query}`);
+  };
+
   const resetFilters = () => {
     const query = setSearchParams(searchParams, {
       page: 1,
       limit,
       q: null,
       category: null,
+      verified: null,
     });
     router.push(`/offerers${query}`);
   };
@@ -372,19 +386,34 @@ export default function OfferersClient() {
                 <span>
                   Хайлтаар нэр, овгоор шүүнэ. Ангиллаар нарийвчилж болно.
                 </span>
-                {(qParam || category) && (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={resetFilters}
+                    onClick={toggleVerified}
                     className={cn(
-                      "inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1 text-xs text-foreground transition hover:bg-muted/70",
-                      "ui-interactive"
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition",
+                      verifiedParam
+                        ? "border-green-400 bg-green-50 text-green-700 hover:bg-green-100"
+                        : "border-border/70 text-foreground hover:bg-muted/70 ui-interactive"
                     )}
                   >
-                    <FilterX className="h-3 w-3" aria-hidden="true" />
-                    Шүүлтийг цэвэрлэх
+                    <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+                    {verifiedParam ? "Баталгаажсан" : "Баталгаажсан"}
                   </button>
-                )}
+                  {(qParam || category || verifiedParam) && (
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-full border border-border/70 px-3 py-1 text-xs text-foreground transition hover:bg-muted/70",
+                        "ui-interactive"
+                      )}
+                    >
+                      <FilterX className="h-3 w-3" aria-hidden="true" />
+                      Шүүлтийг цэвэрлэх
+                    </button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -398,7 +427,7 @@ export default function OfferersClient() {
               type="button"
               onClick={() => updateCategory(null)}
               className={cn(
-                "flex min-h-[88px] w-full flex-col items-center justify-center rounded-2xl border px-3 py-3 text-xs font-medium transition",
+                "flex min-h-22 w-full flex-col items-center justify-center rounded-2xl border px-3 py-3 text-xs font-medium transition",
                 !category
                   ? "border-primary bg-primary text-primary-foreground shadow-sm"
                   : "border-border bg-muted text-foreground hover:bg-muted/70"
@@ -415,7 +444,7 @@ export default function OfferersClient() {
                   type="button"
                   onClick={() => updateCategory(item.value)}
                   className={cn(
-                    "flex min-h-[8px] w-full flex-col items-center justify-center gap-2 rounded-2xl border px-1 py-1 text-xs font-medium transition",
+                    "flex min-h-2 w-full flex-col items-center justify-center gap-2 rounded-2xl border px-1 py-1 text-xs font-medium transition",
                     active
                       ? "border-primary bg-primary text-primary-foreground shadow-sm"
                       : "border-border bg-muted text-foreground hover:bg-muted/70"
@@ -500,7 +529,7 @@ export default function OfferersClient() {
                 size="sm"
                 onClick={() => updatePage(resolvedPage - 1)}
                 disabled={!hasPrevious || isFetching}
-                className="min-w-[120px]"
+                className="min-w-30"
               >
                 Өмнөх
               </Button>
@@ -519,7 +548,7 @@ export default function OfferersClient() {
                 size="sm"
                 onClick={() => updatePage(resolvedPage + 1)}
                 disabled={!hasNext || isFetching}
-                className="min-w-[120px]"
+                className="min-w-30"
               >
                 Дараах
               </Button>

@@ -2,13 +2,17 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Query,
   Req,
+  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
+import * as fs from 'fs';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -30,6 +34,7 @@ import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { AdminListingsQueryDto } from './dto/admin-listings-query.dto';
 import { AdminUpdateUserStatusDto } from './dto/admin-update-user-status.dto';
 import { AdminUpdateListingStatusDto } from './dto/admin-update-listing-status.dto';
+import { AdminUpdateVerificationDto } from './dto/admin-update-verification.dto';
 
 @Controller('admin')
 @ApiTags('admin')
@@ -151,6 +156,68 @@ export class AdminController {
       action: 'ADMIN_RESTORE_USER',
       targetType: 'USER',
       targetId: id,
+    });
+    return result;
+  }
+
+  @Get('verification')
+  @ApiOperation({ summary: 'List pending identity verifications (admin)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Paginated pending verifications' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  getPendingVerifications(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.service.getPendingVerifications({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+  }
+
+  @Get('users/:id/verification/document')
+  @ApiOperation({ summary: 'Stream KYC document for a user (admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Document file stream' })
+  @ApiResponse({ status: 404, description: 'Document not found' })
+  async streamVerificationDocument(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const filePath = await this.service.getVerificationDocumentPath(id);
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException('Document file not found');
+    }
+    res.sendFile(filePath);
+  }
+
+  @Patch('users/:id/verification')
+  @ApiOperation({ summary: 'Approve or reject user identity verification (admin)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiBody({ type: AdminUpdateVerificationDto })
+  @ApiResponse({ status: 200, description: 'Verification status updated' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async updateVerificationStatus(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() dto: AdminUpdateVerificationDto,
+  ) {
+    const adminId = this.resolveAdminId(req);
+    const result = await this.service.updateVerificationStatus(
+      adminId,
+      id,
+      dto.action,
+      dto.reason,
+    );
+    void this.auditService.log({
+      actorId: adminId,
+      action: dto.action === 'APPROVE' ? 'ADMIN_KYC_APPROVE' : 'ADMIN_KYC_REJECT',
+      targetType: 'USER',
+      targetId: id,
+      metadata: { action: dto.action, reason: dto.reason ?? null },
     });
     return result;
   }

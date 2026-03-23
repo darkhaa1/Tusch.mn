@@ -8,13 +8,14 @@ import AppShell from "@web/components/layout/AppShell";
 import { useCurrentUser } from "@web/lib/hooks/useApi";
 import { cn } from "@web/lib/utils";
 
-type NavKey = "dashboard" | "users" | "listings" | "reports";
+type NavKey = "dashboard" | "users" | "listings" | "reports" | "verification";
 
 const NAV_ITEMS: { href: string; key: NavKey }[] = [
   { href: "/admin", key: "dashboard" },
   { href: "/admin/users", key: "users" },
   { href: "/admin/listings", key: "listings" },
   { href: "/admin/reports", key: "reports" },
+  { href: "/admin/verification", key: "verification" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -60,7 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/"
               className={cn(
                 "text-sm font-medium text-primary hover:underline",
-                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                " focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               )}
             >
               {t("backHome")}
@@ -89,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     isActive
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   )}
                 >
                   {t(`nav.${item.key}`)}

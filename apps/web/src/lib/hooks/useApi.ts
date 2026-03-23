@@ -109,6 +109,15 @@ import {
   fetchFavoriteProviders,
   fetchFavoriteProviderIds,
 } from "@web/lib/api/favorites";
+import {
+  fetchVerificationStatus,
+  submitVerificationDocument,
+} from "@web/lib/api/verification";
+import {
+  fetchAdminVerifications,
+  updateAdminVerification,
+} from "@web/lib/api/admin";
+import type { AdminVerificationsPage, VerificationStatusResponse } from "@web/lib/api/types";
 
 export function useCurrentUser() {
   return useQuery({
@@ -346,6 +355,7 @@ export function useUsers(
 export function useProviders(params?: {
   q?: string;
   category?: string;
+  verified?: boolean;
   page?: number;
   limit?: number;
 }) {
@@ -354,6 +364,7 @@ export function useProviders(params?: {
       'providers',
       params?.q || '',
       params?.category || 'all',
+      params?.verified ?? false,
       params?.page || 1,
       params?.limit || 12,
     ],
@@ -913,4 +924,50 @@ export function useFavoritesCount() {
   const { data: listingIds = [] } = useFavoriteListingIds();
   const { data: providerIds = [] } = useFavoriteProviderIds();
   return listingIds.length + providerIds.length;
+}
+
+export function useVerificationStatus() {
+  const { data: user } = useCurrentUser();
+  return useQuery<VerificationStatusResponse>({
+    queryKey: ['verification-status'],
+    queryFn: fetchVerificationStatus,
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useSubmitVerification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => submitVerificationDocument(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['verification-status'] });
+      queryClient.invalidateQueries({ queryKey: ['current-user'] });
+    },
+  });
+}
+
+export function useAdminVerifications(params?: { page?: number; limit?: number }) {
+  return useQuery<AdminVerificationsPage>({
+    queryKey: ['admin-verifications', params?.page || 1, params?.limit || 20],
+    queryFn: () => fetchAdminVerifications(params),
+  });
+}
+
+export function useUpdateAdminVerification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      userId,
+      action,
+      reason,
+    }: {
+      userId: string;
+      action: 'APPROVE' | 'REJECT';
+      reason?: string;
+    }) => updateAdminVerification(userId, action, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-verifications'] });
+    },
+  });
 }

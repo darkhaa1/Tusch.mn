@@ -15,7 +15,9 @@ export type AuditAction =
   | 'ADMIN_UPDATE_LISTING_STATUS'
   | 'USER_DELETE_LISTING'
   | 'USER_CANCEL_OFFER'
-  | 'LOGIN_SUSPICIOUS';
+  | 'LOGIN_SUSPICIOUS'
+  | 'ADMIN_KYC_APPROVE'
+  | 'ADMIN_KYC_REJECT';
 
 export interface AuditLogEntry {
   actorId: string;

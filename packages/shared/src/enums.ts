@@ -33,9 +33,20 @@ export const NotificationType = {
   LISTING_HIDDEN: "LISTING_HIDDEN",
   ACCOUNT_SUSPENDED: "ACCOUNT_SUSPENDED",
   REVIEW_REQUESTED: "REVIEW_REQUESTED",
+  IDENTITY_VERIFIED: "IDENTITY_VERIFIED",
+  IDENTITY_REJECTED: "IDENTITY_REJECTED",
 } as const;
 export type NotificationType =
   (typeof NotificationType)[keyof typeof NotificationType];
+
+export const VerificationStatus = {
+  NOT_SUBMITTED: "NOT_SUBMITTED",
+  PENDING: "PENDING",
+  VERIFIED: "VERIFIED",
+  REJECTED: "REJECTED",
+} as const;
+export type VerificationStatus =
+  (typeof VerificationStatus)[keyof typeof VerificationStatus];
 
 export const ReportTargetType = {
   LISTING: "LISTING",

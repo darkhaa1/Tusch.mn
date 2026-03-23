@@ -23,6 +23,9 @@ export const THROTTLE_CONFIGS = {
   // Reports — très strict
   REPORTS: { ttl: 60_000, limit: 5 },
 
+  // KYC — 3 submissions per day
+  KYC_SUBMIT: { ttl: 86_400_000, limit: 3 },
+
   // Notifications — permissif (polling 30s)
   NOTIFICATIONS_GET: { ttl: 60_000, limit: 120 },
 

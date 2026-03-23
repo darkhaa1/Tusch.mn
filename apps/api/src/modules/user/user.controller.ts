@@ -1,17 +1,26 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   Param,
   Patch,
+  Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
+import { THROTTLE_CONFIGS } from '../../common/throttler';
+import { kycDocumentMulterOptions } from '../../common/multer/image-options';
 import {
   ApiTags,
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiParam,
@@ -127,6 +136,40 @@ export class UserController {
     const userId = req.user.id;
     const user = await this.userService.completeOnboarding(userId, body);
     return { user };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('verification/status')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get my verification status' })
+  @ApiResponse({ status: 200, description: 'Verification status' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getVerificationStatus(@Req() req: AuthenticatedRequest) {
+    return this.userService.getVerificationStatus(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('verification/submit')
+  @Throttle({ default: THROTTLE_CONFIGS.KYC_SUBMIT })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Submit identity document for verification' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { document: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Document submitted' })
+  @ApiResponse({ status: 400, description: 'No file or invalid file type' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UseInterceptors(FileInterceptor('document', kycDocumentMulterOptions))
+  async submitVerification(
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) throw new BadRequestException('Document file is required');
+    return this.userService.submitVerification(req.user.id, file.filename);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

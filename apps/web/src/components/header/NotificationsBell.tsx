@@ -17,6 +17,8 @@ const notificationTargetByType: Record<NotificationType, string> = {
   LISTING_HIDDEN: "/profile",
   ACCOUNT_SUSPENDED: "/profile",
   REVIEW_REQUESTED: "/profile?tab=history",
+  IDENTITY_VERIFIED: "/dashboard/verification",
+  IDENTITY_REJECTED: "/dashboard/verification",
 };
 
 function formatNotificationTime(value: string) {

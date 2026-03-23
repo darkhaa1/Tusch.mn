@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { join } from 'path';
 import { Prisma } from '@prisma/client';
 import {
   ListingStatus,
   NotificationType,
   UserStatus,
+  VerificationStatus,
 } from '@repo/shared';
+import { KYC_UPLOAD_DIR } from '../../common/multer/constants';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
@@ -275,6 +278,101 @@ export class AdminService {
     ]);
 
     return restored;
+  }
+
+  async getPendingVerifications(params?: { page?: number; limit?: number }) {
+    const page = Math.max(1, params?.page ?? 1);
+    const limit = Math.min(50, Math.max(1, params?.limit ?? 20));
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.UserWhereInput = {
+      verificationStatus: VerificationStatus.PENDING,
+      deletedAt: null,
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { updatedAt: 'asc' },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          verificationStatus: true,
+          verificationDocumentUrl: true,
+          updatedAt: true,
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  async getVerificationDocumentPath(userId: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { verificationDocumentUrl: true },
+    });
+    if (!user?.verificationDocumentUrl) {
+      throw new NotFoundException('No verification document found');
+    }
+    return join(KYC_UPLOAD_DIR, user.verificationDocumentUrl);
+  }
+
+  async updateVerificationStatus(
+    adminId: string,
+    targetId: string,
+    action: 'APPROVE' | 'REJECT',
+    reason?: string,
+  ) {
+    const existing = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true, verificationStatus: true },
+    });
+    if (!existing) throw new NotFoundException('User not found');
+
+    const isApproved = action === 'APPROVE';
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetId },
+        data: {
+          verificationStatus: isApproved
+            ? VerificationStatus.VERIFIED
+            : VerificationStatus.REJECTED,
+          verifiedAt: isApproved ? new Date() : null,
+          verificationRejectedReason: isApproved ? null : (reason ?? null),
+        },
+        select: { id: true, verificationStatus: true, verifiedAt: true },
+      }),
+      this.prisma.adminActionLog.create({
+        data: {
+          adminId,
+          action: isApproved ? 'KYC_APPROVE' : 'KYC_REJECT',
+          targetType: 'User',
+          targetId,
+          meta: { reason: reason ?? null },
+        },
+      }),
+    ]);
+
+    await this.notificationsService.create({
+      userId: targetId,
+      type: isApproved
+        ? NotificationType.IDENTITY_VERIFIED
+        : NotificationType.IDENTITY_REJECTED,
+      title: isApproved
+        ? 'Identity verified'
+        : 'Identity verification rejected',
+      body: isApproved
+        ? 'Your identity has been successfully verified.'
+        : `Your identity verification was rejected: ${reason || 'No reason provided.'}`,
+    });
+
+    return updated;
   }
 
   async restoreListing(adminId: string, targetId: string) {

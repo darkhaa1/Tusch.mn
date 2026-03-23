@@ -7,6 +7,7 @@ import type {
   ReportTargetType,
   UserRole,
   UserStatus,
+  VerificationStatus,
 } from "./enums";
 import type { PaginatedResponse } from "./pagination";
 
@@ -25,6 +26,9 @@ export type CurrentUser = {
   status?: UserStatus;
   emailVerified: boolean;
   onboardingCompletedAt?: string | null;
+  verificationStatus?: VerificationStatus;
+  verificationRejectedReason?: string | null;
+  verifiedAt?: string | null;
   bio?: string | null;
   city?: string | null;
   serviceCategories?: string[];
@@ -98,7 +102,26 @@ export type ProviderCard = {
   reviewsCount: number;
   favoritesCount: number;
   isFavorited: boolean;
+  isVerified: boolean;
 };
+
+export type VerificationStatusResponse = {
+  status: VerificationStatus;
+  rejectedReason: string | null;
+  verifiedAt: string | null;
+};
+
+export type AdminVerificationItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  verificationStatus: VerificationStatus;
+  verificationDocumentUrl: string | null;
+  updatedAt: string;
+};
+
+export type AdminVerificationsPage = PaginatedResponse<AdminVerificationItem>;
 
 export type AdminUser = {
   id: string;

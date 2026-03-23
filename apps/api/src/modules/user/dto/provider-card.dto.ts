@@ -33,6 +33,9 @@ export class ProviderCardDto {
 
   @ApiProperty({ example: false })
   isFavorited!: boolean;
+
+  @ApiProperty({ example: false })
+  isVerified!: boolean;
 }
 
 export class ProvidersResponseDto {
