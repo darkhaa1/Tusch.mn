@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   UploadedFile,
@@ -31,6 +32,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { UpdateMyRoleDto } from './dto/update-my-role.dto';
 import { CompleteOnboardingDto } from './dto/complete-onboarding.dto';
+import { UpdateServiceZonesDto } from './dto/update-service-zones.dto';
 import { UserRole } from '@repo/shared';
 import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
@@ -172,6 +174,21 @@ export class UserController {
     return this.userService.submitVerification(req.user.id, file.filename);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put('service-zones')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Replace all service zones for the current user' })
+  @ApiBody({ type: UpdateServiceZonesDto })
+  @ApiResponse({ status: 200, description: 'Service zones updated' })
+  @ApiResponse({ status: 400, description: 'Validation error or invalid city/district' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateServiceZones(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpdateServiceZonesDto,
+  ) {
+    return this.userService.updateServiceZones(req.user.id, body.zones);
+  }
+
   @UseGuards(OptionalJwtAuthGuard)
   @Get('providers')
   @ApiOperation({ summary: 'List providers' })
@@ -203,6 +220,16 @@ export class UserController {
   ) {
     const userId = user?.id ?? user?.sub;
     return this.userService.getProviders(query, userId);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/service-zones')
+  @ApiOperation({ summary: 'Get service zones for a provider' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Service zones list' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getServiceZones(@Param('id') id: string) {
+    return this.userService.getServiceZones(id);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

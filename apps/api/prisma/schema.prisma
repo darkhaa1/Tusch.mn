@@ -110,6 +110,7 @@ model User {
   city          String?
   serviceCategories String[]
   serviceZones      String[]
+  zones             ServiceZone[]
   listing     Listing[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
@@ -269,6 +270,18 @@ model Offer {
   @@unique([listingId, providerId])
   @@index([providerId])
   @@index([listingId, status])
+}
+
+model ServiceZone {
+  id        String   @id @default(cuid())
+  userId    String
+  city      String
+  district  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, city])
 }
 
 model FavoriteListing {

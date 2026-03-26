@@ -3,6 +3,7 @@ import type {
   CurrentUser,
   ProvidersPage,
   PublicUserProfile,
+  ServiceZone,
   UsersPage,
 } from "./types";
 import type { UserRole } from "@repo/shared";
@@ -37,6 +38,7 @@ export async function fetchUsers(params?: {
 export async function fetchProviders(params?: {
   q?: string;
   category?: string;
+  city?: string;
   verified?: boolean;
   page?: number;
   limit?: number;
@@ -44,12 +46,26 @@ export async function fetchProviders(params?: {
   const searchParams = new URLSearchParams();
   if (params?.q) searchParams.set("q", params.q);
   if (params?.category) searchParams.set("category", params.category);
+  if (params?.city) searchParams.set("city", params.city);
   if (params?.verified) searchParams.set("verified", "true");
   if (params?.page) searchParams.set("page", String(params.page));
   if (params?.limit) searchParams.set("limit", String(params.limit));
   const query = searchParams.toString();
   const path = query ? `/users/providers?${query}` : "/users/providers";
   return apiFetch<ProvidersPage>(path, { method: "GET" });
+}
+
+export async function fetchServiceZones(userId: string): Promise<ServiceZone[]> {
+  return apiFetch<ServiceZone[]>(`/users/${userId}/service-zones`, { method: "GET" });
+}
+
+export async function updateServiceZones(
+  zones: { city: string; district?: string }[]
+): Promise<ServiceZone[]> {
+  return apiFetch<ServiceZone[]>("/users/service-zones", {
+    method: "PUT",
+    body: JSON.stringify({ zones }),
+  });
 }
 
 export async function fetchPublicUserProfile(

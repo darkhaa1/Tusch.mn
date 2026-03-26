@@ -49,7 +49,9 @@ import {
   completeOnboarding,
   fetchProviders,
   fetchPublicUserProfile,
+  fetchServiceZones,
   fetchUsers,
+  updateServiceZones,
 } from "@web/lib/api/users";
 import {
   fetchConversationWith,
@@ -355,6 +357,7 @@ export function useUsers(
 export function useProviders(params?: {
   q?: string;
   category?: string;
+  city?: string;
   verified?: boolean;
   page?: number;
   limit?: number;
@@ -364,11 +367,31 @@ export function useProviders(params?: {
       'providers',
       params?.q || '',
       params?.category || 'all',
+      params?.city || '',
       params?.verified ?? false,
       params?.page || 1,
       params?.limit || 12,
     ],
     queryFn: () => fetchProviders(params),
+  });
+}
+
+export function useServiceZones(userId?: string) {
+  return useQuery({
+    queryKey: ['service-zones', userId],
+    queryFn: () => fetchServiceZones(userId as string),
+    enabled: !!userId,
+  });
+}
+
+export function useUpdateServiceZones() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (zones: { city: string; district?: string }[]) =>
+      updateServiceZones(zones),
+    onSuccess: (_result, _vars, _ctx) => {
+      queryClient.invalidateQueries({ queryKey: ['service-zones'] });
+    },
   });
 }
 
