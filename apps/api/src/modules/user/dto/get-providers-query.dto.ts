@@ -13,6 +13,11 @@ export class GetProvidersQueryDto {
   @IsString()
   category?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by service zone city' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
   @ApiPropertyOptional({ description: 'Filter verified providers only', type: Boolean })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)

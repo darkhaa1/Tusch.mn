@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, MapPin, Share2, Heart, FilterX, ShieldCheck, Star } from "lucide-react";
+import { Search, MapPin, Share2, Heart, FilterX, ShieldCheck, Star, X } from "lucide-react";
 import {
   Badge,
   Button,
@@ -20,6 +20,7 @@ import {
 } from "@web/components/ui";
 import AppShell from "@web/components/layout/AppShell";
 import { CATEGORY_LABEL_MAP, CATEGORY_OPTIONS } from "@web/lib/categories";
+import { MN_LOCATIONS } from "@repo/shared";
 import {
   useProviders,
   useFavoriteProviderIds,
@@ -65,6 +66,7 @@ export default function OfferersClient() {
   }, [qParam]);
 
   const category = normalizeText(searchParams.get("category")) || undefined;
+  const city = normalizeText(searchParams.get("city")) || undefined;
   const verifiedParam = searchParams.get("verified") === "true";
   const page = getNumberParam(searchParams, "page", DEFAULT_PAGE);
   const limit = getNumberParam(searchParams, "limit", DEFAULT_LIMIT);
@@ -82,6 +84,7 @@ export default function OfferersClient() {
   const { data, isLoading, error, refetch, isFetching } = useProviders({
     q: qParam || undefined,
     category,
+    city,
     verified: verifiedParam || undefined,
     page,
     limit,
@@ -139,6 +142,17 @@ export default function OfferersClient() {
     router.push(`/offerers${query}`);
   };
 
+  const updateCity = (nextCity?: string | null) => {
+    const query = setSearchParams(searchParams, {
+      page: 1,
+      limit,
+      q: qParam || null,
+      category: category || null,
+      city: nextCity || null,
+    });
+    router.push(`/offerers${query}`);
+  };
+
   const toggleVerified = () => {
     const query = setSearchParams(searchParams, {
       page: 1,
@@ -156,6 +170,7 @@ export default function OfferersClient() {
       limit,
       q: null,
       category: null,
+      city: null,
       verified: null,
     });
     router.push(`/offerers${query}`);
@@ -400,7 +415,7 @@ export default function OfferersClient() {
                     <ShieldCheck className="h-3 w-3" aria-hidden="true" />
                     {verifiedParam ? "Баталгаажсан" : "Баталгаажсан"}
                   </button>
-                  {(qParam || category || verifiedParam) && (
+                  {(qParam || category || city || verifiedParam) && (
                     <button
                       type="button"
                       onClick={resetFilters}
@@ -457,6 +472,42 @@ export default function OfferersClient() {
                 </button>
               );
             })}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between">
+            <p className="text-sm font-medium text-muted-foreground">Хот / Байршил</p>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => updateCity(null)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-sm font-medium transition",
+                !city
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border/70 text-foreground hover:bg-muted/70"
+              )}
+            >
+              Бүгд
+            </button>
+            {MN_LOCATIONS.map((loc) => (
+              <button
+                key={loc.city}
+                type="button"
+                onClick={() => updateCity(city === loc.city ? null : loc.city)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition",
+                  city === loc.city
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border/70 text-foreground hover:bg-muted/70"
+                )}
+              >
+                <MapPin className="h-3 w-3" aria-hidden="true" />
+                {loc.city}
+                {city === loc.city && <X className="h-3 w-3 opacity-70" aria-hidden="true" />}
+              </button>
+            ))}
           </div>
 
           <div className="mt-6 flex items-center justify-between">

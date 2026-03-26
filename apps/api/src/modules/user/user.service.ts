@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { ListingStatus, UserRole, VerificationStatus } from '@repo/shared';
+import { ListingStatus, MN_CITY_SET, MN_DISTRICT_MAP, UserRole, VerificationStatus } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { ProviderCardDto, ProvidersResponseDto } from './dto/provider-card.dto';
 
@@ -13,6 +13,7 @@ export type PublicUserProfile = {
     createdAt: Date;
     favoritesCount: number;
     isFavorited: boolean;
+    serviceZones: Array<{ id: string; userId: string; city: string; district: string | null; createdAt: Date }>;
     verification: {
       emailVerified: boolean;
       phoneVerified: boolean;
@@ -226,6 +227,55 @@ export class UserService {
     return { status: updated.verificationStatus };
   }
 
+  async updateServiceZones(
+    userId: string,
+    zones: { city: string; district?: string }[],
+  ) {
+    for (const zone of zones) {
+      if (!MN_CITY_SET.has(zone.city)) {
+        throw new BadRequestException(
+          `City "${zone.city}" is not in the reference list`,
+        );
+      }
+      if (zone.district) {
+        const districtSet = MN_DISTRICT_MAP.get(zone.city);
+        if (!districtSet || !districtSet.has(zone.district)) {
+          throw new BadRequestException(
+            `District "${zone.district}" is not valid for city "${zone.city}"`,
+          );
+        }
+      }
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.serviceZone.deleteMany({ where: { userId } }),
+      this.prisma.serviceZone.createMany({
+        data: zones.map((z) => ({
+          userId,
+          city: z.city,
+          district: z.district ?? null,
+        })),
+      }),
+    ]);
+
+    return this.prisma.serviceZone.findMany({
+      where: { userId },
+      orderBy: [{ city: 'asc' }, { district: 'asc' }],
+    });
+  }
+
+  async getServiceZones(userId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.serviceZone.findMany({
+      where: { userId },
+      orderBy: [{ city: 'asc' }, { district: 'asc' }],
+    });
+  }
+
   private getTopCategory(
     listings: Array<{ category: string | null }>,
   ): string | null {
@@ -251,6 +301,7 @@ export class UserService {
     params?: {
       q?: string;
       category?: string;
+      city?: string;
       verified?: boolean;
       page?: number;
       limit?: number;
@@ -284,6 +335,12 @@ export class UserService {
           { firstName: { contains: q, mode: 'insensitive' } },
           { lastName: { contains: q, mode: 'insensitive' } },
         ],
+      });
+    }
+
+    if (params?.city) {
+      andFilters.push({
+        zones: { some: { city: params.city } },
       });
     }
 
@@ -482,6 +539,11 @@ export class UserService {
     const isFavorited = viewerId
       ? (safeUser.favoritedBy?.length ?? 0) > 0
       : false;
+    const serviceZones = await this.prisma.serviceZone.findMany({
+      where: { userId },
+      orderBy: [{ city: 'asc' }, { district: 'asc' }],
+    });
+
     const { _count, favoritedBy, verificationStatus, ...safeUserBase } = safeUser;
     void _count;
     void favoritedBy;
@@ -492,6 +554,7 @@ export class UserService {
         avatarUrl: safeUserBase.avatarUrl || null,
         favoritesCount,
         isFavorited,
+        serviceZones,
         verification: {
           emailVerified: safeUserBase.emailVerified,
           phoneVerified: false,

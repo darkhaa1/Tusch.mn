@@ -53,6 +53,7 @@ export type PublicUserProfile = {
     createdAt: string;
     favoritesCount: number;
     isFavorited: boolean;
+    serviceZones?: ServiceZone[];
     verification: {
       emailVerified: boolean;
       phoneVerified: boolean;
@@ -103,6 +104,14 @@ export type ProviderCard = {
   favoritesCount: number;
   isFavorited: boolean;
   isVerified: boolean;
+};
+
+export type ServiceZone = {
+  id: string;
+  userId: string;
+  city: string;
+  district: string | null;
+  createdAt: string;
 };
 
 export type VerificationStatusResponse = {

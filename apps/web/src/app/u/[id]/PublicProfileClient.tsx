@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Star, ShieldCheck, Phone, Mail } from "lucide-react";
+import { Star, ShieldCheck, Phone, Mail, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   Avatar,
@@ -162,6 +162,28 @@ export default function PublicProfileClient() {
             </Card>
           </div>
 
+
+          {data.user.serviceZones && data.user.serviceZones.length > 0 && (
+            <Card className="border border-border/80">
+              <CardContent className="space-y-2 p-4">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  Үйлчилгээний бүс нутаг
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {data.user.serviceZones.map((z) => (
+                    <Badge
+                      key={z.id}
+                      variant="outline"
+                      className="gap-1 text-xs"
+                    >
+                      <MapPin className="h-3 w-3" aria-hidden="true" />
+                      {z.district ? `${z.city} · ${z.district}` : z.city}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Tabs defaultValue="overview" className="w-full">
             <TabsList>

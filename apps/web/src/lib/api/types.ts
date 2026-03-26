@@ -17,6 +17,7 @@ export type {
   Offer,
   PublicUserProfile,
   ProviderCard,
+  ServiceZone,
   AdminUser,
   AdminListing,
   Review,
