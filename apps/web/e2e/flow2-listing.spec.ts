@@ -1,27 +1,12 @@
-/**
- * Flow 2 — Annonce (Listing)
- *
- * 1. Login as a user
- * 2. Navigate to /listings
- * 3. Open "Зар нэмэх" modal (multi-step)
- *    Step 1: pick category
- *    Step 2: set price
- *    Step 3: fill description + location
- *    Step 4: skip images → submit
- * 4. Verify listing appears in /listings (by its description)
- * 5. Navigate to listing detail page — verify it loads
- */
-
-import { test, expect } from "@playwright/test";
-import { injectAuthCookie } from "./helpers/auth";
+import { expect, test } from "@playwright/test";
+import { injectAuthCookie, waitForAppIdle } from "./helpers/auth";
 import { seedUser, uniqueEmail } from "./helpers/api";
 
-test.describe("Flow 2 — Listing creation", () => {
-  test("create listing via UI modal → appears in list → detail accessible", async ({
+test.describe("Flow 2 - Listing creation", () => {
+  test("create listing via UI modal, then open its detail page", async ({
     page,
     context,
   }) => {
-    // ── 1. Seed user ─────────────────────────────────────────────────────────
     const email = uniqueEmail("listing-flow");
     const { cookie } = await seedUser({
       email,
@@ -29,67 +14,46 @@ test.describe("Flow 2 — Listing creation", () => {
       firstName: "Listing",
       lastName: "Creator",
     });
+
     await injectAuthCookie(context, cookie);
 
-    // Unique description so we can find this listing in the list
-    const description = `E2E test listing ${Date.now()} — нарийн засвар`;
+    const description = `E2E test listing ${Date.now()} for listing flow`;
 
-    // ── 2. Navigate to /listings ──────────────────────────────────────────────
     await page.goto("/listings");
-    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("button", { name: "Зар нэмэх" }).first(),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Зар нэмэх" }).first().click();
 
-    // ── 3. Open modal — "Зар нэмэх" button ───────────────────────────────────
-    // The button text comes from t("client.addListing") = "Зар нэмэх"
-    await page.getByRole("button", { name: /зар нэмэх/i }).click();
+    await expect(
+      page.getByRole("heading", { name: "Шинэ зар" }),
+    ).toBeVisible();
 
-    // Modal should appear with title "Шинэ зар"
-    await expect(page.getByText("Шинэ зар")).toBeVisible({ timeout: 5_000 });
-
-    // ── Step 1: Select category ───────────────────────────────────────────────
-    // Categories are rendered as buttons; pick the first visible one (any category)
     const categoryButtons = page.locator(
       'button[class*="rounded-xl"][class*="border"]',
     );
     await categoryButtons.first().click();
+    await page.getByRole("button", { name: "Дараах" }).click();
 
-    // Click "Дараах" to advance
-    await page.getByRole("button", { name: /дараах/i }).click();
+    await page.locator('input[type="number"]').first().fill("50000");
+    await page.getByRole("button", { name: "Дараах" }).click();
 
-    // ── Step 2: Enter price ───────────────────────────────────────────────────
-    const priceInput = page.locator('input[type="number"]').first();
-    await priceInput.fill("50000");
-    await page.getByRole("button", { name: /дараах/i }).click();
-
-    // ── Step 3: Description + location ───────────────────────────────────────
     await page.locator("textarea").first().fill(description);
-    await page.locator('input[placeholder*="Хот"]').fill("Улаанбаатар");
-    await page.getByRole("button", { name: /дараах/i }).click();
+    await page.locator('input[type="text"]').first().fill("Улаанбаатар");
+    await page.getByRole("button", { name: "Дараах" }).click();
 
-    // ── Step 4: Images (skip) → Submit ────────────────────────────────────────
-    // On step 4 the button text changes to "Илгээх"
-    await page.getByRole("button", { name: /илгээх/i }).click();
+    await page.getByRole("button", { name: "Илгээх" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Шинэ зар" }),
+    ).toBeHidden({ timeout: 10_000 });
 
-    // Modal closes — wait for it to disappear
-    await expect(page.getByText("Шинэ зар")).toBeHidden({ timeout: 10_000 });
-
-    // ── 4. Verify listing appears in the list ────────────────────────────────
-    // Reload the listings page to get fresh data
     await page.goto("/listings");
-    await page.waitForLoadState("networkidle");
-
-    // The listing card should contain the unique description snippet
-    const listingCard = page.getByText(/E2E test listing/i).first();
+    const listingCard = page.getByText(description).first();
     await expect(listingCard).toBeVisible({ timeout: 10_000 });
 
-    // ── 5. Navigate to listing detail ────────────────────────────────────────
     await listingCard.click();
-    await page.waitForLoadState("networkidle");
-
-    // Detail page should show the description
-    await expect(page.getByText(/E2E test listing/i)).toBeVisible({
-      timeout: 10_000,
-    });
-    // URL should be /listings/<id>
+    await waitForAppIdle(page);
+    await expect(page.getByText(description)).toBeVisible({ timeout: 10_000 });
     expect(page.url()).toMatch(/\/listings\/[a-z0-9]+/i);
   });
 });

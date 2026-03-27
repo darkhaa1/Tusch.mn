@@ -11,7 +11,10 @@ import { test, expect } from "@playwright/test";
 import { injectAuthCookie } from "./helpers/auth";
 import { seedUser, uniqueEmail, apiLogin } from "./helpers/api";
 
-const API_URL = process.env.TEST_API_URL ?? "http://localhost:3310/api/v1";
+const API_URL =
+  process.env.TEST_API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:3410";
 
 test.describe("Flow 1 — Auth", () => {
   test("unauthenticated: /auth/me returns 401", async ({ request }) => {
@@ -39,11 +42,10 @@ test.describe("Flow 1 — Auth", () => {
 
     // ── 3. Navigate to profile — user data should load ──────────────────────
     await page.goto("/profile");
-    await page.waitForLoadState("networkidle");
 
     // The profile page calls GET /auth/me with the injected cookie.
     // When it succeeds, it renders user info (firstName "Auth" should appear).
-    await expect(page.getByText("Auth", { exact: false })).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Auth Test/i })).toBeVisible({
       timeout: 10_000,
     });
 

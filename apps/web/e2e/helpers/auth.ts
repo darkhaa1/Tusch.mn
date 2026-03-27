@@ -1,6 +1,9 @@
 import type { BrowserContext, Page } from "@playwright/test";
 
-const API_URL = process.env.TEST_API_URL ?? "http://localhost:3310/api/v1";
+const API_URL =
+  process.env.TEST_API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:3410";
 
 /**
  * Injects the `accessToken` cookie from a raw Set-Cookie header string

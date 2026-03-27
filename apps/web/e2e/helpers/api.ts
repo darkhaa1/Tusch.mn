@@ -3,7 +3,10 @@
  * Used by E2E tests to create users, listings, offers etc. without going through the UI.
  */
 
-const API_URL = process.env.TEST_API_URL ?? "http://localhost:3310/api/v1";
+const API_URL =
+  process.env.TEST_API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:3410";
 
 /** Unique email per test run */
 export function uniqueEmail(prefix: string): string {
@@ -99,19 +102,22 @@ export async function apiCreateListing(
   return res.json() as Promise<{ id: string }>;
 }
 
-/** Set a user's role to PROVIDER via onboarding endpoint */
-export async function apiSetProviderRole(cookie: string): Promise<void> {
+/** Complete onboarding so the web app does not redirect seeded users */
+export async function apiCompleteOnboarding(
+  cookie: string,
+  data: { role: "CLIENT" | "PROVIDER" },
+): Promise<void> {
   const res = await fetch(`${API_URL}/users/onboarding`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Cookie: cookie,
     },
-    body: JSON.stringify({ role: "PROVIDER" }),
+    body: JSON.stringify(data),
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`apiSetProviderRole failed ${res.status}: ${body}`);
+    throw new Error(`apiCompleteOnboarding failed ${res.status}: ${body}`);
   }
 }
 
@@ -186,9 +192,9 @@ export async function seedUser(opts: {
   // Extract just the cookie value (before any attributes like Path, HttpOnly etc.)
   const cookieValue = rawCookie.split(";")[0];
 
-  if (opts.role === "PROVIDER") {
-    await apiSetProviderRole(cookieValue);
-  }
+  await apiCompleteOnboarding(cookieValue, {
+    role: opts.role === "PROVIDER" ? "PROVIDER" : "CLIENT",
+  });
 
   return { id: registered.id, email: opts.email, cookie: cookieValue };
 }
