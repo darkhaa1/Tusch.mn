@@ -69,7 +69,7 @@ const apiServerEnv = {
 const managedApiServer = apiServerEnv.DATABASE_URL
   ? [
       {
-        command: "pnpm --filter api exec prisma migrate deploy && pnpm --filter api start",
+        command: "pnpm --filter @repo/shared build && pnpm --filter api build && pnpm --filter api exec prisma migrate deploy && pnpm --filter api start:prod",
         url: `${API_ORIGIN}/health`,
         reuseExistingServer: true,
         timeout: 180_000,

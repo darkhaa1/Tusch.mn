@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectAuthCookie, waitForAppIdle } from "./helpers/auth";
+import { injectAuthCookie } from "./helpers/auth";
 import { seedUser, uniqueEmail } from "./helpers/api";
 
 test.describe("Flow 2 - Listing creation", () => {
@@ -25,35 +25,40 @@ test.describe("Flow 2 - Listing creation", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Зар нэмэх" }).first().click();
 
+    // Wait for modal to open — "Шинэ зар" heading inside the portal
     await expect(
-      page.getByRole("heading", { name: "Шинэ зар" }),
+      page.getByRole("heading", { name: "Шинэ зар", level: 2 }),
     ).toBeVisible();
 
-    const categoryButtons = page.locator(
-      'button[class*="rounded-xl"][class*="border"]',
-    );
-    await categoryButtons.first().click();
-    await page.getByRole("button", { name: "Дараах" }).click();
+    // Step 1 — category: modal category buttons come after sidebar buttons in DOM
+    // Use "Гэр цэвэрлэгээ" which exists in sidebar (ref=e77) AND modal (ref=e382),
+    // .last() picks the modal one.
+    await page.getByRole("button", { name: "Гэр цэвэрлэгээ" }).last().click();
+    // "Дараах" pagination button is [disabled]; modal's is last enabled one
+    await page.getByRole("button", { name: "Дараах" }).last().click();
 
-    await page.locator('input[type="number"]').first().fill("50000");
-    await page.getByRole("button", { name: "Дараах" }).click();
+    // Step 2 — price
+    await page.locator('input[type="number"]').last().fill("50000");
+    await page.getByRole("button", { name: "Дараах" }).last().click();
 
-    await page.locator("textarea").first().fill(description);
-    await page.locator('input[type="text"]').first().fill("Улаанбаатар");
-    await page.getByRole("button", { name: "Дараах" }).click();
+    // Step 3 — description + location
+    await page.locator("textarea").last().fill(description);
+    await page.locator('input[type="text"]').last().fill("Улаанбаатар");
+    await page.getByRole("button", { name: "Дараах" }).last().click();
 
-    await page.getByRole("button", { name: "Илгээх" }).click();
+    // Step 4 — submit
+    await page.getByRole("button", { name: "Илгээх" }).last().click();
     await expect(
-      page.getByRole("heading", { name: "Шинэ зар" }),
+      page.getByRole("heading", { name: "Шинэ зар", level: 2 }),
     ).toBeHidden({ timeout: 10_000 });
 
     await page.goto("/listings");
-    const listingCard = page.getByText(description).first();
-    await expect(listingCard).toBeVisible({ timeout: 10_000 });
+    const descParagraph = page.getByText(description).first();
+    await expect(descParagraph).toBeVisible({ timeout: 10_000 });
 
-    await listingCard.click();
-    await waitForAppIdle(page);
+    // The "Дэлгэрэнгүй" link is a sibling of the description paragraph inside the card
+    await descParagraph.locator("..").getByRole("link", { name: "Дэлгэрэнгүй" }).click();
+    await page.waitForURL(/\/listings\/[a-z0-9]+/i, { timeout: 10_000 });
     await expect(page.getByText(description)).toBeVisible({ timeout: 10_000 });
-    expect(page.url()).toMatch(/\/listings\/[a-z0-9]+/i);
   });
 });

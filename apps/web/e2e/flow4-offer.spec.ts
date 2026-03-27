@@ -67,7 +67,9 @@ test.describe("Flow 4 - Offer", () => {
     await injectAuthCookie(context, cookieClient);
 
     await page.goto(`/listings/${listing.id}`);
-    await waitForAppIdle(page);
+    await expect(
+      page.getByRole("tab", { name: "Ирсэн санал" }),
+    ).toBeVisible({ timeout: 10_000 });
     await page.getByRole("tab", { name: "Ирсэн санал" }).click();
 
     await expect(page.getByText("Зөвшөөрөх")).toBeVisible({ timeout: 8_000 });

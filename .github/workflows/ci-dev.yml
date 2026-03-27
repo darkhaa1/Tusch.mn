@@ -59,6 +59,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Build shared
+        run: pnpm --filter @repo/shared build
+
       - name: Build API
         run: pnpm --filter api build
 
@@ -73,16 +76,24 @@ jobs:
       - name: Build web
         run: pnpm --filter web build
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:3310/api/v1
+          NEXT_PUBLIC_API_URL: http://localhost:3310
           NEXTAUTH_SECRET: ci-nextauth-secret-change-me-min-32-chars
           NEXTAUTH_URL: http://localhost:3000
 
       - name: Start API (background)
         working-directory: apps/api
-        run: pnpm start &
+        run: pnpm start:prod &
         env:
           PORT: 3310
           CORS_ORIGIN: http://localhost:3000
+
+      - name: Wait for API to be ready
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3310/health && echo "API ready" && break
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
 
       - name: Install Playwright browsers
         working-directory: apps/web
@@ -94,8 +105,8 @@ jobs:
         env:
           CI: true
           TEST_BASE_URL: http://localhost:3000
-          TEST_API_URL: http://localhost:3310/api/v1
-          NEXT_PUBLIC_API_URL: http://localhost:3310/api/v1
+          TEST_API_URL: http://localhost:3310
+          NEXT_PUBLIC_API_URL: http://localhost:3310
           NEXTAUTH_SECRET: ci-nextauth-secret-change-me-min-32-chars
           NEXTAUTH_URL: http://localhost:3000
           PORT: 3000
