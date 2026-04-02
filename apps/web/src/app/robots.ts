@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/profile/', '/messages/', '/api/'],
+      disallow: ['/admin/', '/dashboard/', '/profile/', '/messages/', '/api/', '/notifications/'],
     },
     sitemap: 'https://tusch.mn/sitemap.xml',
   };
