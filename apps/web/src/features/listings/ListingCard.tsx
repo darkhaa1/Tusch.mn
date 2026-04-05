@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle2, MapPin } from "lucide-react";
 import type { Listing, ListingUser } from "@web/lib/api/types";
 import { resolveCategoryLabel } from "./categoryLabels";
@@ -17,9 +18,10 @@ type ListingWithOptionalUser = Listing & {
 
 type ListingCardProps = {
   listing: ListingWithOptionalUser;
+  priority?: boolean;
 };
 
-export default function ListingCard({ listing }: ListingCardProps) {
+export default function ListingCard({ listing, priority = false }: ListingCardProps) {
   const categoryLabel = resolveCategoryLabel(listing.category) || listing.category || "Ангилал";
   const heading = categoryLabel;
   const priceLabel =
@@ -33,12 +35,14 @@ export default function ListingCard({ listing }: ListingCardProps) {
   return (
     <Card className="group flex h-full flex-col overflow-hidden ui-card">
       <div className="relative">
-        <div className="aspect-4/3 w-full overflow-hidden bg-muted">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        <div className="relative aspect-4/3 w-full overflow-hidden bg-muted">
+          <Image
             src={coverUrl}
             alt={heading}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+            fill
+            sizes="(max-width: 640px) 80vw, (max-width: 768px) 45vw, (max-width: 1024px) 30vw, 22vw"
+            priority={priority}
+            className="object-cover transition duration-500 group-hover:scale-[1.02]"
           />
         </div>
         <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/20 to-transparent" />

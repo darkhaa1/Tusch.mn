@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 
 export default function Hero() {
@@ -19,10 +17,10 @@ export default function Hero() {
           alt="hero"
           width={360}
           height={320}
+          priority
           className="w-80 md:w-80 lg:w-100 h-auto mt-4 md:mt-0"
         />
       </div>
     </section>
   );
 }
-

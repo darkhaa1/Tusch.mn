@@ -75,12 +75,12 @@ export default function NewListings({ category }: NewListingsProps) {
 
         <div className="overflow-hidden pb-2" ref={emblaRef}>
           <div className="flex gap-4">
-            {listings.map((listing) => (
+            {listings.map((listing, index) => (
               <div
                 key={listing.id}
                 className="min-w-[80%] sm:min-w-[45%] md:min-w-[30%] lg:min-w-[22%]"
               >
-                <ListingCard listing={listing} />
+                <ListingCard listing={listing} priority={index === 0} />
               </div>
             ))}
           </div>
