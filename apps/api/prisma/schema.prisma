@@ -132,22 +132,23 @@ model User {
 }
 
 model Listing {
-  id          String   @id @default(cuid())
-  description String
-  price       Int
-  location    String?
-  category    String?
-  status      ListingStatus @default(ACTIVE)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  images      ListingImage[]
-  message     Message[]
-  offers      Offer[]
-  favoritedBy FavoriteListing[]
+  id           String                   @id @default(cuid())
+  description  String
+  price        Int
+  location     String?
+  category     String?
+  status       ListingStatus            @default(ACTIVE)
+  userId       String
+  searchVector Unsupported("tsvector")?
+  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  images       ListingImage[]
+  message      Message[]
+  offers       Offer[]
+  favoritedBy  FavoriteListing[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 
   @@index([userId])
   @@index([deletedAt])

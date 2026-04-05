@@ -35,7 +35,13 @@ export class GetListingsQueryDto {
   @IsIn(CATEGORY_SLUGS, { message: 'Буруу ангилал' })
   category?: string;
 
-  @ApiPropertyOptional({ description: 'Search by keyword' })
+  @ApiPropertyOptional({ description: 'Full-text search query (tsvector)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  q?: string;
+
+  @ApiPropertyOptional({ description: 'Search by keyword (LIKE fallback)' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
