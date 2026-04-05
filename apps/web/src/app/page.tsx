@@ -1,5 +1,3 @@
-"use client";
-
 import CallToAction from "@web/features/home/components/CallToAction";
 import CategoryGrid from "@web/features/home/components/CategoryGrid";
 import Hero from "@web/features/home/components/Hero";
