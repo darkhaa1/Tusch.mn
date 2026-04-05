@@ -75,6 +75,7 @@ export class ListingsController {
   @Throttle({ default: THROTTLE_CONFIGS.SEARCH })
   @ApiOperation({ summary: 'List listings (public)' })
   @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'q', required: false, description: 'Full-text search (tsvector)' })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'minPrice', required: false, type: Number })
   @ApiQuery({ name: 'maxPrice', required: false, type: Number })

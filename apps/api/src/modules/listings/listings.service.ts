@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Listing, Prisma } from '@prisma/client';
@@ -60,7 +61,82 @@ const buildListingInclude = (userId?: string, includePrivateUser = false) => ({
 
 @Injectable()
 export class ListingsService {
+  private readonly logger = new Logger(ListingsService.name);
+
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Sanitize a raw search string for use with plainto_tsquery.
+   * Returns null if the sanitized result is empty.
+   */
+  private sanitizeFullTextQuery(raw: string): string | null {
+    const clean = raw
+      .trim()
+      .replace(/[&|!<>():*\\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return clean.length > 0 ? clean : null;
+  }
+
+  /**
+   * Full-text search via tsvector/tsquery, combined with optional filters.
+   * Returns paginated IDs sorted by ts_rank DESC.
+   */
+  private async fullTextSearch(
+    sanitizedQ: string,
+    q: GetListingsQueryDto,
+    userId?: string,
+  ): Promise<{ items: any[]; total: number }> {
+    const skip = (q.page - 1) * q.limit;
+
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`l."searchVector" @@ plainto_tsquery('simple', ${sanitizedQ})`,
+      Prisma.sql`l.status = ${'ACTIVE'}`,
+      Prisma.sql`l."deletedAt" IS NULL`,
+      Prisma.sql`u."deletedAt" IS NULL`,
+    ];
+
+    if (q.category) conditions.push(Prisma.sql`l.category = ${q.category}`);
+    if (q.location)
+      conditions.push(Prisma.sql`l.location ILIKE ${'%' + q.location + '%'}`);
+    if (q.minPrice !== undefined)
+      conditions.push(Prisma.sql`l.price >= ${q.minPrice}`);
+    if (q.maxPrice !== undefined)
+      conditions.push(Prisma.sql`l.price <= ${q.maxPrice}`);
+
+    const whereClause = Prisma.join(conditions, ' AND ');
+
+    const [rawRows, countResult] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ id: string; rank: number }>>`
+        SELECT l.id, ts_rank(l."searchVector", plainto_tsquery('simple', ${sanitizedQ})) AS rank
+        FROM "Listing" l
+        JOIN "User" u ON u.id = l."userId"
+        WHERE ${whereClause}
+        ORDER BY rank DESC
+        LIMIT ${q.limit} OFFSET ${skip}
+      `,
+      this.prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(*) AS count
+        FROM "Listing" l
+        JOIN "User" u ON u.id = l."userId"
+        WHERE ${whereClause}
+      `,
+    ]);
+
+    const total = Number(countResult[0]?.count ?? 0);
+    const ids = rawRows.map((r) => r.id);
+    const rankMap = new Map(rawRows.map((r) => [r.id, r.rank]));
+
+    const data = await this.prisma.listing.findMany({
+      where: { id: { in: ids } },
+      include: buildListingInclude(userId) as any,
+    });
+
+    // Restore rank order from raw query
+    data.sort((a, b) => (rankMap.get(b.id) ?? 0) - (rankMap.get(a.id) ?? 0));
+
+    return { items: this.mapListings(data, userId), total };
+  }
 
   private withFavorites(listing: any, userId?: string) {
     if (!listing) return listing;
@@ -81,7 +157,29 @@ export class ListingsService {
   }
 
   async findAll(q: GetListingsQueryDto, userId?: string) {
-    const search = q.search?.trim();
+    // Full-text search path: when q param is provided
+    if (q.q?.trim()) {
+      const sanitizedQ = this.sanitizeFullTextQuery(q.q);
+      if (sanitizedQ) {
+        try {
+          const { items, total } = await this.fullTextSearch(
+            sanitizedQ,
+            q,
+            userId,
+          );
+          return { items, total, page: q.page, limit: q.limit };
+        } catch (err) {
+          // Graceful fallback: tsvector column may not exist yet (e.g. fresh DB without migration)
+          this.logger.warn(
+            'Full-text search failed, falling back to LIKE search',
+            err,
+          );
+        }
+      }
+    }
+
+    // LIKE / filter-only search path (fallback or when q is absent)
+    const search = q.search?.trim() ?? q.q?.trim();
     const filters: Prisma.ListingWhereInput[] = [
       { status: ListingStatus.ACTIVE },
       { deletedAt: null },
