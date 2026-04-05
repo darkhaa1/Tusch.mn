@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useRegisterUser } from "@web/lib/hooks/useApi";
 import {
@@ -32,6 +33,7 @@ export default function SignupModal({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [accountType, setAccountType] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const registerMutation = useRegisterUser();
 
   const handleRegister = async () => {
@@ -39,11 +41,15 @@ export default function SignupModal({ open, onClose }: Props) {
       setError(t("passwordMismatch"));
       return;
     }
+    if (!acceptedTerms) {
+      setError("Үйлчилгээний нөхцөл болон нууцлалын бодлогыг зөвшөөрөх шаардлагатай.");
+      return;
+    }
 
     setLoading(true);
     setError("");
     try {
-      await registerMutation.mutateAsync({ email, password, accountType, firstName, lastName, phone });
+      await registerMutation.mutateAsync({ email, password, accountType, firstName, lastName, phone, acceptedTerms });
       alert(t("success"));
       onClose();
     } catch (err: any) {
@@ -163,10 +169,29 @@ export default function SignupModal({ open, onClose }: Props) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            <label className="flex items-start gap-2 text-sm text-foreground/80 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border border-input accent-primary"
+              />
+              <span>
+                Би{" "}
+                <Link href="/cgu" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">
+                  үйлчилгээний нөхцөл
+                </Link>{" "}
+                болон{" "}
+                <Link href="/confidentialite" target="_blank" className="text-primary underline underline-offset-2 hover:opacity-80">
+                  нууцлалын бодлогыг
+                </Link>{" "}
+                уншиж, зөвшөөрч байна.
+              </span>
+            </label>
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button
               onClick={handleRegister}
-              disabled={loading}
+              disabled={loading || !acceptedTerms}
               className="w-full justify-center"
             >
               {loading ? t("submitting") : t("submit")}

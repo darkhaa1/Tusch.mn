@@ -44,6 +44,7 @@ describe('AuthService', () => {
       lastName: 'Doe',
       phone: '12345678',
       accountType: 'basic',
+      acceptedTerms: true,
     };
 
     it('should hash password and create user', async () => {
