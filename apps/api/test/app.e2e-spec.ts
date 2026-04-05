@@ -22,7 +22,8 @@ describe('App (e2e)', () => {
     lastName: string;
     phone: string;
     accountType: string;
-  }) => request(app.getHttpServer()).post('/auth/register').send(payload);
+    acceptedTerms?: boolean;
+  }) => request(app.getHttpServer()).post('/auth/register').send({ acceptedTerms: true, ...payload });
 
   const verifyEmail = (token: string) =>
     request(app.getHttpServer())
