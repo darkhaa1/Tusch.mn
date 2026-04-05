@@ -20,6 +20,7 @@ export async function registerUser(body: {
   lastName: string;
   phone?: string;
   avatarUrl?: string | null;
+  acceptedTerms: boolean;
 }) {
   return apiFetch("/auth/register", {
     method: "POST",

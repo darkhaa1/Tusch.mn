@@ -36,6 +36,7 @@ export async function apiRegister(opts: {
       lastName: opts.lastName,
       phone: "99000000",
       accountType: "basic",
+      acceptedTerms: true,
     }),
   });
   if (!res.ok) {

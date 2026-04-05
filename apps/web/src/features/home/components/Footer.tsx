@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="bg-gray-50 text-xs sm:text-sm text-gray-600 mt-10 pb-20 md:pb-10">
@@ -16,7 +18,11 @@ export default function Footer() {
           <ul className="space-y-1">
             <li>Тусламжийн төв</li>
             <li>Холбоо барих</li>
-            <li>Үйлчилгээний нөхцөл</li>
+            <li>
+              <Link href="/cgu" className="hover:text-primary hover:underline underline-offset-2 transition-colors">
+                Үйлчилгээний нөхцөл
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -39,30 +45,18 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Fixed bottom nav mobile */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow md:hidden">
-        <div className="flex justify-around py-2 text-xs text-gray-600">
-          <div className="flex flex-col items-center">
-            <span className="material-icons">home</span>
-            <span>Нүүр</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="material-icons">search</span>
-            <span>Хайх</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="material-icons text-blue-600">add_circle</span>
-            <span className="text-blue-600">Зар</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="material-icons">chat</span>
-            <span>Чат</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="material-icons">person</span>
-            <span>Профайл</span>
-          </div>
-        </div>
+      <div className="max-w-6xl mx-auto px-4 pb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 border-t border-gray-200 pt-4">
+        <Link href="/cgu" className="hover:text-primary hover:underline underline-offset-2 transition-colors">
+          CGU
+        </Link>
+        <Link href="/confidentialite" className="hover:text-primary hover:underline underline-offset-2 transition-colors">
+          Нууцлал
+        </Link>
+        <a href="mailto:info@tusch.mn" className="hover:text-primary hover:underline underline-offset-2 transition-colors">
+          Холбоо барих
+        </a>
+        <span>Бидний тухай</span>
+        <span className="ml-auto">© {new Date().getFullYear()} Tusch.mn</span>
       </div>
     </footer>
   );

@@ -102,6 +102,7 @@ model User {
   resetToken     String?   @unique
   resetTokenExp  DateTime?
   onboardingCompletedAt DateTime?
+  acceptedTermsAt       DateTime?
   verificationStatus         VerificationStatus @default(NOT_SUBMITTED)
   verificationDocumentUrl    String?
   verificationRejectedReason String?

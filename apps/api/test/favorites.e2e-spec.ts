@@ -21,7 +21,7 @@ describe('Favorites (e2e)', () => {
     lastName: string;
     phone: string;
     accountType: string;
-  }) => request(app.getHttpServer()).post('/auth/register').send(payload);
+  }) => request(app.getHttpServer()).post('/auth/register').send({ acceptedTerms: true, ...payload });
 
   const markEmailVerified = async (email: string) => {
     await prisma.user.update({

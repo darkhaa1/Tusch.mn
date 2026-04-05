@@ -26,7 +26,7 @@ describe('Listing image reorder (e2e)', () => {
     lastName: string;
     phone: string;
     accountType: string;
-  }) => request(app.getHttpServer()).post('/auth/register').send(payload);
+  }) => request(app.getHttpServer()).post('/auth/register').send({ acceptedTerms: true, ...payload });
 
   const login = async (email: string, password: string) => {
     const res = await request(app.getHttpServer())

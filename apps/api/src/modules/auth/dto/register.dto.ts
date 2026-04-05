@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, Equals, MinLength } from 'class-validator';
 
 export class AuthDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -25,4 +25,9 @@ export class AuthDto {
   @ApiProperty({ example: 'basic' })
   @IsNotEmpty()
   accountType!: string;
+
+  @ApiProperty({ example: true, description: 'Үйлчилгээний нөхцөл болон нууцлалын бодлогыг зөвшөөрсөн эсэх' })
+  @IsBoolean()
+  @Equals(true, { message: 'Бүртгүүлэхийн тулд үйлчилгээний нөхцөлийг зөвшөөрөх шаардлагатай' })
+  acceptedTerms!: boolean;
 }
