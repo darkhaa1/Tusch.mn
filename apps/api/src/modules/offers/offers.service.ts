@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { NotificationType, OfferStatus, UserRole } from '@repo/shared';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
@@ -60,7 +61,7 @@ export class OffersService {
       );
     }
 
-    const existing = await (this.prisma as any).offer.findFirst({
+    const existing = await this.prisma.offer.findFirst({
       where: { listingId, providerId: userId, status: 'PENDING' },
     });
     if (existing) {
@@ -72,7 +73,7 @@ export class OffersService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    const offer = await (this.prisma as any).offer.create({
+    const offer = await this.prisma.offer.create({
       data: {
         listingId,
         providerId: userId,
@@ -86,7 +87,7 @@ export class OffersService {
 
     await this.notifications.create({
       userId: listing.userId,
-      type: NotificationType.NEW_OFFER as any,
+      type: NotificationType.NEW_OFFER,
       title: 'Nouvelle offre',
       body: `${user.firstName} ${user.lastName} a fait une offre sur votre annonce`,
     });
@@ -99,14 +100,14 @@ export class OffersService {
     const where = { providerId: userId };
 
     const [items, total] = await this.prisma.$transaction([
-      (this.prisma as any).offer.findMany({
+      this.prisma.offer.findMany({
         where,
         include: offerInclude,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      (this.prisma as any).offer.count({ where }),
+      this.prisma.offer.count({ where }),
     ]);
 
     return { items, total, page, limit };
@@ -117,14 +118,14 @@ export class OffersService {
     const where = { listing: { userId, deletedAt: null } };
 
     const [items, total] = await this.prisma.$transaction([
-      (this.prisma as any).offer.findMany({
+      this.prisma.offer.findMany({
         where,
         include: offerInclude,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      (this.prisma as any).offer.count({ where }),
+      this.prisma.offer.count({ where }),
     ]);
 
     return { items, total, page, limit };
@@ -140,7 +141,7 @@ export class OffersService {
       throw new ForbiddenException('Not your listing');
     }
 
-    return (this.prisma as any).offer.findMany({
+    return this.prisma.offer.findMany({
       where: { listingId },
       include: offerInclude,
       orderBy: { createdAt: 'desc' },
@@ -148,7 +149,7 @@ export class OffersService {
   }
 
   async findOne(id: string, userId: string) {
-    const offer = await (this.prisma as any).offer.findUnique({
+    const offer = await this.prisma.offer.findUnique({
       where: { id },
       include: offerInclude,
     });
@@ -162,7 +163,7 @@ export class OffersService {
   }
 
   async cancel(id: string, userId: string) {
-    const offer = await (this.prisma as any).offer.findUnique({
+    const offer = await this.prisma.offer.findUnique({
       where: { id },
     });
     if (!offer) throw new NotFoundException('Offer not found');
@@ -175,7 +176,7 @@ export class OffersService {
       throw new BadRequestException('Only pending offers can be cancelled');
     }
 
-    return (this.prisma as any).offer.update({
+    return this.prisma.offer.update({
       where: { id },
       data: { status: 'CANCELLED' },
       include: offerInclude,
@@ -183,7 +184,7 @@ export class OffersService {
   }
 
   async accept(id: string, userId: string) {
-    const offer = await (this.prisma as any).offer.findUnique({
+    const offer = await this.prisma.offer.findUnique({
       where: { id },
       include: {
         listing: { select: { id: true, userId: true, description: true } },
@@ -202,12 +203,12 @@ export class OffersService {
 
     const now = new Date();
     const [updatedOffer] = await this.prisma.$transaction([
-      (this.prisma as any).offer.update({
+      this.prisma.offer.update({
         where: { id },
         data: { status: 'ACCEPTED', respondedAt: now },
         include: offerInclude,
       }),
-      (this.prisma as any).offer.updateMany({
+      this.prisma.offer.updateMany({
         where: {
           listingId: offer.listingId,
           status: 'PENDING',
@@ -237,7 +238,7 @@ export class OffersService {
   }
 
   async reject(id: string, userId: string) {
-    const offer = await (this.prisma as any).offer.findUnique({
+    const offer = await this.prisma.offer.findUnique({
       where: { id },
       include: { listing: { select: { userId: true } } },
     });
@@ -251,7 +252,7 @@ export class OffersService {
       throw new BadRequestException('Only pending offers can be rejected');
     }
 
-    const updatedOffer = await (this.prisma as any).offer.update({
+    const updatedOffer = await this.prisma.offer.update({
       where: { id },
       data: { status: 'REJECTED', respondedAt: new Date() },
       include: offerInclude,
@@ -268,7 +269,7 @@ export class OffersService {
   }
 
   async complete(id: string, userId: string, dto?: CompleteOfferDto) {
-    const offer = await (this.prisma as any).offer.findUnique({
+    const offer = await this.prisma.offer.findUnique({
       where: { id },
       include: {
         listing: { select: { userId: true, description: true } },
@@ -287,7 +288,7 @@ export class OffersService {
       throw new BadRequestException('Only accepted offers can be completed');
     }
 
-    const completedOffer = await (this.prisma as any).offer.update({
+    const completedOffer = await this.prisma.offer.update({
       where: { id },
       data: {
         status: OfferStatus.COMPLETED,
@@ -337,18 +338,18 @@ export class OffersService {
     return completedOffer;
   }
 
-  private async listHistory(where: any, page: number, limit: number) {
+  private async listHistory(where: Prisma.OfferWhereInput, page: number, limit: number) {
     const skip = (page - 1) * limit;
 
     const [items, total] = await this.prisma.$transaction([
-      (this.prisma as any).offer.findMany({
+      this.prisma.offer.findMany({
         where,
         include: offerInclude,
         orderBy: { completedAt: 'desc' },
         skip,
         take: limit,
       }),
-      (this.prisma as any).offer.count({ where }),
+      this.prisma.offer.count({ where }),
     ]);
 
     return { items, total, page, limit };
@@ -383,12 +384,12 @@ export class OffersService {
 
   async getStats(userId: string) {
     const [clientAgg, providerAgg] = await Promise.all([
-      (this.prisma as any).offer.aggregate({
+      this.prisma.offer.aggregate({
         where: { status: OfferStatus.COMPLETED, listing: { userId } },
         _count: { _all: true },
         _sum: { price: true },
       }),
-      (this.prisma as any).offer.aggregate({
+      this.prisma.offer.aggregate({
         where: { status: OfferStatus.COMPLETED, providerId: userId },
         _count: { _all: true },
         _sum: { price: true },

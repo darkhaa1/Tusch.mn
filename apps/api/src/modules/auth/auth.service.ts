@@ -43,10 +43,6 @@ export class AuthService {
       },
     });
 
-    console.log(
-      `[auth] Email verification token for ${user.email}: ${rawToken}`,
-    );
-
     const response: { token?: string } = {};
     if (process.env.NODE_ENV !== 'production') {
       response.token = rawToken;
@@ -299,10 +295,6 @@ export class AuthService {
         emailVerifyTokenExp: expiration,
       },
     });
-
-    console.log(
-      `[auth] Email verification token for ${user.email}: ${rawToken}`,
-    );
 
     const response: { message: string; token?: string } = {
       message: 'Баталгаажуулах холбоос дахин илгээгдлээ',

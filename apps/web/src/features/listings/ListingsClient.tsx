@@ -26,7 +26,7 @@ import { useListingLocations, useListingsPage } from "@web/lib/hooks/useApi";
 import { buildListingsQuery, parseListingsQuery } from "@web/lib/query";
 import { resolveCategoryLabel } from "./categoryLabels";
 import { cn } from "@web/lib/utils";
-import { CATEGORY_OPTIONS } from "@web/lib/categories";
+import { CATEGORY_OPTIONS } from "@web/lib/category-ui";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;

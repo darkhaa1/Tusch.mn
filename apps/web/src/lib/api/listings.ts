@@ -10,12 +10,8 @@ export async function fetchListings(params?: {
   }
   const query = searchParams.toString();
   const path = query ? `/listings?${query}` : "/listings";
-  const data = await apiFetch<
-    { items?: Listing[]; data?: Listing[] } | Listing[]
-  >(path, { method: "GET" });
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data.items)) return data.items;
-  return data.data || [];
+  const data = await apiFetch<{ items: Listing[] }>(path, { method: "GET" });
+  return data.items;
 }
 
 export async function fetchListingsPage(params?: {
@@ -40,48 +36,11 @@ export async function fetchListingsPage(params?: {
   const query = searchParams.toString();
   const path = query ? `/listings?${query}` : "/listings";
 
-  const data = await apiFetch<
-    | Listing[]
-    | {
-        items?: Listing[];
-        total?: number;
-        page?: number;
-        limit?: number;
-        data?: Listing[];
-      }
-  >(path, { method: "GET" });
-
-  const fallbackPage = params?.page ?? 1;
-  const fallbackLimit = params?.limit ?? 12;
-
-  if (Array.isArray(data)) {
-    const start = (fallbackPage - 1) * fallbackLimit;
-    const items = data.slice(start, start + fallbackLimit);
-    return {
-      items,
-      total: data.length,
-      page: fallbackPage,
-      limit: fallbackLimit,
-    };
-  }
-
-  const items = Array.isArray(data.items) ? data.items : data.data || [];
-
-  return {
-    items,
-    total: data.total ?? items.length,
-    page: data.page ?? fallbackPage,
-    limit: data.limit ?? fallbackLimit,
-  };
+  return apiFetch<ListingsPage>(path, { method: "GET" });
 }
 
 export async function fetchMyListings(): Promise<Listing[]> {
-  const data = await apiFetch<{ data?: Listing[] } | Listing[]>(
-    "/listings/me",
-    { method: "GET" }
-  );
-  if (Array.isArray(data)) return data;
-  return data.data || [];
+  return apiFetch<Listing[]>("/listings/me", { method: "GET" });
 }
 
 export async function fetchListingById(id: string): Promise<Listing> {

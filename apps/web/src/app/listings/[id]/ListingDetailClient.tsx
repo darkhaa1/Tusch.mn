@@ -41,7 +41,7 @@ import {
 import { ListingGallery } from "@web/features/listings/components/ListingGallery";
 import { ListingDetailsCard } from "@web/features/listings/components/ListingDetailsCard";
 import { ListingSidebar } from "@web/features/listings/components/ListingSidebar";
-import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "@web/lib/categories";
+import { CATEGORY_OPTIONS, CATEGORY_LABEL_MAP } from "@web/lib/category-ui";
 import { ReportDialogButton } from "@web/components/report/ReportDialogButton";
 import { CreateOfferModal } from "@web/features/offers/CreateOfferModal";
 import { OffersList } from "@web/features/offers/OffersList";

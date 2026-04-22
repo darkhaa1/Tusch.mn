@@ -2,7 +2,7 @@
 
 import { Badge, Button, Card, CardContent, Input, Textarea } from "@web/components/ui";
 import type { ChangeEvent } from "react";
-import type { CategoryOption } from "@web/lib/categories";
+import type { CategoryOption } from "@web/lib/category-ui";
 import { cn } from "@web/lib/utils";
 
 type FormState = {
