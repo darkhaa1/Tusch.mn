@@ -22,7 +22,7 @@ import {
 } from "@web/lib/hooks/useApi";
 import ListingCard from "@web/features/listings/ListingCard";
 import { resolveCategoryLabel } from "@web/features/listings/categoryLabels";
-import { CATEGORY_LABEL_MAP } from "@web/lib/categories";
+import { CATEGORY_LABEL_MAP } from "@web/lib/category-ui";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import { cn } from "@web/lib/utils";
 

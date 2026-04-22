@@ -16,7 +16,7 @@ import {
   ArrowLeft,
   ImageUp,
 } from "lucide-react";
-import { CATEGORY_OPTIONS } from "@web/lib/categories";
+import { CATEGORY_OPTIONS } from "@web/lib/category-ui";
 
 const ListingSchema = z.object({
   category: z.string().min(1, "Ангиллыг заавал сонгоно уу."),

@@ -8,7 +8,7 @@ import {
   useUpdateAdminListingStatus,
 } from "@web/lib/hooks/useApi";
 import type { AdminListing, ListingStatus } from "@web/lib/api/types";
-import { CATEGORY_LABEL_MAP, CATEGORY_OPTIONS } from "@web/lib/categories";
+import { CATEGORY_LABEL_MAP, CATEGORY_OPTIONS } from "@web/lib/category-ui";
 import { cn } from "@web/lib/utils";
 
 const STATUS_LABELS: Record<ListingStatus, string> = {

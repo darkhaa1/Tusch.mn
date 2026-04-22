@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CATEGORY_OPTIONS } from "@web/lib/categories";
+import { CATEGORY_OPTIONS } from "@web/lib/category-ui";
 
 export default function CategoryGrid() {
   return (

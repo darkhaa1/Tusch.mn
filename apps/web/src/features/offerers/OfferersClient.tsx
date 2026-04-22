@@ -19,7 +19,7 @@ import {
   Avatar,
 } from "@web/components/ui";
 import AppShell from "@web/components/layout/AppShell";
-import { CATEGORY_LABEL_MAP, CATEGORY_OPTIONS } from "@web/lib/categories";
+import { CATEGORY_LABEL_MAP, CATEGORY_OPTIONS } from "@web/lib/category-ui";
 import { MN_LOCATIONS } from "@repo/shared";
 import {
   useProviders,
