@@ -28,6 +28,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
+import { UserVerificationService } from './user-verification.service';
+import { UserServiceZonesService } from './user-service-zones.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../common/guards/optional-jwt-auth.guard';
 import { UpdateMyRoleDto } from './dto/update-my-role.dto';
@@ -42,7 +44,11 @@ import { AuthenticatedRequest } from '../../common/types/request.types';
 @Controller('users')
 @ApiTags('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly verificationService: UserVerificationService,
+    private readonly zonesService: UserServiceZonesService,
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -147,7 +153,7 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Verification status' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getVerificationStatus(@Req() req: AuthenticatedRequest) {
-    return this.userService.getVerificationStatus(req.user.id);
+    return this.verificationService.getVerificationStatus(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -171,7 +177,7 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) throw new BadRequestException('Document file is required');
-    return this.userService.submitVerification(req.user.id, file.filename);
+    return this.verificationService.submitVerification(req.user.id, file.filename);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -186,7 +192,7 @@ export class UserController {
     @Req() req: AuthenticatedRequest,
     @Body() body: UpdateServiceZonesDto,
   ) {
-    return this.userService.updateServiceZones(req.user.id, body.zones);
+    return this.zonesService.updateServiceZones(req.user.id, body.zones);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
@@ -229,7 +235,7 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Service zones list' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getServiceZones(@Param('id') id: string) {
-    return this.userService.getServiceZones(id);
+    return this.zonesService.getServiceZones(id);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

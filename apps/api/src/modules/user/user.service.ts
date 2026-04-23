@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { ListingStatus, MN_CITY_SET, MN_DISTRICT_MAP, UserRole, VerificationStatus } from '@repo/shared';
+import { ListingStatus, UserRole, VerificationStatus } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { ProviderCardDto, ProvidersResponseDto } from './dto/provider-card.dto';
 
@@ -197,84 +197,6 @@ export class UserService {
     return rest;
   }
 
-  async getVerificationStatus(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
-      select: {
-        verificationStatus: true,
-        verificationRejectedReason: true,
-        verifiedAt: true,
-      },
-    });
-    if (!user) throw new NotFoundException('User not found');
-    return {
-      status: user.verificationStatus,
-      rejectedReason: user.verificationRejectedReason,
-      verifiedAt: user.verifiedAt,
-    };
-  }
-
-  async submitVerification(userId: string, documentFilename: string) {
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        verificationStatus: VerificationStatus.PENDING,
-        verificationDocumentUrl: documentFilename,
-        verificationRejectedReason: null,
-      },
-      select: { verificationStatus: true },
-    });
-    return { status: updated.verificationStatus };
-  }
-
-  async updateServiceZones(
-    userId: string,
-    zones: { city: string; district?: string }[],
-  ) {
-    for (const zone of zones) {
-      if (!MN_CITY_SET.has(zone.city)) {
-        throw new BadRequestException(
-          `City "${zone.city}" is not in the reference list`,
-        );
-      }
-      if (zone.district) {
-        const districtSet = MN_DISTRICT_MAP.get(zone.city);
-        if (!districtSet || !districtSet.has(zone.district)) {
-          throw new BadRequestException(
-            `District "${zone.district}" is not valid for city "${zone.city}"`,
-          );
-        }
-      }
-    }
-
-    await this.prisma.$transaction([
-      this.prisma.serviceZone.deleteMany({ where: { userId } }),
-      this.prisma.serviceZone.createMany({
-        data: zones.map((z) => ({
-          userId,
-          city: z.city,
-          district: z.district ?? null,
-        })),
-      }),
-    ]);
-
-    return this.prisma.serviceZone.findMany({
-      where: { userId },
-      orderBy: [{ city: 'asc' }, { district: 'asc' }],
-    });
-  }
-
-  async getServiceZones(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId, deletedAt: null },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('User not found');
-    return this.prisma.serviceZone.findMany({
-      where: { userId },
-      orderBy: [{ city: 'asc' }, { district: 'asc' }],
-    });
-  }
 
   private getTopCategory(
     listings: Array<{ category: string | null }>,
