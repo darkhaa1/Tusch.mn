@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ListingsService } from './listings.service';
+import { ListingImageService } from './listing-image.service';
 import { PrismaService } from '../../database/prisma.service';
 import {
   createMockPrismaService,
@@ -30,6 +31,7 @@ describe('ListingsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ListingsService,
+        ListingImageService,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

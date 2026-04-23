@@ -36,6 +36,7 @@ export function createMockPrismaService(): MockPrismaService {
     user: delegate(),
     listing: delegate(),
     listingImage: delegate(),
+    serviceZone: delegate(),
     message: delegate(),
     notification: delegate(),
     offer: delegate(),
@@ -45,6 +46,7 @@ export function createMockPrismaService(): MockPrismaService {
       if (Array.isArray(args)) return Promise.all(args);
       return args({
         listingImage: delegate(),
+        serviceZone: delegate(),
       });
     }),
   } as unknown as MockPrismaService;
