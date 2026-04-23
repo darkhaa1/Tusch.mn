@@ -10,6 +10,7 @@ import {
 import { KYC_UPLOAD_DIR } from '../../common/multer/constants';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { renderTemplate } from '../notifications/notification-templates';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { AdminListingsQueryDto } from './dto/admin-listings-query.dto';
 
@@ -134,8 +135,7 @@ export class AdminService {
       await this.notificationsService.create({
         userId: targetId,
         type: NotificationType.ACCOUNT_SUSPENDED,
-        title: 'Account suspended',
-        body: 'Your account has been suspended by an administrator.',
+        ...renderTemplate('ACCOUNT_SUSPENDED', {}),
       });
     }
 
@@ -241,8 +241,7 @@ export class AdminService {
       await this.notificationsService.create({
         userId: existing.userId,
         type: NotificationType.LISTING_HIDDEN,
-        title: 'Listing hidden',
-        body: 'One of your listings was hidden by an administrator.',
+        ...renderTemplate('LISTING_HIDDEN', {}),
       });
     }
 
@@ -364,12 +363,9 @@ export class AdminService {
       type: isApproved
         ? NotificationType.IDENTITY_VERIFIED
         : NotificationType.IDENTITY_REJECTED,
-      title: isApproved
-        ? 'Identity verified'
-        : 'Identity verification rejected',
-      body: isApproved
-        ? 'Your identity has been successfully verified.'
-        : `Your identity verification was rejected: ${reason || 'No reason provided.'}`,
+      ...(isApproved
+        ? renderTemplate('IDENTITY_VERIFIED', {})
+        : renderTemplate('IDENTITY_REJECTED', { reason })),
     });
 
     return updated;

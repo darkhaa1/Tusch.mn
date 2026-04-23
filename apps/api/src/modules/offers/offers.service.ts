@@ -9,6 +9,7 @@ import { NotificationType, OfferStatus, UserRole } from '@repo/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { renderTemplate } from '../notifications/notification-templates';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { CompleteOfferDto } from './dto/complete-offer.dto';
 
@@ -85,11 +86,13 @@ export class OffersService {
       include: offerInclude,
     });
 
+    const providerName = [user.firstName, user.lastName]
+      .filter(Boolean)
+      .join(' ');
     await this.notifications.create({
       userId: listing.userId,
       type: NotificationType.NEW_OFFER,
-      title: 'Nouvelle offre',
-      body: `${user.firstName} ${user.lastName} a fait une offre sur votre annonce`,
+      ...renderTemplate('NEW_OFFER', { providerName }),
     });
 
     return offer;
@@ -228,8 +231,7 @@ export class OffersService {
         data: {
           userId: offer.providerId,
           type: NotificationType.OFFER_ACCEPTED,
-          title: 'Offer accepted',
-          body: 'Your offer has been accepted.',
+          ...renderTemplate('OFFER_ACCEPTED', {}),
         },
       }),
     ]);
@@ -261,8 +263,7 @@ export class OffersService {
     await this.notifications.create({
       userId: offer.providerId,
       type: NotificationType.OFFER_REJECTED,
-      title: 'Offer rejected',
-      body: 'Your offer has been rejected.',
+      ...renderTemplate('OFFER_REJECTED', {}),
     });
 
     return updatedOffer;
@@ -298,7 +299,6 @@ export class OffersService {
       include: offerInclude,
     });
 
-    // Notify both parties to leave a review
     const reviewLink = '/reviews/create?offerId=' + id;
     const providerName = [offer.provider.firstName, offer.provider.lastName]
       .filter(Boolean)
@@ -316,22 +316,18 @@ export class OffersService {
       this.notifications.create({
         userId: clientId,
         type: NotificationType.REVIEW_REQUESTED,
-        title: 'Laissez un avis',
-        body:
-          'La prestation avec ' +
-          providerName +
-          ' est terminee. Donnez votre avis : ' +
+        ...renderTemplate('REVIEW_REQUESTED', {
+          partnerName: providerName,
           reviewLink,
+        }),
       }),
       this.notifications.create({
         userId: offer.providerId,
         type: NotificationType.REVIEW_REQUESTED,
-        title: 'Laissez un avis',
-        body:
-          'La prestation avec ' +
-          clientName +
-          ' est terminee. Donnez votre avis : ' +
+        ...renderTemplate('REVIEW_REQUESTED', {
+          partnerName: clientName,
           reviewLink,
+        }),
       }),
     ]);
 
