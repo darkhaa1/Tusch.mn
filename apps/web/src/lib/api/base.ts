@@ -1,5 +1,8 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+export const serverApiBaseUrl =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3310";
+
 // Small wrapper to normalize errors and JSON parsing.
 export async function apiFetch<TResponse>(
   path: string,

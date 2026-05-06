@@ -2,15 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MN_LOCATIONS } from '@repo/shared';
+import { fetchListingsByLocation } from '@web/lib/api/listings';
 import { BreadcrumbJsonLd } from '@web/components/seo/JsonLd';
-import type { Listing, ListingsPage } from '@web/lib/api/types';
+import type { Listing } from '@web/lib/api/types';
 
 export const revalidate = 86400;
 
 const BASE_URL = 'https://tusch.mn';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3310';
 
-// Transliteration map: Mongolian city name → Latin URL slug
 const CITY_SLUG_MAP: Record<string, string> = {
   Улаанбаатар: 'ulaanbaatar',
   Дархан: 'darkhan',
@@ -19,7 +18,6 @@ const CITY_SLUG_MAP: Record<string, string> = {
   Ховд: 'khovd',
 };
 
-// Reverse map: slug → Mongolian name
 const SLUG_TO_CITY: Record<string, string> = Object.fromEntries(
   Object.entries(CITY_SLUG_MAP).map(([city, slug]) => [slug, city]),
 );
@@ -81,20 +79,6 @@ export async function generateMetadata({
   };
 }
 
-async function fetchCityListings(cityName: string): Promise<Listing[]> {
-  try {
-    const res = await fetch(
-      `${API_URL}/listings?location=${encodeURIComponent(cityName)}&limit=20&sort=newest`,
-      { next: { revalidate: 86400 } },
-    );
-    if (!res.ok) return [];
-    const data: ListingsPage = await res.json();
-    return data.items ?? [];
-  } catch {
-    return [];
-  }
-}
-
 export default async function VillePage({
   params,
 }: {
@@ -105,7 +89,7 @@ export default async function VillePage({
   const meta = CITY_META[slug];
   if (!cityName || !meta) notFound();
 
-  const listings = await fetchCityListings(cityName);
+  const listings: Listing[] = await fetchListingsByLocation(cityName);
 
   const breadcrumbItems = [
     { name: 'Нүүр', url: BASE_URL },

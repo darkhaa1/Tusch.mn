@@ -1,5 +1,66 @@
-import { apiFetch } from "./base";
+import { cache } from "react";
+import { apiFetch, serverApiBaseUrl } from "./base";
 import type { Listing, ListingsPage } from "./types";
+
+export type ListingServerData = {
+  id: string;
+  description?: string;
+  category?: string;
+  price?: number;
+  location?: string;
+  images?: { url?: string }[];
+  user?: { firstName?: string; lastName?: string };
+};
+
+async function _getListingByIdServer(
+  id: string,
+): Promise<ListingServerData | null> {
+  try {
+    const res = await fetch(`${serverApiBaseUrl}/listings/${id}`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<ListingServerData>;
+  } catch {
+    return null;
+  }
+}
+
+export const getListingByIdServer = cache(_getListingByIdServer);
+
+async function _fetchListingsByCategory(
+  categorySlug: string,
+): Promise<Listing[]> {
+  try {
+    const res = await fetch(
+      `${serverApiBaseUrl}/listings?category=${encodeURIComponent(categorySlug)}&limit=20&sort=newest`,
+      { next: { revalidate: 86400 } },
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as ListingsPage;
+    return data.items ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export const fetchListingsByCategory = cache(_fetchListingsByCategory);
+
+async function _fetchListingsByLocation(cityName: string): Promise<Listing[]> {
+  try {
+    const res = await fetch(
+      `${serverApiBaseUrl}/listings?location=${encodeURIComponent(cityName)}&limit=20&sort=newest`,
+      { next: { revalidate: 86400 } },
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as ListingsPage;
+    return data.items ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export const fetchListingsByLocation = cache(_fetchListingsByLocation);
 
 export async function fetchListings(params?: {
   category?: string;

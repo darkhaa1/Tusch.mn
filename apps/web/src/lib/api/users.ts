@@ -1,4 +1,30 @@
-import { apiFetch } from "./base";
+import { cache } from "react";
+import { apiFetch, serverApiBaseUrl } from "./base";
+
+export type UserServerData = {
+  user: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+  };
+};
+
+async function _getUserPublicProfileServer(
+  id: string,
+): Promise<UserServerData | null> {
+  try {
+    const res = await fetch(`${serverApiBaseUrl}/users/${id}/public`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<UserServerData>;
+  } catch {
+    return null;
+  }
+}
+
+export const getUserPublicProfileServer = cache(_getUserPublicProfileServer);
 import type {
   CurrentUser,
   ProvidersPage,

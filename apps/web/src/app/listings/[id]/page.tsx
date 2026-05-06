@@ -1,37 +1,9 @@
 import type { Metadata } from 'next';
 import { CATEGORY_LABEL_MAP } from '@repo/shared';
+import { getListingByIdServer } from '@web/lib/api/listings';
+import { resolveImageUrl } from '@web/lib/image';
 import ListingDetailClient from './ListingDetailClient';
 import { ServiceJsonLd, BreadcrumbJsonLd } from '@web/components/seo/JsonLd';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3310';
-
-interface ListingData {
-  id: string;
-  description?: string;
-  category?: string;
-  price?: number;
-  location?: string;
-  images?: { url?: string }[];
-  user?: { firstName?: string; lastName?: string };
-}
-
-async function fetchListing(id: string): Promise<ListingData | null> {
-  try {
-    const res = await fetch(`${API_URL}/listings/${id}`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
-
-function resolveImage(url?: string): string | undefined {
-  if (!url) return undefined;
-  if (url.startsWith('http')) return url;
-  return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
-}
 
 export async function generateMetadata({
   params,
@@ -39,7 +11,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const listing = await fetchListing(id);
+  const listing = await getListingByIdServer(id);
 
   if (!listing) {
     return { title: 'Зар олдсонгүй' };
@@ -51,7 +23,7 @@ export async function generateMetadata({
   const locationPart = listing.location ? ` - ${listing.location}` : '';
   const title = `${categoryLabel}${locationPart}`;
   const description = listing.description?.slice(0, 160) || '';
-  const resolvedImage = resolveImage(listing.images?.[0]?.url);
+  const resolvedImage = resolveImageUrl(listing.images?.[0]?.url);
 
   return {
     title,
@@ -81,7 +53,7 @@ export default async function ListingDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const listing = await fetchListing(id);
+  const listing = await getListingByIdServer(id);
 
   const categoryLabel = listing?.category
     ? CATEGORY_LABEL_MAP.get(listing.category) || listing.category
