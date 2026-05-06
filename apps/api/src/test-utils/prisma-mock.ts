@@ -42,6 +42,9 @@ export function createMockPrismaService(): MockPrismaService {
     offer: delegate(),
     review: delegate(),
     report: delegate(),
+    favoriteListing: delegate(),
+    favoriteProvider: delegate(),
+    adminActionLog: delegate(),
     $transaction: jest.fn((args) => {
       if (Array.isArray(args)) return Promise.all(args);
       return args({
@@ -49,5 +52,6 @@ export function createMockPrismaService(): MockPrismaService {
         serviceZone: delegate(),
       });
     }),
+    $queryRaw: jest.fn(),
   } as unknown as MockPrismaService;
 }
