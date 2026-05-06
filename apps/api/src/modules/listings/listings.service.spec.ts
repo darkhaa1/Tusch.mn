@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ListingsService } from './listings.service';
 import { ListingImageService } from './listing-image.service';
+import { ListingSearchService } from './listing-search.service';
 import { PrismaService } from '../../database/prisma.service';
 import {
   createMockPrismaService,
@@ -32,6 +33,7 @@ describe('ListingsService', () => {
       providers: [
         ListingsService,
         ListingImageService,
+        ListingSearchService,
         { provide: PrismaService, useValue: prisma },
       ],
     }).compile();

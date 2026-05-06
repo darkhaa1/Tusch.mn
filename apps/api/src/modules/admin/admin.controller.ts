@@ -217,7 +217,7 @@ export class AdminController {
       action: dto.action === 'APPROVE' ? 'ADMIN_KYC_APPROVE' : 'ADMIN_KYC_REJECT',
       targetType: 'USER',
       targetId: id,
-      metadata: { action: dto.action, reason: dto.reason ?? null },
+      metadata: { reason: dto.reason ?? undefined },
     });
     return result;
   }

@@ -1,3 +1,11 @@
+// Notification contract (shared between API and Web):
+//   - NotificationKeys / NotificationKey: key constants and type
+//   - NotificationTemplateVars: typed variables per notification type
+//
+// Actual translated text (title + body strings) lives in
+//   apps/api/src/modules/notifications/notification-templates.ts
+//   to keep the shared package free of runtime text.
+
 export const NotificationKeys = {
   NEW_OFFER: 'NEW_OFFER',
   OFFER_ACCEPTED: 'OFFER_ACCEPTED',
