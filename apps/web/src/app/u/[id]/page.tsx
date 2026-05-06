@@ -1,29 +1,8 @@
 import type { Metadata } from 'next';
+import { getUserPublicProfileServer } from '@web/lib/api/users';
+import { resolveImageUrl } from '@web/lib/image';
 import PublicProfileClient from './PublicProfileClient';
 import { PersonJsonLd, BreadcrumbJsonLd } from '@web/components/seo/JsonLd';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3310';
-
-interface UserData {
-  user: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    avatarUrl?: string;
-  };
-}
-
-async function fetchUser(id: string): Promise<UserData | null> {
-  try {
-    const res = await fetch(`${API_URL}/users/${id}/public`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
-    return null;
-  }
-}
 
 export async function generateMetadata({
   params,
@@ -31,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const data = await fetchUser(id);
+  const data = await getUserPublicProfileServer(id);
 
   if (!data) {
     return { title: 'Хэрэглэгч олдсонгүй' };
@@ -42,12 +21,7 @@ export async function generateMetadata({
     'Хэрэглэгч';
   const title = `${fullName} - Үйлчилгээ үзүүлэгч`;
   const description = `${fullName} - Tusch.mn дээрх үйлчилгээ үзүүлэгч`;
-  const avatarUrl = data.user.avatarUrl;
-  const resolvedAvatar = avatarUrl
-    ? avatarUrl.startsWith('http')
-      ? avatarUrl
-      : `${API_URL}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`
-    : undefined;
+  const resolvedAvatar = resolveImageUrl(data.user.avatarUrl);
 
   return {
     title,
@@ -77,18 +51,13 @@ export default async function PublicProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const data = await fetchUser(id);
+  const data = await getUserPublicProfileServer(id);
 
   const fullName = data
     ? [data.user.firstName, data.user.lastName].filter(Boolean).join(' ') ||
       'Хэрэглэгч'
     : '';
-  const avatarUrl = data?.user.avatarUrl;
-  const resolvedAvatar = avatarUrl
-    ? avatarUrl.startsWith('http')
-      ? avatarUrl
-      : `${API_URL}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`
-    : undefined;
+  const resolvedAvatar = resolveImageUrl(data?.user.avatarUrl) ?? undefined;
 
   return (
     <>

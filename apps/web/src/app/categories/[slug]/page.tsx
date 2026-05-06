@@ -2,20 +2,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CATEGORIES } from '@repo/shared';
+import { fetchListingsByCategory } from '@web/lib/api/listings';
 import { BreadcrumbJsonLd, JsonLd } from '@web/components/seo/JsonLd';
-import type { Listing, ListingsPage } from '@web/lib/api/types';
+import type { Listing } from '@web/lib/api/types';
 
 export const revalidate = 86400;
 
 const BASE_URL = 'https://tusch.mn';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3310';
 
-// Map category slug → URL-friendly slug (underscores → hyphens)
 function toUrlSlug(categorySlug: string) {
   return categorySlug.replace(/_/g, '-');
 }
 
-// Map URL slug back to category slug (hyphens → underscores)
 function fromUrlSlug(urlSlug: string) {
   return urlSlug.replace(/-/g, '_');
 }
@@ -89,20 +87,6 @@ export async function generateMetadata({
   };
 }
 
-async function fetchCategoryListings(categorySlug: string): Promise<Listing[]> {
-  try {
-    const res = await fetch(
-      `${API_URL}/listings?category=${encodeURIComponent(categorySlug)}&limit=20&sort=newest`,
-      { next: { revalidate: 86400 } },
-    );
-    if (!res.ok) return [];
-    const data: ListingsPage = await res.json();
-    return data.items ?? [];
-  } catch {
-    return [];
-  }
-}
-
 export default async function CategoryPage({
   params,
 }: {
@@ -113,7 +97,7 @@ export default async function CategoryPage({
   const meta = CATEGORY_META[categorySlug];
   if (!meta) notFound();
 
-  const listings = await fetchCategoryListings(categorySlug);
+  const listings: Listing[] = await fetchListingsByCategory(categorySlug);
 
   const breadcrumbItems = [
     { name: 'Нүүр', url: BASE_URL },
