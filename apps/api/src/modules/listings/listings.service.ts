@@ -11,6 +11,7 @@ import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { GetListingsQueryDto } from './dto/get-listings-query.dto';
 import { ListingImageService } from './listing-image.service';
+import { ListingSearchService } from './listing-search.service';
 
 const listingUserSelectPublic = {
   id: true,
@@ -62,80 +63,8 @@ export class ListingsService {
   constructor(
     private prisma: PrismaService,
     private listingImages: ListingImageService,
+    private searchService: ListingSearchService,
   ) {}
-
-  /**
-   * Sanitize a raw search string for use with plainto_tsquery.
-   * Returns null if the sanitized result is empty.
-   */
-  private sanitizeFullTextQuery(raw: string): string | null {
-    const clean = raw
-      .trim()
-      .replace(/[&|!<>():*\\]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    return clean.length > 0 ? clean : null;
-  }
-
-  /**
-   * Full-text search via tsvector/tsquery, combined with optional filters.
-   * Returns paginated IDs sorted by ts_rank DESC.
-   */
-  private async fullTextSearch(
-    sanitizedQ: string,
-    q: GetListingsQueryDto,
-    userId?: string,
-  ): Promise<{ items: any[]; total: number }> {
-    const skip = (q.page - 1) * q.limit;
-
-    const conditions: Prisma.Sql[] = [
-      Prisma.sql`l."searchVector" @@ plainto_tsquery('simple', ${sanitizedQ})`,
-      Prisma.sql`l.status = ${'ACTIVE'}`,
-      Prisma.sql`l."deletedAt" IS NULL`,
-      Prisma.sql`u."deletedAt" IS NULL`,
-    ];
-
-    if (q.category) conditions.push(Prisma.sql`l.category = ${q.category}`);
-    if (q.location)
-      conditions.push(Prisma.sql`l.location ILIKE ${'%' + q.location + '%'}`);
-    if (q.minPrice !== undefined)
-      conditions.push(Prisma.sql`l.price >= ${q.minPrice}`);
-    if (q.maxPrice !== undefined)
-      conditions.push(Prisma.sql`l.price <= ${q.maxPrice}`);
-
-    const whereClause = Prisma.join(conditions, ' AND ');
-
-    const [rawRows, countResult] = await Promise.all([
-      this.prisma.$queryRaw<Array<{ id: string; rank: number }>>`
-        SELECT l.id, ts_rank(l."searchVector", plainto_tsquery('simple', ${sanitizedQ})) AS rank
-        FROM "Listing" l
-        JOIN "User" u ON u.id = l."userId"
-        WHERE ${whereClause}
-        ORDER BY rank DESC
-        LIMIT ${q.limit} OFFSET ${skip}
-      `,
-      this.prisma.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(*) AS count
-        FROM "Listing" l
-        JOIN "User" u ON u.id = l."userId"
-        WHERE ${whereClause}
-      `,
-    ]);
-
-    const total = Number(countResult[0]?.count ?? 0);
-    const ids = rawRows.map((r) => r.id);
-    const rankMap = new Map(rawRows.map((r) => [r.id, r.rank]));
-
-    const data = await this.prisma.listing.findMany({
-      where: { id: { in: ids } },
-      include: buildListingInclude(userId),
-    });
-
-    // Restore rank order from raw query
-    data.sort((a, b) => (rankMap.get(b.id) ?? 0) - (rankMap.get(a.id) ?? 0));
-
-    return { items: this.mapListings(data, userId), total };
-  }
 
   private withFavorites(listing: any, userId?: string) {
     if (!listing) return listing;
@@ -158,12 +87,14 @@ export class ListingsService {
   async findAll(q: GetListingsQueryDto, userId?: string) {
     // Full-text search path: when q param is provided
     if (q.q?.trim()) {
-      const sanitizedQ = this.sanitizeFullTextQuery(q.q);
+      const sanitizedQ = this.searchService.buildSearchQuery(q.q);
       if (sanitizedQ) {
         try {
-          const { items, total } = await this.fullTextSearch(
+          const { items, total } = await this.searchService.fullTextSearch(
             sanitizedQ,
             q,
+            buildListingInclude(userId),
+            this.mapListings.bind(this),
             userId,
           );
           return { items, total, page: q.page, limit: q.limit };
