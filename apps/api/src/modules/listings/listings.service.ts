@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -11,13 +10,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { GetListingsQueryDto } from './dto/get-listings-query.dto';
-import { unlink } from 'fs/promises';
-import { join, parse as parsePath } from 'path';
-import {
-  processImage,
-  generateThumbnail,
-} from '../../common/image/image-processor';
-import { LISTING_UPLOAD_DIR } from '../../common/multer/constants';
+import { ListingImageService } from './listing-image.service';
 
 const listingUserSelectPublic = {
   id: true,
@@ -39,7 +32,10 @@ const listingImagesInclude = {
   orderBy: { position: 'asc' as const },
 } as const;
 
-const buildListingInclude = (userId?: string, includePrivateUser = false) => ({
+const buildListingInclude = (
+  userId?: string,
+  includePrivateUser = false,
+): Prisma.ListingInclude => ({
   user: {
     select: includePrivateUser
       ? listingUserSelectPrivate
@@ -63,7 +59,10 @@ const buildListingInclude = (userId?: string, includePrivateUser = false) => ({
 export class ListingsService {
   private readonly logger = new Logger(ListingsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private listingImages: ListingImageService,
+  ) {}
 
   /**
    * Sanitize a raw search string for use with plainto_tsquery.
@@ -129,7 +128,7 @@ export class ListingsService {
 
     const data = await this.prisma.listing.findMany({
       where: { id: { in: ids } },
-      include: buildListingInclude(userId) as any,
+      include: buildListingInclude(userId),
     });
 
     // Restore rank order from raw query
@@ -220,7 +219,7 @@ export class ListingsService {
     const [data, total] = await this.prisma.$transaction([
       this.prisma.listing.findMany({
         where,
-        include: buildListingInclude(userId) as any,
+        include: buildListingInclude(userId),
         skip,
         take: q.limit,
         orderBy: { createdAt: orderBy },
@@ -244,7 +243,7 @@ export class ListingsService {
         deletedAt: null,
         user: { deletedAt: null },
       },
-      include: buildListingInclude(userId) as any,
+      include: buildListingInclude(userId),
     });
     if (!item) throw new NotFoundException('Listing not found');
     return this.withFavorites(item, userId);
@@ -253,7 +252,7 @@ export class ListingsService {
   async findOne(id: string, userId?: string) {
     const item = await this.prisma.listing.findFirst({
       where: { id, deletedAt: null },
-      include: buildListingInclude(userId, true) as any,
+      include: buildListingInclude(userId, true),
     });
     if (!item) throw new NotFoundException('Listing not found');
     return this.withFavorites(item, userId);
@@ -290,160 +289,17 @@ export class ListingsService {
     files: Express.Multer.File[],
     userId: string,
   ) {
-    const listing = await this.prisma.listing.findFirst({
-      where: { id: listingId, deletedAt: null },
-    });
-    if (!listing) throw new NotFoundException('Listing not found');
-    this.ensureOwnership(listing, userId);
-
-    const existingImages = await (this.prisma as any).listingImage.findMany({
-      where: { listingId },
-      orderBy: { position: 'asc' },
-    });
-
-    if (existingImages.length + files.length > 3) {
-      throw new BadRequestException('Maximum 3 images par annonce');
-    }
-
-    const usedPositions = new Set(existingImages.map((img: { position: number }) => img.position));
-    const availablePositions = [1, 2, 3].filter(
-      (pos) => !usedPositions.has(pos),
-    );
-
-    const data: Array<{
-      listingId: string;
-      url: string;
-      thumbnailUrl: string;
-      position: number;
-    }> = [];
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const rawPath = file.path;
-      const parsed = parsePath(file.filename);
-      const baseName = parsed.name;
-
-      const processedFilename = `${baseName}.jpg`;
-      const processedPath = join(LISTING_UPLOAD_DIR, processedFilename);
-      const thumbFilename = `${baseName}_thumb.jpg`;
-      const thumbPath = join(LISTING_UPLOAD_DIR, thumbFilename);
-
-      await processImage(rawPath, processedPath);
-
-      if (
-        parsed.ext.toLowerCase() !== '.jpg' &&
-        parsed.ext.toLowerCase() !== '.jpeg'
-      ) {
-        try {
-          await unlink(rawPath);
-        } catch {
-          // ignore
-        }
-      }
-
-      await generateThumbnail(processedPath, thumbPath);
-
-      data.push({
-        listingId,
-        url: `/uploads/listings/${processedFilename}`,
-        thumbnailUrl: `/uploads/listings/${thumbFilename}`,
-        position: availablePositions[i],
-      });
-    }
-
-    await (this.prisma as any).listingImage.createMany({ data });
-
+    await this.listingImages.addImages(listingId, files, userId);
     return this.findOne(listingId, userId);
   }
 
   async deleteImage(listingId: string, imageId: string, userId: string) {
-    const listing = await this.prisma.listing.findFirst({
-      where: { id: listingId, deletedAt: null },
-    });
-    if (!listing) throw new NotFoundException('Listing not found');
-    this.ensureOwnership(listing, userId);
-
-    const image = await (this.prisma as any).listingImage.findUnique({
-      where: { id: imageId },
-    });
-    if (!image || image.listingId !== listingId) {
-      throw new NotFoundException('Image not found');
-    }
-
-    // Remove physical files if possible
-    if (image.url) {
-      const filePath = join(process.cwd(), image.url.replace(/^\//, ''));
-      try {
-        await unlink(filePath);
-      } catch {
-        // ignore if already deleted
-      }
-    }
-
-    if (image.thumbnailUrl) {
-      const thumbPath = join(
-        process.cwd(),
-        image.thumbnailUrl.replace(/^\//, ''),
-      );
-      try {
-        await unlink(thumbPath);
-      } catch {
-        // ignore if already deleted
-      }
-    }
-
-    await (this.prisma as any).listingImage.delete({ where: { id: imageId } });
-
+    await this.listingImages.deleteImage(listingId, imageId, userId);
     return this.findOne(listingId, userId);
   }
 
   async reorderImages(listingId: string, imageIds: string[], userId: string) {
-    const listing = await this.prisma.listing.findFirst({
-      where: { id: listingId, deletedAt: null },
-    });
-    if (!listing) throw new NotFoundException('Listing not found');
-    this.ensureOwnership(listing, userId);
-
-    const images = await (this.prisma as any).listingImage.findMany({
-      where: { listingId },
-      select: { id: true },
-      orderBy: { position: 'asc' },
-    });
-
-    if (imageIds.length !== images.length) {
-      throw new BadRequestException('Image list length mismatch');
-    }
-
-    const uniqueIds = new Set(imageIds);
-    if (uniqueIds.size !== imageIds.length) {
-      throw new BadRequestException('Duplicate image IDs are not allowed');
-    }
-
-    const existingIds = new Set(images.map((image: { id: string }) => image.id));
-    for (const imageId of imageIds) {
-      if (!existingIds.has(imageId)) {
-        throw new BadRequestException(
-          'All image IDs must belong to this listing',
-        );
-      }
-    }
-
-    await this.prisma.$transaction(async (tx) => {
-      for (let index = 0; index < imageIds.length; index++) {
-        await (tx as any).listingImage.update({
-          where: { id: imageIds[index] },
-          data: { position: index + 1000 },
-        });
-      }
-
-      for (let index = 0; index < imageIds.length; index++) {
-        await (tx as any).listingImage.update({
-          where: { id: imageIds[index] },
-          data: { position: index },
-        });
-      }
-    });
-
+    await this.listingImages.reorderImages(listingId, imageIds, userId);
     return this.findOne(listingId, userId);
   }
 
@@ -451,7 +307,7 @@ export class ListingsService {
     const items = await this.prisma.listing.findMany({
       where: { userId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
-      include: buildListingInclude(userId, true) as any,
+      include: buildListingInclude(userId, true),
     });
     return this.mapListings(items, userId);
   }

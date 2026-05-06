@@ -4,10 +4,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma.service';
 import { AuthDto } from './dto/register.dto';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
+import { AVATAR_UPLOAD_DIR } from '../../common/multer/constants';
 import { randomUUID, randomBytes, createHash } from 'crypto';
 
 @Injectable()
@@ -127,11 +130,20 @@ export class AuthService {
       accountType?: string;
       email?: string;
     },
+    previousAvatarUrl?: string | null,
   ) {
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data,
     });
+
+    if (previousAvatarUrl?.startsWith('/uploads/avatars/')) {
+      const name = previousAvatarUrl.split('/').pop();
+      if (name) {
+        unlink(join(AVATAR_UPLOAD_DIR, name)).catch(() => undefined);
+      }
+    }
+
     return this.sanitizeUser(updated);
   }
 
@@ -159,10 +171,24 @@ export class AuthService {
   }
 
   async deleteUserById(id: string) {
-    return this.prisma.user.update({
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { avatarUrl: true },
+    });
+
+    const result = await this.prisma.user.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    if (user?.avatarUrl?.startsWith('/uploads/avatars/')) {
+      const name = user.avatarUrl.split('/').pop();
+      if (name) {
+        unlink(join(AVATAR_UPLOAD_DIR, name)).catch(() => undefined);
+      }
+    }
+
+    return result;
   }
 
   async deleteProfileAvatar(userId: string) {

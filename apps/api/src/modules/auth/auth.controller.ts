@@ -31,9 +31,6 @@ import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { AuthenticatedRequest } from '../../common/types/request.types';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { avatarMulterOptions } from '../../common/multer/image-options';
-import { join } from 'path';
-import * as fs from 'fs';
-import { AVATAR_UPLOAD_DIR } from '../../common/multer/constants';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -183,25 +180,19 @@ export class AuthController {
       previousAvatarUrl = currentUser?.avatarUrl || null;
     }
 
-    const updatedUser = await this.authService.updateProfile(userId, {
-      firstName: body.firstName,
-      lastName: body.lastName,
-      phone: body.phone,
-      avatarUrl,
-      accountType: body.accountType,
-      email: body.email,
-    });
+    const updatedUser = await this.authService.updateProfile(
+      userId,
+      {
+        firstName: body.firstName,
+        lastName: body.lastName,
+        phone: body.phone,
+        avatarUrl,
+        accountType: body.accountType,
+        email: body.email,
+      },
+      shouldCleanOldAvatar ? previousAvatarUrl : undefined,
+    );
 
-    if (
-      shouldCleanOldAvatar &&
-      previousAvatarUrl?.startsWith('/uploads/avatars/')
-    ) {
-      const previousName = previousAvatarUrl.split('/').pop();
-      if (previousName && previousName !== file?.filename) {
-        const previousPath = join(AVATAR_UPLOAD_DIR, previousName);
-        fs.promises.unlink(previousPath).catch(() => undefined);
-      }
-    }
     return { user: updatedUser };
   }
 
@@ -268,15 +259,6 @@ export class AuthController {
 
     await this.authService.deleteUserById(userId);
     res.clearCookie('accessToken', { ...this.cookieOptions, maxAge: 0 });
-
-    const avatarUrl = currentUser?.avatarUrl;
-    if (avatarUrl?.startsWith('/uploads/avatars/')) {
-      const avatarName = avatarUrl.split('/').pop();
-      if (avatarName) {
-        const avatarPath = join(AVATAR_UPLOAD_DIR, avatarName);
-        fs.promises.unlink(avatarPath).catch(() => undefined);
-      }
-    }
 
     return { success: true };
   }
