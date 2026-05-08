@@ -36,6 +36,18 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-noto-mono), ui-monospace, "Courier New", monospace;
+
+  /* Atelier / Гэр — Design System v2 color tokens */
+  --color-atelier-ink: #1a1714;
+  --color-atelier-cream: #f4ede1;
+  --color-atelier-paper: #faf6ee;
+  --color-atelier-sand: #e8ddc8;
+  --color-atelier-terre: #a8542a;
+  --color-atelier-olive: #5e6b3a;
+  --color-atelier-muted: #8a7f6f;
+  --color-atelier-line: #d9cfba;
 }
 
 @layer base {

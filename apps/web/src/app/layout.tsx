@@ -1,6 +1,6 @@
 import '../styles/globals.css';
 import type { Metadata } from 'next';
-import { Noto_Sans } from 'next/font/google';
+import { Noto_Sans, Noto_Serif, Noto_Sans_Mono } from 'next/font/google';
 import { Providers } from './Providers';
 import { IntlProvider } from './IntlProvider';
 import Header from '@web/features/home/components/Header';
@@ -15,6 +15,23 @@ const notoSans = Noto_Sans({
   variable: '--font-sans',
   display: 'swap',
   preload: true,
+});
+
+const notoSerif = Noto_Serif({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-noto-serif',
+  display: 'swap',
+  preload: false,
+});
+
+const notoSansMono = Noto_Sans_Mono({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '700'],
+  variable: '--font-noto-mono',
+  display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -48,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
-      <body className={`${notoSans.variable} font-sans max-w-310 mx-auto px-4`}>
+      <body className={`${notoSans.variable} ${notoSerif.variable} ${notoSansMono.variable} font-sans max-w-310 mx-auto px-4`}>
         <OrganizationJsonLd />
         <IntlProvider>
           {/* Providers wraps all content that uses session/react-query */}
