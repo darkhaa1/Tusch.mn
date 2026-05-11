@@ -36,6 +36,98 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Atelier (ui-v2) — colors */
+  --color-atelier-ink: var(--at-ink);
+  --color-atelier-cream: var(--at-cream);
+  --color-atelier-paper: var(--at-paper);
+  --color-atelier-sand: var(--at-sand);
+  --color-atelier-terre: var(--at-terre);
+  --color-atelier-rose: var(--at-rose);
+  --color-atelier-ocre: var(--at-ocre);
+  --color-atelier-olive: var(--at-olive);
+  --color-atelier-cobalt: var(--at-cobalt);
+  --color-atelier-pourpre: var(--at-pourpre);
+  --color-atelier-muted: var(--at-muted);
+  --color-atelier-line: var(--at-line);
+
+  /* Atelier (ui-v2) — fonts */
+  --font-serif-atelier: var(--at-serif);
+  --font-sans-atelier: var(--at-sans);
+  --font-mono-atelier: var(--at-mono);
+}
+
+/* ============================================================
+ * Atelier design system (ui-v2)
+ * Coexists with the shadcn tokens above; opt-in via bg-atelier-*,
+ * font-serif-atelier, etc.
+ * ============================================================ */
+:root {
+  --at-ink: #1a1714;
+  --at-cream: #f4ede1;
+  --at-paper: #faf6ee;
+  --at-sand: #e8ddc8;
+  --at-terre: #a8542a;
+  --at-rose: #d97a5f;
+  --at-ocre: #e0a830;
+  --at-olive: #5e6b3a;
+  --at-cobalt: #264a8b;
+  --at-pourpre: #7a2b3a;
+  --at-muted: #8a7f6f;
+  --at-line: #d9cfba;
+
+  --at-serif: var(--font-noto-serif), Georgia, serif;
+  --at-sans: var(--font-noto-sans), system-ui, sans-serif;
+  --at-mono: var(--font-noto-mono), ui-monospace, monospace;
+
+  --at-italic-style: italic;
+  --at-italic-display: inline;
+
+  --at-ornament: 0.6;
+  --at-khee-display: block;
+  --at-flourish-display: inline;
+}
+
+[data-palette='tal'] {
+  --at-ink: #1a2230;
+  --at-cream: #eef0e6;
+  --at-paper: #f6f7ee;
+  --at-sand: #dde0d0;
+  --at-terre: #4f7d6b;
+  --at-rose: #7fa996;
+  --at-ocre: #d4a84a;
+  --at-olive: #6b7a3a;
+  --at-cobalt: #3a6b9e;
+  --at-pourpre: #2d4a5c;
+  --at-muted: #7a8576;
+  --at-line: #c8d0bc;
+}
+
+[data-palette='uuls'] {
+  --at-ink: #0e0a10;
+  --at-cream: #f0e4cf;
+  --at-paper: #f6ecd6;
+  --at-sand: #e2d3b4;
+  --at-terre: #5a2438;
+  --at-rose: #a04050;
+  --at-ocre: #d68a2e;
+  --at-olive: #7a5a20;
+  --at-cobalt: #3a2848;
+  --at-pourpre: #5a2438;
+  --at-muted: #8a7058;
+  --at-line: #d0bc94;
+}
+
+[data-typo='songodog'] {
+  --at-italic-style: normal;
+  --at-italic-display: inline;
+}
+
+[data-typo='orchin'] {
+  --at-serif: var(--font-dm-sans), system-ui, sans-serif;
+  --at-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --at-italic-style: normal;
+  --at-italic-display: none;
 }
 
 @layer base {
