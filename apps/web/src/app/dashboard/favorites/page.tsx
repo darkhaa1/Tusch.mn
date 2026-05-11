@@ -13,6 +13,7 @@ import {
   CardContent,
   Skeleton,
 } from "@web/components/ui";
+import { SectionHeader } from "@web/components/ui-v2";
 import {
   useCurrentUser,
   useFavoriteListings,
@@ -25,6 +26,12 @@ import { resolveCategoryLabel } from "@web/features/listings/categoryLabels";
 import { CATEGORY_LABEL_MAP } from "@web/lib/category-ui";
 import resolveImageUrl from "@web/lib/resolveImageUrl";
 import { cn } from "@web/lib/utils";
+
+const atLabels = {
+  eyebrow: "Дашбоард · Хадгалсан",
+  title: "Миний дуртай",
+  description: "Хадгалсан зар болон үйлчилгээ үзүүлэгчид",
+};
 
 type Tab = "listings" | "providers";
 
@@ -58,13 +65,15 @@ function FavoritesContent() {
 
   if (userLoading) {
     return (
-      <AppShell title="Миний дуртай">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 w-full rounded-xl" />
-          ))}
-        </div>
-      </AppShell>
+      <div className="bg-atelier-paper min-h-screen">
+        <AppShell title={atLabels.title}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-64 w-full rounded-xl" />
+            ))}
+          </div>
+        </AppShell>
+      </div>
     );
   }
 
@@ -79,12 +88,18 @@ function FavoritesContent() {
   ];
 
   return (
-    <AppShell
-      title="Миний дуртай"
-      description="Хадгалсан зар болон үйлчилгээ үзүүлэгчид"
-    >
+    <div className="bg-atelier-paper min-h-screen">
+      <AppShell>
+        <SectionHeader
+          number={atLabels.eyebrow}
+          title={atLabels.title}
+          italic
+          subtitle={atLabels.description}
+          size="lg"
+          className="mb-6"
+        />
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-border pb-0">
+      <div className="flex gap-2 border-b border-atelier-line pb-0">
         {tabs.map(({ key, label, count }) => (
           <button
             key={key}
@@ -241,7 +256,8 @@ function FavoritesContent() {
           )}
         </>
       )}
-    </AppShell>
+      </AppShell>
+    </div>
   );
 }
 
