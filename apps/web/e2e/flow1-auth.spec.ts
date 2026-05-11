@@ -45,7 +45,9 @@ test.describe("Flow 1 — Auth", () => {
 
     // The profile page calls GET /auth/me with the injected cookie.
     // When it succeeds, it renders user info (firstName "Auth" should appear).
-    await expect(page.getByRole("heading", { name: /Auth Test/i })).toBeVisible({
+    // New Atelier profile page renders "Сайн уу, {firstName}." as h1 (desktop) /
+    // "Сайн уу, {lastName}." (mobile). Match firstName which the test browser sees on desktop.
+    await expect(page.getByRole("heading", { name: /Auth/i })).toBeVisible({
       timeout: 10_000,
     });
 

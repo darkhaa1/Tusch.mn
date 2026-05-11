@@ -39,13 +39,18 @@ test.describe("Flow 3 - Message", () => {
     // ── User A: open the listing page and send a message ────────────────────
     await injectAuthCookie(context, userA.cookie);
     await page.goto(`/listings/${listing.id}`);
+    // New Atelier CTAs on listing detail:
+    //   • Desktop PricingPanel aside: "Зурвас бичих" outline
+    //   • Mobile sticky bottom CTA: "Зурвас" outline (md:hidden)
+    // Playwright Chrome runs at desktop viewport, so target the desktop label.
     await expect(
-      page.getByRole("button", { name: "Мессеж илгээх" }),
+      page.getByRole("button", { name: "Зурвас бичих" }),
     ).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "Мессеж илгээх" }).click();
+    await page.getByRole("button", { name: "Зурвас бичих" }).click();
 
+    // Message dialog heading: "Зурвас илгээх"
     await expect(
-      page.getByRole("heading", { name: "Мессеж илгээх" }),
+      page.getByRole("heading", { name: "Зурвас илгээх" }),
     ).toBeVisible({ timeout: 5_000 });
 
     const messageText = `E2E message ${Date.now()} from sender to owner`;
@@ -53,7 +58,7 @@ test.describe("Flow 3 - Message", () => {
     await page.getByRole("button", { name: "Илгээх", exact: true }).click();
 
     await expect(
-      page.getByRole("heading", { name: "Мессеж илгээх" }),
+      page.getByRole("heading", { name: "Зурвас илгээх" }),
     ).toBeHidden({ timeout: 10_000 });
 
     // ── Switch to user B: verify thread is received via API ──────────────────

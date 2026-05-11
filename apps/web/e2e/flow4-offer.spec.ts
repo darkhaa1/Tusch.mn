@@ -67,10 +67,11 @@ test.describe("Flow 4 - Offer", () => {
     await injectAuthCookie(context, cookieClient);
 
     await page.goto(`/listings/${listing.id}`);
+    // Atelier redesign renamed the received-offers tab from "Ирсэн санал" to "Санал".
     await expect(
-      page.getByRole("tab", { name: "Ирсэн санал" }),
+      page.getByRole("tab", { name: "Санал", exact: true }),
     ).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("tab", { name: "Ирсэн санал" }).click();
+    await page.getByRole("tab", { name: "Санал", exact: true }).click();
 
     await expect(page.getByText("Зөвшөөрөх")).toBeVisible({ timeout: 8_000 });
     await page.getByRole("button", { name: "Зөвшөөрөх" }).first().click();
@@ -79,7 +80,8 @@ test.describe("Flow 4 - Offer", () => {
     ).toBeVisible({ timeout: 5_000 });
     await page.getByRole("button", { name: "Зөвшөөрөх" }).last().click();
 
-    await expect(page.getByRole("status")).toContainText("Санал зөвшөөрөгдлөө.");
+    // Atelier renamed the offer-accepted toast to "Санал хүлээн зөвшөөрсөн".
+    await expect(page.getByRole("status")).toContainText("Санал хүлээн зөвшөөрсөн");
 
     const receivedRes = await page.request.get(`${API_URL}/offers/received`);
     expect(receivedRes.status()).toBe(200);

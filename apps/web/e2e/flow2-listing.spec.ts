@@ -25,40 +25,41 @@ test.describe("Flow 2 - Listing creation", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Зар нэмэх" }).first().click();
 
-    // Wait for modal to open — "Шинэ зар" heading inside the portal
-    await expect(
-      page.getByRole("heading", { name: "Шинэ зар", level: 2 }),
-    ).toBeVisible();
+    // Atelier modal: no "Шинэ зар" heading — detect open state via the close button
+    // (aria-label "Хаах") which is inside the portal.
+    const modalClose = page.getByRole("button", { name: "Хаах" }).first();
+    await expect(modalClose).toBeVisible({ timeout: 10_000 });
 
-    // Step 1 — category: modal category buttons come after sidebar buttons in DOM
-    // Use "Гэр цэвэрлэгээ" which exists in sidebar (ref=e77) AND modal (ref=e382),
-    // .last() picks the modal one.
+    // Step 1 — category: sidebar buttons exist too, .last() picks the modal one
     await page.getByRole("button", { name: "Гэр цэвэрлэгээ" }).last().click();
-    // "Дараах" pagination button is [disabled]; modal's is last enabled one
-    await page.getByRole("button", { name: "Дараах" }).last().click();
+    // Atelier renamed "Дараах" → "Үргэлжлүүлэх"
+    await page.getByRole("button", { name: "Үргэлжлүүлэх" }).last().click();
 
     // Step 2 — price
     await page.locator('input[type="number"]').last().fill("50000");
-    await page.getByRole("button", { name: "Дараах" }).last().click();
+    await page.getByRole("button", { name: "Үргэлжлүүлэх" }).last().click();
 
     // Step 3 — description + location
     await page.locator("textarea").last().fill(description);
     await page.locator('input[type="text"]').last().fill("Улаанбаатар");
-    await page.getByRole("button", { name: "Дараах" }).last().click();
+    await page.getByRole("button", { name: "Үргэлжлүүлэх" }).last().click();
 
-    // Step 4 — submit
+    // Step 4 — submit (button still labeled "Илгээх")
     await page.getByRole("button", { name: "Илгээх" }).last().click();
-    await expect(
-      page.getByRole("heading", { name: "Шинэ зар", level: 2 }),
-    ).toBeHidden({ timeout: 10_000 });
+    await expect(modalClose).toBeHidden({ timeout: 10_000 });
 
     await page.goto("/listings");
-    const descParagraph = page.getByText(description).first();
-    await expect(descParagraph).toBeVisible({ timeout: 10_000 });
-
-    // The "Дэлгэрэнгүй" link is a sibling of the description paragraph inside the card
-    await descParagraph.locator("..").getByRole("link", { name: "Дэлгэрэнгүй" }).click();
+    // Atelier ListingCard renders BOTH a mobile (md:hidden) and desktop (hidden md:flex)
+    // variant, so the description text appears in multiple DOM nodes — some hidden.
+    // Match the wrapping <a href="/listings/..."> with visible filter to pick the
+    // desktop variant on test Chrome viewport.
+    const cardLink = page
+      .locator('a[href^="/listings/"]')
+      .filter({ hasText: description, visible: true })
+      .first();
+    await expect(cardLink).toBeVisible({ timeout: 10_000 });
+    await cardLink.click();
     await page.waitForURL(/\/listings\/[a-z0-9]+/i, { timeout: 10_000 });
-    await expect(page.getByText(description)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(description).first()).toBeVisible({ timeout: 10_000 });
   });
 });
