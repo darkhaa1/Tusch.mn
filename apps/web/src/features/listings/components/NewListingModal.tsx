@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * New listing wizard — Atelier redesign (SA-8).
+ *
+ * Mobile: full-screen paper sheet with header (× / "Үе шат N / M" mono caps /
+ *   "Ноорог" terre eyebrow), scrolling body, and sticky footer with outline
+ *   "← Буцах" + filled "Үргэлжлүүлэх".
+ * Desktop: centered modal (max-w-2xl) with ink border, same internal rhythm
+ *   and stacked progress dots above the header text.
+ *
+ * Zod schema, react-hook-form, useCreateListing mutation, and the file upload
+ * pipeline are unchanged from the prior version — only presentation.
+ */
+
 import { useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 import { createPortal } from "react-dom";
@@ -9,8 +22,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCreateListing } from "@web/lib/hooks/useApi";
 import { uploadListingImages } from "@web/lib/api/listings";
 import type { Listing } from "@web/lib/api/types";
-import { Badge, Button } from "@web/components/ui";
-import { X, ArrowLeft } from "lucide-react";
+import { Button as AtButton, LabelMono } from "@web/components/ui-v2";
 import NewListingStepCategory from "./NewListingStepCategory";
 import NewListingStepPrice from "./NewListingStepPrice";
 import NewListingStepDetails from "./NewListingStepDetails";
@@ -37,7 +49,23 @@ type NewListingModalProps = {
 
 const STEPS_TOTAL = 4;
 
-export default function NewListingModal({ isOpen, onClose }: NewListingModalProps) {
+const labels = {
+  draft: "Ноорог",
+  step: "Үе шат",
+  back: "← Буцах",
+  next: "Үргэлжлүүлэх",
+  submit: "Илгээх",
+  submitting: "Илгээж байна…",
+  close: "Хаах",
+  unverifiedEmail: "Имэйлээ баталгаажуулсны дараа зар нийтлэх боломжтой.",
+  defaultError: "Алдаа гарлаа",
+  emailVerifyKey: "Имэйл баталгаажуулна уу",
+};
+
+export default function NewListingModal({
+  isOpen,
+  onClose,
+}: NewListingModalProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [step, setStep] = useState(1);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -72,11 +100,10 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
       setStep(1);
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Алдаа гарлаа";
+      const message =
+        err instanceof Error ? err.message : labels.defaultError;
       setSubmitError(
-        message === "Имэйл баталгаажуулна уу"
-          ? "Имэйлээ баталгаажуулсны дараа зар нийтлэх боломжтой."
-          : message,
+        message === labels.emailVerifyKey ? labels.unverifiedEmail : message,
       );
     }
   };
@@ -111,35 +138,76 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
     if (step > 1) setStep((prev) => prev - 1);
   };
 
+  const handleClose = () => {
+    if (mutation.isPending) return;
+    onClose();
+  };
+
   if (!isOpen) return null;
 
+  const isLast = step === STEPS_TOTAL;
+  const pending = mutation.isPending;
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-2">
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={() => (!mutation.isPending ? onClose() : null)}
+    <div className="fixed inset-0 z-50 flex md:items-center md:justify-center md:p-6">
+      {/* Backdrop — only on desktop modal */}
+      <button
+        type="button"
+        aria-label={labels.close}
+        onClick={handleClose}
+        className="absolute inset-0 hidden bg-atelier-ink/40 md:block"
       />
-      <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl bg-background shadow-2xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="space-y-0.5">
-            <p className="text-xs text-muted-foreground">
-              Алхам {step}/{STEPS_TOTAL}
-            </p>
-            <h2 className="text-lg font-semibold text-foreground">Шинэ зар</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => (!mutation.isPending ? onClose() : null)}
-            aria-label="Хаах"
+
+      {/* Wizard surface */}
+      <div
+        className="relative z-10 flex h-full w-full flex-col bg-atelier-cream md:h-auto md:max-h-[88vh] md:w-full md:max-w-2xl md:border md:border-atelier-ink md:bg-atelier-paper md:shadow-2xl"
+        style={{ fontFamily: "var(--at-sans)" }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 md:px-8 md:pt-6">
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label={labels.close}
+            disabled={pending}
+            className="text-atelier-ink text-[22px] leading-none disabled:opacity-40"
+            style={{ fontFamily: "var(--at-serif)" }}
           >
-            <X className="h-5 w-5" />
-          </Button>
+            ×
+          </button>
+          <LabelMono tone="muted">
+            {labels.step} {step} / {STEPS_TOTAL}
+          </LabelMono>
+          <LabelMono tone="terre">{labels.draft}</LabelMono>
         </div>
 
-        <div className="max-h-[75vh] overflow-y-auto space-y-6 px-4 py-5">
+        {/* Progress dots — desktop only (mobile uses the mono "step N / M"). */}
+        <div className="hidden md:block md:px-8">
+          <div className="flex items-center gap-2 pt-1 pb-2">
+            {Array.from({ length: STEPS_TOTAL }).map((_, i) => {
+              const idx = i + 1;
+              const filled = idx <= step;
+              return (
+                <span
+                  key={i}
+                  className={
+                    "h-0.75 flex-1 " +
+                    (filled ? "bg-atelier-ink" : "bg-atelier-line")
+                  }
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-8 md:py-6">
           {submitError ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div
+              className="mb-5 border border-atelier-pourpre bg-atelier-paper px-4 py-3 text-[13px] italic text-atelier-pourpre"
+              style={{ fontFamily: "var(--at-serif)" }}
+              role="alert"
+            >
               {submitError}
             </div>
           ) : null}
@@ -159,14 +227,14 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
               priceValue={priceValue}
               setValue={setValue}
               error={errors.price?.message}
-              disabled={mutation.isPending}
+              disabled={pending}
             />
           )}
           {step === 3 && (
             <NewListingStepDetails
               register={register}
               errors={errors}
-              disabled={mutation.isPending}
+              disabled={pending}
             />
           )}
           {step === 4 && (
@@ -176,43 +244,37 @@ export default function NewListingModal({ isOpen, onClose }: NewListingModalProp
               onFilesChange={handleFilesChange}
               onRemoveFile={removeFile}
               onOpenPicker={openFilePicker}
-              isPending={mutation.isPending}
+              isPending={pending}
             />
           )}
         </div>
 
-        <div className="sticky bottom-0 left-0 right-0 border-t bg-background/95 px-4 py-3 backdrop-blur">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={step === 1 ? onClose : goBack}
-              disabled={mutation.isPending}
-              className="gap-2"
+        {/* Footer */}
+        <div className="border-t border-atelier-line bg-atelier-cream px-5 py-3 md:bg-atelier-paper md:px-8 md:py-4">
+          <div className="flex items-center gap-3">
+            <AtButton
+              type="button"
+              variant="outline"
+              italic
+              onClick={step === 1 ? handleClose : goBack}
+              disabled={pending}
             >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Буцах
-            </Button>
-            <div className="flex items-center gap-3">
-              <Badge
-                variant="outline"
-                className="rounded-full border-border/80 px-3 py-1 text-xs font-medium"
-              >
-                Алхам {step}/{STEPS_TOTAL}
-              </Badge>
-              <Button
-                type={step === STEPS_TOTAL ? "submit" : "button"}
-                onClick={goNext}
-                disabled={mutation.isPending}
-                className="min-w-35"
-              >
-                {mutation.isPending
-                  ? "Илгээж байна..."
-                  : step === STEPS_TOTAL
-                    ? "Илгээх"
-                    : "Дараах"}
-              </Button>
-            </div>
+              {labels.back}
+            </AtButton>
+            <div className="flex-1" />
+            <AtButton
+              type={isLast ? "submit" : "button"}
+              variant="primary"
+              onClick={goNext}
+              disabled={pending}
+              className="min-w-40"
+            >
+              {pending
+                ? labels.submitting
+                : isLast
+                  ? labels.submit
+                  : labels.next}
+            </AtButton>
           </div>
         </div>
       </div>
