@@ -98,7 +98,7 @@ export default function NewListings({ category }: NewListingsProps) {
       </div>
 
       <div className="mt-4 text-right">
-        <Link href="/listings" className="text-sm text-blue-600 hover:underline">
+        <Link href="/listings" className="text-sm text-primary hover:underline">
           Бүх заруудыг харах
         </Link>
       </div>
