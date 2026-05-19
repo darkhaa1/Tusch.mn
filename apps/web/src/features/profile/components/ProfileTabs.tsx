@@ -13,7 +13,7 @@ type ProfileTabsProps = {
   user: CurrentUser | null | undefined;
 };
 
-const placeholderImages = ["/placeholder.jpg", "/placeholder.jpg", "/placeholder.jpg"];
+const placeholderImages = ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"];
 
 export function ProfileTabs({ user }: ProfileTabsProps) {
   const t = useTranslations("offers");

@@ -10,7 +10,7 @@
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "../..",
     "paths": {
       "@repo/shared": ["../../packages/shared/src/index.ts"],
       "@repo/shared/*": ["../../packages/shared/src/*"]

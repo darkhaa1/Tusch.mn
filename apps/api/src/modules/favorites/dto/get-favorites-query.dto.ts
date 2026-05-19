@@ -10,11 +10,11 @@ export class GetFavoritesQueryDto {
   @Min(1)
   page?: number = 1;
 
-  @ApiPropertyOptional({ default: 12, minimum: 1, maximum: 50 })
+  @ApiPropertyOptional({ default: 12, minimum: 1, maximum: 200 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(50)
+  @Max(200)
   limit?: number = 12;
 }

@@ -363,6 +363,8 @@ export class AuthController {
         id: result.id,
         email: result.email,
         avatarUrl: result.avatarUrl,
+        adminRole: result.adminRole,
+        isAdmin: result.isAdmin,
       },
     };
   }

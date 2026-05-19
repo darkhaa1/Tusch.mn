@@ -313,8 +313,8 @@ export default function ListingDetailClient() {
     ? `${author.firstName || ""} ${author.lastName || ""}`.trim() || author.email
     : tl("detail.unknownUser");
   const authorAvatar = resolveImageUrl(author?.avatarUrl);
-  const imageUrls = images.map((img) => resolveImageUrl(img.url) || "/placeholder.jpg");
-  const displayedMain = imageUrls[selectedIndex] || resolveImageUrl(images[0]?.url) || "/placeholder.jpg";
+  const imageUrls = images.map((img) => resolveImageUrl(img.url) || "/placeholder.svg");
+  const displayedMain = imageUrls[selectedIndex] || resolveImageUrl(images[0]?.url) || "/placeholder.svg";
   const categoryValue = isEditing ? formState.category : listing.category;
   const categoryLabel = categoryValue ? CATEGORY_LABEL_MAP.get(categoryValue) || categoryValue : null;
   const heading = categoryLabel || tl("detail.listingFallback");
