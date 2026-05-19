@@ -156,7 +156,7 @@ export function ListingSidebar({
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={resolveImageUrl(image.thumbnailUrl) || resolveImageUrl(image.url) || "/placeholder.jpg"} alt={heading} className="h-full w-full object-cover" />
+                <img src={resolveImageUrl(image.thumbnailUrl) || resolveImageUrl(image.url) || "/placeholder.svg"} alt={heading} className="h-full w-full object-cover" />
                 <div className="absolute left-1 top-1 rounded bg-black/50 p-1 text-white">
                   <GripVertical className="h-4 w-4" aria-hidden="true" />
                 </div>

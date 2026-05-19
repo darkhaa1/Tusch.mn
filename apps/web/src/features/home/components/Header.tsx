@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -94,9 +93,11 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/favicon.ico" alt="Tusch.mn" width={32} height={32} className="h-8 w-8" />
-            <span className="text-lg font-semibold text-foreground">Tusch.mn</span>
+          <Link href="/" aria-label="Tusch — Нүүр" className="flex items-center">
+            <span className="font-serif font-medium tracking-tight text-atelier-ink text-2xl leading-none">
+              tus<em className="font-serif italic text-atelier-terre">ch</em>
+              <span className="text-atelier-terre">.</span>
+            </span>
           </Link>
         </div>
 

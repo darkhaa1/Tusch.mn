@@ -2,13 +2,13 @@ import Image from "next/image";
 
 export default function Hero() {
   return (
-    <section className="bg-blue-50 p-6 md:p-8 flex flex-col items-center justify-between rounded-lg mt-6 md:my-8 mx-2 md:mx-4">
+    <section className="bg-accent p-6 md:p-8 flex flex-col items-center justify-between rounded-lg mt-6 md:my-8 mx-2 md:mx-4">
       <div className="md:flex flex-row w-full items-center gap-4 justify-center">
         <div className="md:w-1/2 space-y-2">
-          <h1 className="text-2xl md:text-4xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-4xl font-bold text-foreground">
             Танд тусламж хэрэгтэй байна уу?
           </h1>
-          <p className="text-base md:text-lg text-gray-700">
+          <p className="text-base md:text-lg text-foreground/80">
             Ойр байгаа үйлчилгээг олж эсвэл өөрийн үйлчилгээг санал болгоорой.
           </p>
         </div>

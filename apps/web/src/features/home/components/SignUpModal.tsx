@@ -99,8 +99,8 @@ export default function SignupModal({ open, onClose }: Props) {
               {t("facebook")}
             </Button>
 
-            <div className="flex items-center gap-2 text-gray-400 text-sm justify-center">
-              <div className="h-px bg-gray-300 flex-1" /> {t("or")} <div className="h-px bg-gray-300 flex-1" />
+            <div className="flex items-center gap-2 text-muted-foreground text-sm justify-center">
+              <div className="h-px bg-border flex-1" /> {t("or")} <div className="h-px bg-border flex-1" />
             </div>
 
             <Button variant="outline" className="w-full justify-center" onClick={() => setStep(2)}>
@@ -117,7 +117,7 @@ export default function SignupModal({ open, onClose }: Props) {
               {t("accountIndividual")}
             </Button>
 
-            <div className="flex items-center justify-center text-gray-400 text-sm">- {t("or")} -</div>
+            <div className="flex items-center justify-center text-muted-foreground text-sm">- {t("or")} -</div>
 
             <Button variant="outline" className="w-full justify-center" onClick={() => { setAccountType(t("accountFreelancer")); setStep(3); }}>
               {t("accountFreelancer")}
@@ -127,7 +127,7 @@ export default function SignupModal({ open, onClose }: Props) {
               {t("accountCompany")}
             </Button>
 
-            <p className="text-center text-xs text-gray-400 mt-2">{t("stepIndicator")}</p>
+            <p className="text-center text-xs text-muted-foreground mt-2">{t("stepIndicator")}</p>
           </div>
         )}
 

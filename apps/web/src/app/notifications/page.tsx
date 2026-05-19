@@ -57,11 +57,11 @@ function NotificationRow({ item, onRead }: { item: Notification; onRead: (item: 
       onClick={() => onRead(item)}
       className={cn(
         "flex w-full items-start gap-3 border-b px-4 py-4 text-left transition hover:bg-muted/40",
-        !item.readAt ? "bg-blue-50/40" : "",
+        !item.readAt ? "bg-accent/50" : "",
       )}
     >
       <div className="mt-1.5 h-2 w-2 shrink-0">
-        {!item.readAt ? <span className="block h-2 w-2 rounded-full bg-blue-500" /> : null}
+        {!item.readAt ? <span className="block h-2 w-2 rounded-full bg-primary" /> : null}
       </div>
       <div className="min-w-0 flex-1 space-y-1">
         <p className={cn("text-sm font-medium text-foreground", !item.readAt && "font-semibold")}>

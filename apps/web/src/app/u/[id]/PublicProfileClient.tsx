@@ -198,7 +198,7 @@ export default function PublicProfileClient() {
                       <div className="aspect-4/3 w-full bg-muted">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={resolveImageUrl(listing.thumbnailUrl || undefined) || resolveImageUrl(listing.imageUrl || undefined) || "/placeholder.jpg"}
+                          src={resolveImageUrl(listing.thumbnailUrl || undefined) || resolveImageUrl(listing.imageUrl || undefined) || "/placeholder.svg"}
                           alt={listing.description}
                           className="h-full w-full object-cover"
                         />

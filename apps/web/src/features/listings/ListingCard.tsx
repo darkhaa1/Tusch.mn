@@ -29,7 +29,7 @@ export default function ListingCard({ listing, priority = false }: ListingCardPr
       ? `${listing.price.toLocaleString()} ₮`
       : "Тохиролцоно";
   const locationLabel = listing.location?.trim() || "Байршил оруулаагүй";
-  const coverUrl = resolveImageUrl(listing.images?.[0]?.thumbnailUrl) || resolveImageUrl(listing.images?.[0]?.url) || "/placeholder.jpg";
+  const coverUrl = resolveImageUrl(listing.images?.[0]?.thumbnailUrl) || resolveImageUrl(listing.images?.[0]?.url) || "/placeholder.svg";
   const isVerified = Boolean((listing.user as any)?.isVerified || (listing.user as any)?.verified);
 
   return (

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-50 text-xs sm:text-sm text-gray-600 mt-10 pb-20 md:pb-10">
+    <footer className="bg-muted/30 text-xs sm:text-sm text-muted-foreground mt-10 pb-20 md:pb-10">
       <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div>
           <h4 className="font-semibold mb-2">FAQ</h4>
@@ -45,7 +45,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 pb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 border-t border-gray-200 pt-4">
+      <div className="max-w-6xl mx-auto px-4 pb-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground border-t border-border pt-4">
         <Link href="/cgu" className="hover:text-primary hover:underline underline-offset-2 transition-colors">
           CGU
         </Link>

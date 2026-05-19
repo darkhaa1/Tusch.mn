@@ -80,9 +80,9 @@ export default function LoginModal({ open, onClose }: Props) {
               >
                 {t('google')}
               </Button>
-              <div className="flex items-center gap-2 text-gray-400 text-sm justify-center">
-                <div className="h-px bg-gray-300 flex-1" /> {t('or')}{' '}
-                <div className="h-px bg-gray-300 flex-1" />
+              <div className="flex items-center gap-2 text-muted-foreground text-sm justify-center">
+                <div className="h-px bg-border flex-1" /> {t('or')}{' '}
+                <div className="h-px bg-border flex-1" />
               </div>
               <Button className="w-full justify-center" onClick={() => setShowForm(true)}>
                 {t('emailLogin')}
@@ -105,7 +105,7 @@ export default function LoginModal({ open, onClose }: Props) {
                 />
                 <button
                   type="button"
-                  className="text-sm text-blue-600 hover:underline text-right w-full"
+                  className="text-sm text-primary hover:underline text-right w-full"
                   onClick={() => setShowForgotPassword(true)}
                 >
                   {t('forgotPassword')}
