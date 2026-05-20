@@ -2,8 +2,26 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { render } from '@react-email/render';
 import { Resend } from 'resend';
+import {
+  type EmailNotificationKey,
+  getUserEmailPref,
+} from '@repo/shared';
+import { PrismaService } from '../../database/prisma.service';
 import { VerifyEmailTemplate } from './templates/VerifyEmailTemplate';
 import { PasswordResetTemplate } from './templates/PasswordResetTemplate';
+import { NotificationEmail } from './templates/NotificationEmail';
+
+/**
+ * Minimal user shape a notification email needs. Mirrors a subset of the
+ * Prisma User model so callers can pass the model directly without
+ * remapping fields.
+ */
+export interface NotificationRecipient {
+  email: string | null;
+  emailVerified: boolean;
+  firstName: string;
+  emailNotifications: unknown;
+}
 
 export interface SendEmailParams {
   to: string | string[];
@@ -40,7 +58,10 @@ export class EmailService {
   private readonly fromName: string;
   private readonly frontendUrl: string;
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     const apiKey = config.get<string>('RESEND_API_KEY');
     this.fromEmail = config.get<string>('RESEND_FROM_EMAIL') ?? null;
     this.fromName = config.get<string>('RESEND_FROM_NAME') ?? 'Tusch';
@@ -182,27 +203,212 @@ export class EmailService {
     });
   }
 
-  // ── Stubs landing in US-E3 ───────────────────────────────────────────
+  // ── US-E3: per-event notification emails ─────────────────────────────
+  //
+  // Each method gates on three conditions before doing anything:
+  //   1. Service is configured (Resend key + verified domain).
+  //   2. The recipient has a verified email — sending to unverified
+  //      addresses tanks deliverability and risks bounces.
+  //   3. The user has not opted out of this notification kind.
+  // Errors never leak to the caller; business flows continue regardless.
 
-  async sendOfferNotification(
-    _to: string,
-    _offerId: string,
-    _kind: 'accepted' | 'rejected' | 'completed',
-    _locale: 'mn' | 'en' = 'mn',
+  async sendNewMessageEmail(
+    to: NotificationRecipient,
+    params: {
+      fromUserName: string;
+      preview: string;
+      conversationUrl: string;
+    },
   ): Promise<void> {
-    throw new Error('Not implemented yet — US-E3');
+    await this.sendNotification(to, 'newMessage', {
+      subject: `Шинэ зурвас — ${params.fromUserName}`,
+      previewLine: `Та ${params.fromUserName}-ээс зурвас хүлээн авлаа.`,
+      heading: 'Шинэ зурвас',
+      bodyLines: [
+        `Та ${params.fromUserName}-ээс шинэ зурвас хүлээн авлаа.`,
+        `"${truncate(params.preview, 50)}"`,
+      ],
+      cta: { label: 'Зурвас үзэх', href: params.conversationUrl },
+    });
   }
 
-  async sendMessageNotification(
-    _to: string,
-    _senderName: string,
-    _listingId: string,
-    _locale: 'mn' | 'en' = 'mn',
+  async sendNewOfferEmail(
+    to: NotificationRecipient,
+    params: {
+      providerName: string;
+      listingTitle: string;
+      offerAmount: number;
+      offerUrl: string;
+    },
   ): Promise<void> {
-    throw new Error('Not implemented yet — US-E3');
+    await this.sendNotification(to, 'newOffer', {
+      subject: `Шинэ санал ирлээ — ${params.listingTitle}`,
+      previewLine: `${params.providerName} таны зар дээр санал ирүүлсэн.`,
+      heading: 'Шинэ санал',
+      bodyLines: [
+        `${params.providerName} таны "${params.listingTitle}" зар дээр санал ирүүлсэн.`,
+        `Үнэ: ${formatMnt(params.offerAmount)}`,
+      ],
+      cta: { label: 'Саналыг харах', href: params.offerUrl },
+    });
+  }
+
+  async sendOfferAcceptedEmail(
+    to: NotificationRecipient,
+    params: { clientName: string; listingTitle: string; offerUrl: string },
+  ): Promise<void> {
+    await this.sendNotification(to, 'offerAccepted', {
+      subject: 'Таны санал хүлээн авагдлаа',
+      previewLine: `${params.clientName} таны санлыг хүлээн авлаа.`,
+      heading: 'Таны санал хүлээн авагдлаа 🎉',
+      bodyLines: [
+        `${params.clientName} таны "${params.listingTitle}" зар дээрх санлыг хүлээн авлаа.`,
+        'Та одоо захиалагчтай шууд харилцаж эхлэх боломжтой.',
+      ],
+      cta: { label: 'Дэлгэрэнгүй', href: params.offerUrl },
+    });
+  }
+
+  async sendOfferRejectedEmail(
+    to: NotificationRecipient,
+    params: { listingTitle: string },
+  ): Promise<void> {
+    await this.sendNotification(to, 'offerRejected', {
+      subject: 'Санал хүлээн авагдсангүй',
+      previewLine: `Таны "${params.listingTitle}" зар дээрх санлыг хүлээн аваагүй.`,
+      heading: 'Санал хүлээн авагдсангүй',
+      bodyLines: [
+        `Таны "${params.listingTitle}" зар дээрх санлыг харгалзах захиалагч хүлээн аваагүй.`,
+        'Та өөр заруудаас санал тавьж үзээрэй.',
+      ],
+    });
+  }
+
+  async sendOfferCompletedEmail(
+    to: NotificationRecipient,
+    params: {
+      otherPartyName: string;
+      listingTitle: string;
+      reviewUrl: string;
+    },
+  ): Promise<void> {
+    await this.sendNotification(to, 'offerCompleted', {
+      subject: 'Үйлчилгээ дууссан — сэтгэгдэл үлдээнэ үү',
+      previewLine: `Та ${params.otherPartyName}-тэй хийсэн ажил дуусгалаа.`,
+      heading: 'Үйлчилгээ дууслаа',
+      bodyLines: [
+        `Та ${params.otherPartyName}-тэй "${params.listingTitle}" дээрх ажлыг амжилттай дуусгалаа.`,
+        'Туршлагаа хуваалцаж сэтгэгдэл үлдээнэ үү.',
+      ],
+      cta: { label: 'Сэтгэгдэл үлдээх', href: params.reviewUrl },
+    });
+  }
+
+  async sendNewReviewEmail(
+    to: NotificationRecipient,
+    params: {
+      fromUserName: string;
+      rating: number;
+      commentSnippet: string;
+      profileUrl: string;
+    },
+  ): Promise<void> {
+    await this.sendNotification(to, 'newReview', {
+      subject: `Шинэ сэтгэгдэл — ${params.rating}★`,
+      previewLine: `${params.fromUserName} танд ${params.rating} оддын үнэлгээ өгсөн.`,
+      heading: 'Шинэ сэтгэгдэл',
+      bodyLines: [
+        `${params.fromUserName} танд ${params.rating} оддын үнэлгээ өгсөн.`,
+        `"${truncate(params.commentSnippet, 50)}"`,
+      ],
+      cta: { label: 'Профайл үзэх', href: params.profileUrl },
+    });
+  }
+
+  /**
+   * Fire-and-forget helper for call sites that only know the recipient
+   * id. Looks up just the fields needed for gating, runs `sender`, and
+   * swallows every error so the business path is never blocked.
+   */
+  dispatchToUserId(
+    userId: string,
+    sender: (recipient: NotificationRecipient) => Promise<void>,
+  ): void {
+    void this.prisma.user
+      .findUnique({
+        where: { id: userId },
+        select: {
+          email: true,
+          emailVerified: true,
+          firstName: true,
+          emailNotifications: true,
+        },
+      })
+      .then((recipient) => (recipient ? sender(recipient) : undefined))
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : 'unknown';
+        this.logger.warn(`[dispatchToUserId(${userId})] failed: ${msg}`);
+      });
+  }
+
+  /**
+   * Shared rendering + gating path for every notification email.
+   */
+  private async sendNotification(
+    to: NotificationRecipient,
+    prefKey: EmailNotificationKey,
+    params: {
+      subject: string;
+      previewLine: string;
+      heading: string;
+      bodyLines: string[];
+      cta?: { label: string; href: string };
+    },
+  ): Promise<void> {
+    if (!this.isEnabled()) return;
+    if (!to.email || !to.emailVerified) return;
+    if (!getUserEmailPref(to.emailNotifications, prefKey)) return;
+
+    const greeting = `Сайн байна уу, ${to.firstName || 'Хэрэглэгч'}!`;
+    const html = await render(
+      NotificationEmail({
+        preview: params.previewLine,
+        heading: params.heading,
+        greeting,
+        bodyLines: params.bodyLines,
+        cta: params.cta,
+        footerNote:
+          'Та энэ төрлийн имэйлийг profile-аас удирдаж болно.',
+      }),
+    );
+
+    const text = [
+      greeting,
+      '',
+      ...params.bodyLines,
+      ...(params.cta ? ['', `${params.cta.label}: ${params.cta.href}`] : []),
+    ].join('\n');
+
+    await this.send({
+      to: to.email,
+      subject: params.subject,
+      html,
+      text,
+      tags: [{ name: 'type', value: prefKey }],
+    });
   }
 
   private formatFrom(): string {
     return `${this.fromName} <${this.fromEmail}>`;
   }
+}
+
+function truncate(input: string, max: number): string {
+  if (!input) return '';
+  if (input.length <= max) return input;
+  return `${input.slice(0, max).trimEnd()}…`;
+}
+
+function formatMnt(amount: number): string {
+  return `${amount.toLocaleString('mn-MN')}₮`;
 }

@@ -113,6 +113,7 @@ model User {
   verifiedAt                 DateTime?
   bio           String?
   city          String?
+  emailNotifications Json @default("{}")
   serviceCategories String[]
   serviceZones      String[]
   zones             ServiceZone[]

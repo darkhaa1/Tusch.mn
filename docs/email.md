@@ -112,7 +112,60 @@ signature today.
 - If we approach the daily cap during a burst (e.g. mass notification),
   rate-limit on our side rather than let Resend reject.
 
+## Transactional notifications (US-E3)
+
+In addition to the auth flows, the API now also emails the user on the
+following business events:
+
+| Trigger                           | Method                             | Pref key         |
+|-----------------------------------|------------------------------------|------------------|
+| Inbound message                   | `sendNewMessageEmail`              | `newMessage`     |
+| New offer on your listing         | `sendNewOfferEmail`                | `newOffer`       |
+| Offer you sent was accepted       | `sendOfferAcceptedEmail`           | `offerAccepted`  |
+| Offer you sent was rejected       | `sendOfferRejectedEmail`           | `offerRejected`  |
+| Offer marked completed (both)     | `sendOfferCompletedEmail`          | `offerCompleted` |
+| New review on your profile        | `sendNewReviewEmail`               | `newReview`      |
+
+Every send goes through three gates inside `EmailService`:
+
+1. Service is configured (Resend key + verified domain).
+2. Recipient has a verified email — sending to unverified addresses
+   tanks deliverability and risks bounces.
+3. The user has not opted out — see preferences below.
+
+If any gate fails, the method returns silently. Failures of `Resend`
+itself are logged and never bubble up to the business flow.
+
+### User preferences
+
+Stored on `User.emailNotifications` (`JSONB`). Missing keys fall back to
+the global defaults in `packages/shared/src/notifications.ts`
+(`DEFAULT_EMAIL_NOTIFICATION_PREFERENCES`), so existing users need no
+backfill.
+
+API:
+- `GET /users/me/email-preferences` — returns the full record with
+  defaults applied.
+- `PATCH /users/me/email-preferences` — partial patch; unknown keys are
+  dropped, non-boolean values ignored. Throttled at 10/min/user.
+
+UI: `/profile/notifications` (mongol). One toggle per kind; mandatory
+emails (verify, password reset) are documented at the bottom as
+always-on.
+
+### Adding a new transactional kind
+
+1. Extend `EmailNotificationKey` in `packages/shared/src/notifications.ts`
+   and bump the default.
+2. Add a `sendXxxEmail(to, params)` method to `EmailService` that delegates
+   to `sendNotification(to, prefKey, {...})`.
+3. Call it from the business service via
+   `emailService.dispatchToUserId(userId, recipient => ...)` — that
+   helper does the Prisma lookup, gating and try/catch in one line.
+4. Add a row in the table above + the matching toggle key on
+   `/profile/notifications`.
+
 ## Related docs
 - US-E1 (this file): infrastructure + EmailService wrapper.
-- US-E2 (upcoming): React Email templates + branching from auth flows.
-- US-E3 (upcoming): notification emails for offers and messages.
+- US-E2: React Email templates + auth flows (verify, reset).
+- US-E3: notification emails for messages, offers, reviews.

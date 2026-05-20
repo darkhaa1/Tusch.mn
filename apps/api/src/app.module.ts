@@ -28,6 +28,10 @@ import { UserModule } from './modules/user/user.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['apps/api/.env', '.env'],
+      // In tests, process.env is fully populated by setup-e2e.ts. Skip
+      // the local .env files so dev-only secrets (e.g. a real Resend
+      // key) cannot leak into e2e runs and hit external services.
+      ignoreEnvFile: process.env.NODE_ENV === 'test',
       validate: validateEnv,
     }),
     ThrottlerModule.forRootAsync({
