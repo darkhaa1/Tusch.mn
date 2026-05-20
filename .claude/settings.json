@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx jest:*)",
+      "Bash(git stash:*)",
+      "Bash(pnpm --filter web build)"
+    ]
+  }
+}
