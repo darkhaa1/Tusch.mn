@@ -13,6 +13,23 @@ export function uniqueEmail(prefix: string): string {
   return `${prefix}+${Date.now()}+${Math.floor(Math.random() * 99999)}@e2e.tusch.test`;
 }
 
+/**
+ * Unique 8-digit Mongolian mobile number for a test run.
+ *
+ * Required because the User.phone column is now UNIQUE (US-A1). Two test
+ * users that share a phone hit a 409 on the second register.
+ *
+ * Leading digit is 6–9 (the valid MN mobile range, kept in sync with
+ * apps/api/src/common/utils/phone.ts).
+ */
+export function uniquePhone(): string {
+  const head = 6 + Math.floor(Math.random() * 4); // 6, 7, 8 or 9
+  const tail = Math.floor(Math.random() * 10_000_000)
+    .toString()
+    .padStart(7, "0");
+  return `${head}${tail}`;
+}
+
 interface RegisteredUser {
   id: string;
   email: string;
@@ -25,6 +42,7 @@ export async function apiRegister(opts: {
   password: string;
   firstName: string;
   lastName: string;
+  phone?: string;
 }): Promise<RegisteredUser> {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
@@ -34,7 +52,7 @@ export async function apiRegister(opts: {
       password: opts.password,
       firstName: opts.firstName,
       lastName: opts.lastName,
-      phone: "99000000",
+      phone: opts.phone ?? uniquePhone(),
       accountType: "basic",
       acceptedTerms: true,
     }),
