@@ -34,8 +34,12 @@ function buildConfig(values: Record<string, string | undefined>): ConfigService 
   } as unknown as ConfigService;
 }
 
+const mockPrisma = {
+  user: { findUnique: jest.fn() },
+} as any;
+
 function buildService(values: Record<string, string | undefined>): EmailService {
-  return new EmailService(buildConfig(values));
+  return new EmailService(buildConfig(values), mockPrisma);
 }
 
 beforeEach(() => {
@@ -221,24 +225,111 @@ describe('EmailService', () => {
       ]);
     });
 
-    it('sendOfferNotification throws "Not implemented yet"', async () => {
-      await expect(
-        enabledService().sendOfferNotification(
-          'a@b.com',
-          'off_1',
-          'accepted',
-        ),
-      ).rejects.toThrow(/Not implemented yet/);
+  });
+
+  describe('notification emails (US-E3 gating)', () => {
+    const enabled = () =>
+      buildService({
+        RESEND_API_KEY: 're_test_key',
+        RESEND_FROM_EMAIL: 'noreply@tusch.mn',
+        FRONTEND_URL: 'https://tusch.test',
+      });
+
+    const verifiedRecipient = {
+      email: 'a@b.com',
+      emailVerified: true,
+      firstName: 'Bataa',
+      emailNotifications: {} as unknown,
+    };
+
+    it('skips silently when the recipient email is not verified', async () => {
+      await enabled().sendNewMessageEmail(
+        { ...verifiedRecipient, emailVerified: false },
+        {
+          fromUserName: 'Other',
+          preview: 'Hello',
+          conversationUrl: 'https://tusch.test/messages',
+        },
+      );
+      expect(mockSend).not.toHaveBeenCalled();
     });
 
-    it('sendMessageNotification throws "Not implemented yet"', async () => {
-      await expect(
-        enabledService().sendMessageNotification(
-          'a@b.com',
-          'Bataa',
-          'lst_1',
-        ),
-      ).rejects.toThrow(/Not implemented yet/);
+    it('skips silently when the recipient has no email', async () => {
+      await enabled().sendNewOfferEmail(
+        { ...verifiedRecipient, email: null },
+        {
+          providerName: 'Bataa',
+          listingTitle: 'Tutor',
+          offerAmount: 1000,
+          offerUrl: 'https://tusch.test/listings/1',
+        },
+      );
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('skips silently when the user opted out of this kind', async () => {
+      await enabled().sendNewMessageEmail(
+        { ...verifiedRecipient, emailNotifications: { newMessage: false } },
+        {
+          fromUserName: 'Other',
+          preview: 'Hello',
+          conversationUrl: 'https://tusch.test/messages',
+        },
+      );
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('sends with the right tag and subject when all gates pass', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'mid_n' }, error: null });
+      await enabled().sendNewOfferEmail(verifiedRecipient, {
+        providerName: 'Bataa',
+        listingTitle: 'Math tutor',
+        offerAmount: 50_000,
+        offerUrl: 'https://tusch.test/listings/abc?offer=xyz',
+      });
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const payload = mockSend.mock.calls[0][0];
+      expect(payload.subject).toBe('Шинэ санал ирлээ — Math tutor');
+      expect(payload.tags).toEqual([{ name: 'type', value: 'newOffer' }]);
+      expect(payload.text).toContain('Bataa');
+      expect(payload.text).toContain(
+        'https://tusch.test/listings/abc?offer=xyz',
+      );
+    });
+
+    it('dispatchToUserId looks up the user and forwards on success', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'mid_d' }, error: null });
+      mockPrisma.user.findUnique.mockResolvedValueOnce({
+        email: 'a@b.com',
+        emailVerified: true,
+        firstName: 'Bataa',
+        emailNotifications: {},
+      });
+      const service = enabled();
+      service.dispatchToUserId('usr_1', (recipient) =>
+        service.sendNewReviewEmail(recipient, {
+          fromUserName: 'Other',
+          rating: 5,
+          commentSnippet: 'Great!',
+          profileUrl: 'https://tusch.test/u/usr_1',
+        }),
+      );
+      // dispatch is fire-and-forget — flush microtasks before asserting.
+      await new Promise((r) => setImmediate(r));
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      expect(mockSend.mock.calls[0][0].subject).toBe(
+        'Шинэ сэтгэгдэл — 5★',
+      );
+    });
+
+    it('dispatchToUserId swallows lookup errors', async () => {
+      mockPrisma.user.findUnique.mockRejectedValueOnce(new Error('db down'));
+      const service = enabled();
+      service.dispatchToUserId('usr_1', () => {
+        throw new Error('should not be called');
+      });
+      await new Promise((r) => setImmediate(r));
+      expect(mockSend).not.toHaveBeenCalled();
     });
   });
 });

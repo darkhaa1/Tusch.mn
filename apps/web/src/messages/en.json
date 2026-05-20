@@ -374,6 +374,24 @@
       "loadError": "Failed to load statistics."
     }
   },
+  "settings": {
+    "notifications": {
+      "title": "Email notifications",
+      "description": "Choose when to be notified by email.",
+      "loading": "Loading…"
+    }
+  },
+  "notif": {
+    "newMessage": "New message",
+    "newOffer": "New offer",
+    "offerAccepted": "Offer accepted",
+    "offerRejected": "Offer declined",
+    "offerCompleted": "Service completed",
+    "newReview": "New review",
+    "listingFlagged": "Listing flagged",
+    "weeklyDigest": "Weekly digest",
+    "transactionalNotice": "Mandatory emails (verify, password reset) are always sent."
+  },
   "errors": {
     "generic": "Something went wrong.",
     "phone": {

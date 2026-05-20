@@ -4,15 +4,22 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MessagesService } from './messages.service';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import {
   createMockPrismaService,
   MockPrismaService,
 } from '../../test-utils/prisma-mock';
 
 const mockNotifications = { create: jest.fn().mockResolvedValue({}) };
+const mockEmailService = {
+  dispatchToUserId: jest.fn(),
+  sendNewMessageEmail: jest.fn().mockResolvedValue(undefined),
+};
+const mockConfigService = { get: jest.fn().mockReturnValue(undefined) };
 
 describe('MessagesService', () => {
   let service: MessagesService;
@@ -26,6 +33,8 @@ describe('MessagesService', () => {
         MessagesService,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationsService, useValue: mockNotifications },
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 

@@ -4,9 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NotificationType } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 
 @Injectable()
@@ -14,7 +16,16 @@ export class MessagesService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private emailService: EmailService,
+    private config: ConfigService,
   ) {}
+
+  private get frontendUrl(): string {
+    return (this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000').replace(
+      /\/$/,
+      '',
+    );
+  }
 
   private userSelect = {
     id: true,
@@ -73,6 +84,15 @@ export class MessagesService {
       title: 'New message',
       body: `You received a message from ${senderName}.`,
     });
+
+    // Email is best-effort: notification UX must not depend on Resend.
+    this.emailService.dispatchToUserId(dto.recipientId, (recipient) =>
+      this.emailService.sendNewMessageEmail(recipient, {
+        fromUserName: senderName,
+        preview: dto.content,
+        conversationUrl: `${this.frontendUrl}/messages?userId=${senderId}`,
+      }),
+    );
 
     return message;
   }
