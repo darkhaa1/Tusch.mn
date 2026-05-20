@@ -61,15 +61,13 @@ test.describe("Phone auth UI", () => {
   async function openLoginModalToPhoneStep(page: import("@playwright/test").Page) {
     await page.goto("/");
     await page.getByRole("button", { name: "Нэвтрэх", exact: true }).click();
-    await page.getByRole("button", { name: "Утсаар нэвтрэх" }).click();
+    await page.getByTestId("auth-button-phone").click();
   }
 
   test("renders the phone entry inside the login modal", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Нэвтрэх", exact: true }).click();
-    await expect(
-      page.getByRole("button", { name: "Утсаар нэвтрэх" }),
-    ).toBeVisible();
+    await expect(page.getByTestId("auth-button-phone")).toBeVisible();
   });
 
   test("send-code button stays disabled until the phone is valid", async ({ page }) => {

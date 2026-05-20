@@ -22,7 +22,7 @@ export async function logout(
     queryClient.invalidateQueries({ queryKey: ['current-user'] });
   }
 
-  // If a NextAuth session exists (Google / Facebook), sign out there too
+  // If a NextAuth session exists (Google OAuth), sign out there too
   if (session?.user) {
     await signOut({ callbackUrl: '/' });
     return;
