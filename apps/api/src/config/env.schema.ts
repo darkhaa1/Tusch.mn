@@ -31,6 +31,17 @@ const envSchema = z
     FIREBASE_PROJECT_ID: z.string().min(1).optional(),
     FIREBASE_CLIENT_EMAIL: z.string().email().optional(),
     FIREBASE_PRIVATE_KEY: z.string().min(1).optional(),
+
+    // Resend (transactional email). Setting RESEND_API_KEY turns on the
+    // EmailService; RESEND_FROM_EMAIL becomes required in that case so we
+    // never accidentally send from an unverified address. RESEND_FROM_NAME
+    // is purely cosmetic ("Tusch" by default).
+    RESEND_API_KEY: z
+      .string()
+      .regex(/^re_/, 'RESEND_API_KEY must start with "re_"')
+      .optional(),
+    RESEND_FROM_EMAIL: z.string().email().optional(),
+    RESEND_FROM_NAME: z.string().min(1).default('Tusch'),
   })
   .superRefine((env, ctx) => {
     const firebaseVars = [
@@ -39,15 +50,25 @@ const envSchema = z
       ['FIREBASE_PRIVATE_KEY', env.FIREBASE_PRIVATE_KEY],
     ] as const;
     const anySet = firebaseVars.some(([, v]) => !!v);
-    if (!anySet) return;
-    for (const [name, value] of firebaseVars) {
-      if (!value) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [name],
-          message: `${name} is required when other FIREBASE_* variables are set`,
-        });
+    if (anySet) {
+      for (const [name, value] of firebaseVars) {
+        if (!value) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [name],
+            message: `${name} is required when other FIREBASE_* variables are set`,
+          });
+        }
       }
+    }
+
+    if (env.RESEND_API_KEY && !env.RESEND_FROM_EMAIL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['RESEND_FROM_EMAIL'],
+        message:
+          'RESEND_FROM_EMAIL is required when RESEND_API_KEY is set',
+      });
     }
   });
 
