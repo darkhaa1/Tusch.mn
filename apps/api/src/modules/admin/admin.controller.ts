@@ -30,6 +30,7 @@ import { AdminRole } from '@repo/shared';
 import { AuthenticatedRequest } from '../../common/types/request.types';
 import { AdminService } from './admin.service';
 import { AuditService } from '../audit/audit.service';
+import { EmailService } from '../email/email.service';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { AdminListingsQueryDto } from './dto/admin-listings-query.dto';
 import { AdminUpdateUserStatusDto } from './dto/admin-update-user-status.dto';
@@ -45,7 +46,30 @@ export class AdminController {
   constructor(
     private readonly service: AdminService,
     private readonly auditService: AuditService,
+    private readonly emailService: EmailService,
   ) {}
+
+  @Get('email/health')
+  @ApiOperation({
+    summary: 'Email service configuration snapshot (admin only)',
+    description:
+      'Reports whether the Resend wrapper is configured. Does not send a real email.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email config snapshot',
+    schema: {
+      example: {
+        configured: true,
+        fromEmail: 'noreply@tusch.mn',
+        fromName: 'Tusch',
+        domain: 'tusch.mn',
+      },
+    },
+  })
+  getEmailHealth() {
+    return this.emailService.health();
+  }
 
   private resolveAdminId(req: AuthenticatedRequest): string {
     const adminId = req.user.id;
