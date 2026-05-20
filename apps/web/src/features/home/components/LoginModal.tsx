@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { X } from 'lucide-react';
+import { Phone, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useLoginUser } from '@web/lib/hooks/useApi';
@@ -79,29 +79,40 @@ export default function LoginModal({ open, onClose }: Props) {
         <div className="space-y-3">
           {mode === 'choice' && (
             <>
-              <Button
-                variant="outline"
-                className="w-full justify-center"
-                onClick={() => signIn('google', { callbackUrl: '/profile' })}
-              >
-                {t('google')}
-              </Button>
+              {/* 1. PRIMARY — phone. Mongolia-first: visually dominant. */}
+              {phoneEnabled && (
+                <Button
+                  size="lg"
+                  className="w-full justify-center gap-2 text-base"
+                  onClick={() => setMode('phone')}
+                  data-testid="auth-button-phone"
+                >
+                  <Phone className="h-4 w-4" aria-hidden="true" />
+                  {tPhone('loginEntry')}
+                </Button>
+              )}
               <div className="flex items-center gap-2 text-muted-foreground text-sm justify-center">
                 <div className="h-px bg-border flex-1" /> {t('or')}{' '}
                 <div className="h-px bg-border flex-1" />
               </div>
-              <Button className="w-full justify-center" onClick={() => setMode('email')}>
+              {/* 2. Google — secondary outline. */}
+              <Button
+                variant="outline"
+                className="w-full justify-center"
+                onClick={() => signIn('google', { callbackUrl: '/profile' })}
+                data-testid="auth-button-google"
+              >
+                {t('google')}
+              </Button>
+              {/* 3. Email — least prominent (ghost link). */}
+              <Button
+                variant="ghost"
+                className="w-full justify-center text-sm text-muted-foreground"
+                onClick={() => setMode('email')}
+                data-testid="auth-button-email"
+              >
                 {t('emailLogin')}
               </Button>
-              {phoneEnabled && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-center"
-                  onClick={() => setMode('phone')}
-                >
-                  {tPhone('loginEntry')}
-                </Button>
-              )}
             </>
           )}
 

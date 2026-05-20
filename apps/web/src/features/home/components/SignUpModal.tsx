@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Phone, X } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -96,29 +96,42 @@ export default function SignupModal({ open, onClose }: Props) {
 
         {step === 1 && (
           <div className="space-y-3">
-            <Button variant="outline" className="w-full justify-center" onClick={() => signIn("google")}>
-              {t("google")}
-            </Button>
-            <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700" onClick={() => signIn("facebook")}>
-              {t("facebook")}
-            </Button>
+            {/* 1. PRIMARY — phone. Mongolia-first: visually dominant. */}
+            {phoneEnabled && (
+              <Button
+                size="lg"
+                className="w-full justify-center gap-2 text-base"
+                onClick={() => setStep('phone')}
+                data-testid="auth-button-phone"
+              >
+                <Phone className="h-4 w-4" aria-hidden="true" />
+                {tPhone("signupEntry")}
+              </Button>
+            )}
 
             <div className="flex items-center gap-2 text-muted-foreground text-sm justify-center">
               <div className="h-px bg-border flex-1" /> {t("or")} <div className="h-px bg-border flex-1" />
             </div>
 
-            <Button variant="outline" className="w-full justify-center" onClick={() => setStep(2)}>
+            {/* 2. Google — secondary outline. */}
+            <Button
+              variant="outline"
+              className="w-full justify-center"
+              onClick={() => signIn("google")}
+              data-testid="auth-button-google"
+            >
+              {t("google")}
+            </Button>
+
+            {/* 3. Email — least prominent. */}
+            <Button
+              variant="ghost"
+              className="w-full justify-center text-sm text-muted-foreground"
+              onClick={() => setStep(2)}
+              data-testid="auth-button-email"
+            >
               {t("emailSignup")}
             </Button>
-            {phoneEnabled && (
-              <Button
-                variant="outline"
-                className="w-full justify-center"
-                onClick={() => setStep('phone')}
-              >
-                {tPhone("signupEntry")}
-              </Button>
-            )}
           </div>
         )}
 

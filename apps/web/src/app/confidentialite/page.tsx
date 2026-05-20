@@ -34,7 +34,7 @@ export default function ConfidentialitePage() {
               хандсан хуудсуудын лог.
             </li>
             <li>
-              <strong>OAuth нэвтрэлт:</strong> Google эсвэл Facebook-ээр нэвтэрсэн тохиолдолд тухайн платформаас
+              <strong>OAuth нэвтрэлт:</strong> Google-ээр нэвтэрсэн тохиолдолд тухайн платформаас
               нэр болон имэйл хаягийг авна.
             </li>
           </ul>

@@ -38,7 +38,6 @@ export default function Footer() {
         <div>
           <h4 className="font-semibold mb-2">Socials</h4>
           <ul className="space-y-1">
-            <li>Facebook</li>
             <li>Twitter</li>
             <li>Instagram</li>
           </ul>
