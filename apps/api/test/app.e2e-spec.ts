@@ -1142,7 +1142,10 @@ describe('App (e2e)', () => {
       password,
       firstName: 'User',
       lastName: 'A',
-      phone: `9${String(ts).slice(-7)}`,
+      // Distinct first digit from User B (8 vs 7) so the values can never
+      // collide on the User.phone UNIQUE constraint, regardless of which
+      // digit happens to land at position len-7 of Date.now().
+      phone: `8${String(ts).slice(-7)}`,
       accountType: 'basic',
     }).expect(201);
 
@@ -1151,7 +1154,7 @@ describe('App (e2e)', () => {
       password,
       firstName: 'User',
       lastName: 'B',
-      phone: `91${String(ts).slice(-6)}`,
+      phone: `7${String(ts).slice(-7)}`,
       accountType: 'basic',
     }).expect(201);
     const userBId = userBRes.body.id as string;

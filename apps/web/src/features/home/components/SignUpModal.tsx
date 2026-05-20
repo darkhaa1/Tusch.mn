@@ -15,6 +15,8 @@ import {
   Button,
   Input,
 } from "@web/components/ui";
+import { PhoneSignInForm } from "@web/features/auth/PhoneSignInForm";
+import { isFirebasePhoneAuthConfigured } from "@web/lib/firebase/client";
 
 type Props = {
   open: boolean;
@@ -23,7 +25,9 @@ type Props = {
 
 export default function SignupModal({ open, onClose }: Props) {
   const t = useTranslations("auth.signUpModal");
-  const [step, setStep] = useState(1);
+  const tPhone = useTranslations("auth.phone");
+  const phoneEnabled = isFirebasePhoneAuthConfigured();
+  const [step, setStep] = useState<1 | 2 | 3 | 'phone'>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -79,12 +83,12 @@ export default function SignupModal({ open, onClose }: Props) {
           <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
-        {step > 1 ? (
+        {step !== 1 && step !== 'phone' ? (
           <Button
             variant="ghost"
             size="sm"
             className="-ml-1 inline-flex items-center gap-2 text-sm text-muted-foreground"
-            onClick={() => setStep(step - 1)}
+            onClick={() => setStep((step as number) - 1 as 1 | 2)}
           >
             {t("goBack")}
           </Button>
@@ -106,7 +110,24 @@ export default function SignupModal({ open, onClose }: Props) {
             <Button variant="outline" className="w-full justify-center" onClick={() => setStep(2)}>
               {t("emailSignup")}
             </Button>
+            {phoneEnabled && (
+              <Button
+                variant="outline"
+                className="w-full justify-center"
+                onClick={() => setStep('phone')}
+              >
+                {tPhone("signupEntry")}
+              </Button>
+            )}
           </div>
+        )}
+
+        {step === 'phone' && (
+          <PhoneSignInForm
+            mode="login"
+            onSuccess={onClose}
+            onCancel={() => setStep(1)}
+          />
         )}
 
         {step === 2 && (

@@ -121,3 +121,36 @@ export async function resendVerification() {
     method: "POST",
   });
 }
+
+export interface PhoneLoginResponse {
+  user: {
+    id: string;
+    email: string | null;
+    phone: string | null;
+    phoneVerified: boolean;
+    avatarUrl: string | null;
+    adminRole?: string;
+    isAdmin?: boolean;
+  };
+}
+
+export async function phoneLogin(idToken: string, phone: string) {
+  return apiFetch<PhoneLoginResponse>("/auth/phone/login", {
+    method: "POST",
+    body: JSON.stringify({ idToken, phone }),
+  });
+}
+
+export async function phoneLinkRequest(idToken: string, phone: string) {
+  return apiFetch<{ user: CurrentUser }>("/auth/phone/link", {
+    method: "POST",
+    body: JSON.stringify({ idToken, phone }),
+  });
+}
+
+export async function phoneUnlinkRequest(password?: string) {
+  return apiFetch<{ success: boolean }>("/auth/phone/unlink", {
+    method: "POST",
+    body: JSON.stringify(password ? { password } : {}),
+  });
+}

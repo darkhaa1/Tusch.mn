@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import AppShell from "@web/components/layout/AppShell";
 import { useChangePassword, useCurrentUser, useUpdateCurrentUser } from "@web/lib/hooks/useApi";
 import { Button, Card, CardContent, Input } from "@web/components/ui";
+import { PhoneLinkSection } from "@web/features/profile/components/PhoneLinkSection";
 
 type ProfileIdentifiantsFormProps = {
   currentUser: ReturnType<typeof useCurrentUser>["data"];
@@ -95,6 +96,8 @@ function ProfileIdentifiantsForm({
           </div>
         </CardContent>
       </Card>
+
+      <PhoneLinkSection />
 
       <Card className="border border-border/80">
         <CardContent className="space-y-4">
