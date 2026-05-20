@@ -37,6 +37,20 @@ export type CurrentUser = {
   serviceZones?: string[];
 };
 
+/**
+ * Snapshot of the auth methods configured on the current user, returned
+ * by GET /users/me/auth-methods. Powers the unified security settings UI
+ * and the security-improvement banner — never exposed for other users
+ * (anti-IDOR).
+ */
+export type AuthMethods = {
+  email: { value: string; verified: boolean } | null;
+  phone: { value: string; verified: boolean } | null;
+  hasPassword: boolean;
+  canUnlinkEmail: boolean;
+  canUnlinkPhone: boolean;
+};
+
 export type ListingUser = {
   id: string;
   firstName: string;

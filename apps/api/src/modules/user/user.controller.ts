@@ -58,6 +58,64 @@ export class UserController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Get('me/auth-methods')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get the auth methods configured on the current user',
+    description:
+      'Returns email, phone, hasPassword + canUnlinkEmail / canUnlinkPhone ' +
+      'guard flags. Values are only returned for the authenticated user — ' +
+      'callers cannot inspect other users (anti-IDOR).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Auth methods snapshot',
+    schema: {
+      example: {
+        email: { value: 'darkhaa@example.com', verified: true },
+        phone: { value: '+97699112233', verified: true },
+        hasPassword: true,
+        canUnlinkEmail: true,
+        canUnlinkPhone: true,
+      },
+    },
+  })
+  async getAuthMethods(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.id!;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        email: true,
+        emailVerified: true,
+        phone: true,
+        phoneVerified: true,
+        password: true,
+      },
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const hasEmail = !!user.email;
+    const hasPhone = !!user.phone;
+    const hasPassword = !!user.password;
+    // Count distinct auth methods. Email alone (without password) is not a
+    // login method — it gates verification but cannot be used to sign in.
+    const methodCount =
+      (hasEmail && hasPassword ? 1 : 0) + (hasPhone ? 1 : 0);
+
+    return {
+      email: hasEmail
+        ? { value: user.email, verified: user.emailVerified }
+        : null,
+      phone: hasPhone
+        ? { value: user.phone, verified: user.phoneVerified }
+        : null,
+      hasPassword,
+      canUnlinkEmail: hasEmail && methodCount > 1,
+      canUnlinkPhone: hasPhone && methodCount > 1,
+    };
+  }
+
   @Get('me/email-preferences')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
