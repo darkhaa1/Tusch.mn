@@ -36,11 +36,18 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { PhoneLoginDto } from './dto/phone-login.dto';
+import { LinkPhoneDto } from './dto/link-phone.dto';
+import { UnlinkPhoneDto } from './dto/unlink-phone.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Controller('auth')
 @ApiTags('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private auditService: AuditService,
+  ) {}
 
   private get cookieOptions() {
     return {
@@ -367,5 +374,132 @@ export class AuthController {
         isAdmin: result.isAdmin,
       },
     };
+  }
+
+  // ── Phone auth ───────────────────────────────────────────────────────────
+
+  @Post('phone/login')
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiOperation({
+    summary: 'Login or register via a Firebase phone ID token',
+    description:
+      'Verifies the Firebase ID token server-side, matches or creates the user, ' +
+      'and sets the standard `accessToken` cookie used by every other Tusch endpoint.',
+  })
+  @ApiBody({ type: PhoneLoginDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Login successful (JWT cookie)',
+    schema: {
+      example: {
+        user: {
+          id: 'usr_1',
+          phone: '+97699112233',
+          phoneVerified: true,
+          email: null,
+          avatarUrl: null,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid phone or phone mismatch' })
+  @ApiResponse({ status: 401, description: 'Invalid Firebase ID token' })
+  @ApiResponse({ status: 503, description: 'Phone auth not configured' })
+  async phoneLogin(
+    @Body() body: PhoneLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.loginOrRegisterWithPhone(body);
+
+    res.cookie('accessToken', result.accessToken, this.cookieOptions);
+
+    void this.auditService.log({
+      actorId: result.id,
+      action: 'PHONE_LOGIN',
+      targetType: 'USER',
+      targetId: result.id,
+      metadata: { phone: result.phone ?? '', created: result.created },
+    });
+
+    return {
+      user: {
+        id: result.id,
+        email: result.email ?? null,
+        phone: result.phone ?? null,
+        phoneVerified: result.phoneVerified ?? false,
+        avatarUrl: result.avatarUrl ?? null,
+        adminRole: result.adminRole,
+        isAdmin: result.isAdmin,
+      },
+    };
+  }
+
+  @Post('phone/link')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOperation({
+    summary: 'Attach a Firebase-verified phone to the authenticated user',
+  })
+  @ApiBody({ type: LinkPhoneDto })
+  @ApiResponse({ status: 201, description: 'Phone linked' })
+  @ApiResponse({ status: 400, description: 'Invalid phone or phone mismatch' })
+  @ApiResponse({ status: 401, description: 'Unauthorized or invalid token' })
+  @ApiResponse({
+    status: 409,
+    description: 'Phone or Firebase identity already linked to another user',
+  })
+  @ApiResponse({ status: 503, description: 'Phone auth not configured' })
+  async phoneLink(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: LinkPhoneDto,
+  ) {
+    const userId = req.user.id;
+    if (!userId) throw new UnauthorizedException('Unauthorized');
+
+    const user = await this.authService.linkPhoneToExistingUser(userId, body);
+
+    void this.auditService.log({
+      actorId: userId,
+      action: 'PHONE_LINK',
+      targetType: 'USER',
+      targetId: userId,
+      metadata: { phone: user.phone ?? '' },
+    });
+
+    return { user };
+  }
+
+  @Post('phone/unlink')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOperation({
+    summary: 'Remove the phone factor from the authenticated user',
+  })
+  @ApiBody({ type: UnlinkPhoneDto })
+  @ApiResponse({ status: 201, description: 'Phone unlinked' })
+  @ApiResponse({
+    status: 400,
+    description: 'Phone is the only auth method on the account',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized or invalid password' })
+  async phoneUnlink(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UnlinkPhoneDto,
+  ) {
+    const userId = req.user.id;
+    if (!userId) throw new UnauthorizedException('Unauthorized');
+
+    const result = await this.authService.unlinkPhoneFromUser(userId, body);
+
+    void this.auditService.log({
+      actorId: userId,
+      action: 'PHONE_UNLINK',
+      targetType: 'USER',
+      targetId: userId,
+    });
+
+    return result;
   }
 }

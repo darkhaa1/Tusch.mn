@@ -1,6 +1,9 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -12,13 +15,29 @@ import { AuthDto } from './dto/register.dto';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { AVATAR_UPLOAD_DIR } from '../../common/multer/constants';
 import { randomUUID, randomBytes, createHash } from 'crypto';
+import { FirebaseService } from '../firebase/firebase.service';
+import { normalizeMongolianPhone } from '../../common/utils/phone';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private firebaseService: FirebaseService,
   ) {}
+
+  /** Sign the standard Tusch access token used by all auth flows. */
+  private signAccessToken(user: {
+    id: string;
+    email: string | null;
+    adminRole: string;
+  }) {
+    return this.jwtService.signAsync({
+      sub: user.id,
+      email: user.email ?? undefined,
+      adminRole: user.adminRole,
+    });
+  }
 
   private buildEmailVerificationToken() {
     const rawToken = randomBytes(32).toString('hex');
@@ -98,7 +117,9 @@ export class AuthService {
         lastName: body.lastName ?? '',
         avatarUrl: body.avatarUrl,
         password: placeholderPassword,
-        phone: '',
+        // phone is now optional + UNIQUE; writing '' here would collide on
+        // the second OAuth signup (every user would share phone='').
+        phone: null,
         accountType: 'client',
         emailVerified: true,
       },
@@ -331,6 +352,194 @@ export class AuthService {
     return response;
   }
 
+  /**
+   * Log in (or auto-register on first sight) a user via a Firebase phone
+   * ID token. Returns the same shape as `login()`/`oauthLogin()` so the
+   * controller can drop it into the `accessToken` cookie identically.
+   */
+  async loginOrRegisterWithPhone(body: { idToken: string; phone: string }) {
+    if (!this.firebaseService.isEnabled()) {
+      throw new ServiceUnavailableException('Phone auth is not configured');
+    }
+
+    const normalized = normalizeMongolianPhone(body.phone);
+    if (!normalized) {
+      throw new BadRequestException('Invalid phone number');
+    }
+
+    const decoded = await this.firebaseService.verifyIdToken(body.idToken);
+    if (!decoded) {
+      throw new UnauthorizedException('Invalid Firebase ID token');
+    }
+
+    if (decoded.phone_number !== normalized) {
+      throw new BadRequestException(
+        'Phone number does not match the Firebase token',
+      );
+    }
+
+    let user = await this.prisma.user.findUnique({
+      where: { firebaseUid: decoded.uid },
+    });
+    let created = false;
+
+    if (!user) {
+      const byPhone = await this.prisma.user.findUnique({
+        where: { phone: normalized },
+      });
+
+      if (byPhone) {
+        // Phone is known but never had a firebaseUid attached (e.g. legacy
+        // user that registered with phone via the old email/password path).
+        // Link it on first phone login.
+        user = await this.prisma.user.update({
+          where: { id: byPhone.id },
+          data: {
+            firebaseUid: decoded.uid,
+            phoneVerified: true,
+            phoneVerifiedAt: new Date(),
+          },
+        });
+      } else {
+        user = await this.prisma.user.create({
+          data: {
+            phone: normalized,
+            phoneVerified: true,
+            phoneVerifiedAt: new Date(),
+            firebaseUid: decoded.uid,
+            firstName: '',
+            lastName: '',
+            accountType: 'client',
+          },
+        });
+        created = true;
+      }
+    }
+
+    if (user.deletedAt) {
+      throw new UnauthorizedException('Бүртгэл устгагдсан байна');
+    }
+
+    const accessToken = await this.signAccessToken(user);
+
+    return {
+      ...this.sanitizeUser(user),
+      accessToken,
+      created,
+    };
+  }
+
+  /**
+   * Attach a Firebase-verified phone to the user identified by `userId`.
+   * Caller (controller) is responsible for proving the userId via JWT —
+   * this method does NOT trust any phone-derived identity.
+   */
+  async linkPhoneToExistingUser(
+    userId: string,
+    body: { idToken: string; phone: string },
+  ) {
+    if (!this.firebaseService.isEnabled()) {
+      throw new ServiceUnavailableException('Phone auth is not configured');
+    }
+
+    const normalized = normalizeMongolianPhone(body.phone);
+    if (!normalized) {
+      throw new BadRequestException('Invalid phone number');
+    }
+
+    const decoded = await this.firebaseService.verifyIdToken(body.idToken);
+    if (!decoded) {
+      throw new UnauthorizedException('Invalid Firebase ID token');
+    }
+
+    if (decoded.phone_number !== normalized) {
+      throw new BadRequestException(
+        'Phone number does not match the Firebase token',
+      );
+    }
+
+    const me = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!me) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const collision = await this.prisma.user.findFirst({
+      where: {
+        AND: [
+          { id: { not: userId } },
+          {
+            OR: [{ phone: normalized }, { firebaseUid: decoded.uid }],
+          },
+        ],
+      },
+      select: { id: true },
+    });
+    if (collision) {
+      throw new ConflictException(
+        'Phone or Firebase identity is already linked to another account',
+      );
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        phone: normalized,
+        phoneVerified: true,
+        phoneVerifiedAt: new Date(),
+        firebaseUid: decoded.uid,
+      },
+    });
+
+    return this.sanitizeUser(updated);
+  }
+
+  /**
+   * Remove the phone factor from the user identified by `userId`. Refuses
+   * if the user would be left with no way to authenticate.
+   */
+  async unlinkPhoneFromUser(
+    userId: string,
+    body: { password?: string },
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const hasEmailPassword = !!user.email && !!user.password;
+    if (!hasEmailPassword) {
+      throw new BadRequestException(
+        'Cannot unlink phone — it is the only auth method on this account',
+      );
+    }
+
+    if (body.password) {
+      const ok = await bcrypt.compare(body.password, user.password!);
+      if (!ok) {
+        throw new UnauthorizedException('Invalid password');
+      }
+    }
+
+    const previousUid = user.firebaseUid;
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        phone: null,
+        phoneVerified: false,
+        phoneVerifiedAt: null,
+        firebaseUid: null,
+      },
+    });
+
+    if (previousUid) {
+      // Fire-and-forget — Firebase failures should not break the API call.
+      void this.firebaseService.deleteFirebaseUser(previousUid);
+    }
+
+    return { success: true };
+  }
+
   sanitizeUser(user: any) {
     const {
       password: _password,
@@ -338,6 +547,7 @@ export class AuthService {
       resetTokenExp: _resetTokenExp,
       emailVerifyToken: _emailVerifyToken,
       emailVerifyTokenExp: _emailVerifyTokenExp,
+      firebaseUid: _firebaseUid,
       ...rest
     } = user;
     void _password;
@@ -345,6 +555,7 @@ export class AuthService {
     void _resetTokenExp;
     void _emailVerifyToken;
     void _emailVerifyTokenExp;
+    void _firebaseUid;
     return rest;
   }
 }
