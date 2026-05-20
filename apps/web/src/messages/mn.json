@@ -89,6 +89,13 @@
       "unlinkPasswordPrompt": "Баталгаажуулахын тулд нууц үгээ оруулна уу",
       "unlinkUnavailable": "Бусад нэвтрэх арга байхгүй учраас утсаа салгаж болохгүй",
       "notConfigured": "Утсаар нэвтрэх боломжгүй"
+    },
+    "banner": {
+      "unverifiedEmail": "Имэйлээ баталгаажуулна уу",
+      "resend": "Дахин илгээх",
+      "resending": "Илгээж байна…",
+      "resendSent": "Илгээгдлээ",
+      "resendError": "Алдаа гарлаа"
     }
   },
   "listings": {
