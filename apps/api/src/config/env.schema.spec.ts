@@ -48,4 +48,42 @@ describe('validateEnv', () => {
       validateEnv({ ...validEnv, DATABASE_URL: 'not-a-url' }),
     ).toThrow('DATABASE_URL');
   });
+
+  describe('Firebase Admin vars', () => {
+    it('allows all three to be absent (phone auth disabled)', () => {
+      expect(() => validateEnv(validEnv)).not.toThrow();
+    });
+
+    it('accepts all three together', () => {
+      expect(() =>
+        validateEnv({
+          ...validEnv,
+          FIREBASE_PROJECT_ID: 'proj',
+          FIREBASE_CLIENT_EMAIL: 'sa@proj.iam.gserviceaccount.com',
+          FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----',
+        }),
+      ).not.toThrow();
+    });
+
+    it('fails if FIREBASE_PROJECT_ID is set without the other two', () => {
+      expect(() =>
+        validateEnv({ ...validEnv, FIREBASE_PROJECT_ID: 'proj' }),
+      ).toThrow(/FIREBASE_CLIENT_EMAIL|FIREBASE_PRIVATE_KEY/);
+    });
+
+    it('fails if FIREBASE_CLIENT_EMAIL is set without the other two', () => {
+      expect(() =>
+        validateEnv({
+          ...validEnv,
+          FIREBASE_CLIENT_EMAIL: 'sa@proj.iam.gserviceaccount.com',
+        }),
+      ).toThrow(/FIREBASE_PROJECT_ID|FIREBASE_PRIVATE_KEY/);
+    });
+
+    it('fails if FIREBASE_PRIVATE_KEY is set without the other two', () => {
+      expect(() =>
+        validateEnv({ ...validEnv, FIREBASE_PRIVATE_KEY: 'key' }),
+      ).toThrow(/FIREBASE_PROJECT_ID|FIREBASE_CLIENT_EMAIL/);
+    });
+  });
 });
