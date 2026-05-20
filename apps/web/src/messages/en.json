@@ -66,6 +66,30 @@
       "submitting": "Please wait\u2026",
       "passwordMismatch": "Passwords do not match",
       "success": "Registration successful!"
+    },
+    "phone": {
+      "tab": "Phone",
+      "loginEntry": "Sign in with phone",
+      "signupEntry": "Sign up with phone",
+      "title": "Sign in with phone",
+      "placeholder": "9911 2233",
+      "sendCode": "Send code",
+      "sending": "Sending\u2026",
+      "codeSent": "Code sent",
+      "enterCode": "Enter the code",
+      "codePlaceholder": "6-digit code",
+      "verify": "Verify",
+      "verifying": "Verifying\u2026",
+      "changePhone": "Change number",
+      "resend": "Resend",
+      "resendIn": "Resend ({seconds}s)",
+      "verified": "Verified",
+      "link": "Link phone",
+      "unlink": "Unlink phone",
+      "unlinkConfirm": "Are you sure you want to unlink your phone?",
+      "unlinkPasswordPrompt": "Enter your password to confirm",
+      "unlinkUnavailable": "Cannot unlink \u2014 phone is the only sign-in method on this account",
+      "notConfigured": "Phone sign-in is not available"
     }
   },
   "listings": {
@@ -345,7 +369,16 @@
     }
   },
   "errors": {
-    "generic": "Something went wrong."
+    "generic": "Something went wrong.",
+    "phone": {
+      "invalid": "Invalid phone number",
+      "tooManyRequests": "Too many attempts, please try again later",
+      "invalidCode": "Invalid code",
+      "codeExpired": "Code expired",
+      "alreadyUsed": "This phone number is already linked to another account",
+      "cannotUnlink": "Cannot unlink — phone is the only sign-in method on this account",
+      "generic": "Something went wrong, please try again"
+    }
   },
   "reviews": {
     "create": {

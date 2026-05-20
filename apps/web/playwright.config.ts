@@ -112,6 +112,14 @@ export default defineConfig({
         NEXT_PUBLIC_API_URL: API_URL,
         NEXTAUTH_SECRET,
         NEXTAUTH_URL: BASE_URL,
+        // Fake Firebase config so the phone-auth UI is rendered. Tests
+        // bypass Firebase entirely via window.__tuschPhoneAuthTestOverride
+        // and route-intercept the backend, so these values are never used
+        // for real network calls.
+        NEXT_PUBLIC_FIREBASE_API_KEY: "test-key",
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "test.firebaseapp.com",
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: "test-project",
+        NEXT_PUBLIC_FIREBASE_APP_ID: "1:1:web:test",
       },
     },
   ],

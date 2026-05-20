@@ -16,6 +16,10 @@ import {
   Input,
 } from '@web/components/ui';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import { PhoneSignInForm } from '@web/features/auth/PhoneSignInForm';
+import { isFirebasePhoneAuthConfigured } from '@web/lib/firebase/client';
+
+type Mode = 'choice' | 'email' | 'phone';
 
 type Props = {
   open: boolean;
@@ -24,7 +28,8 @@ type Props = {
 
 export default function LoginModal({ open, onClose }: Props) {
   const t = useTranslations('auth.loginModal');
-  const [showForm, setShowForm] = useState(false);
+  const tPhone = useTranslations('auth.phone');
+  const [mode, setMode] = useState<Mode>('choice');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -32,6 +37,7 @@ export default function LoginModal({ open, onClose }: Props) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const router = useRouter();
   const loginMutation = useLoginUser();
+  const phoneEnabled = isFirebasePhoneAuthConfigured();
 
   const handleEmailLogin = async () => {
     setLoading(true);
@@ -66,12 +72,12 @@ export default function LoginModal({ open, onClose }: Props) {
             </Button>
           </div>
           <DialogDescription>
-            {showForm ? t('descriptionEmail') : t('descriptionMethods')}
+            {mode === 'email' ? t('descriptionEmail') : t('descriptionMethods')}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
-          {!showForm ? (
+          {mode === 'choice' && (
             <>
               <Button
                 variant="outline"
@@ -84,11 +90,22 @@ export default function LoginModal({ open, onClose }: Props) {
                 <div className="h-px bg-border flex-1" /> {t('or')}{' '}
                 <div className="h-px bg-border flex-1" />
               </div>
-              <Button className="w-full justify-center" onClick={() => setShowForm(true)}>
+              <Button className="w-full justify-center" onClick={() => setMode('email')}>
                 {t('emailLogin')}
               </Button>
+              {phoneEnabled && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-center"
+                  onClick={() => setMode('phone')}
+                >
+                  {tPhone('loginEntry')}
+                </Button>
+              )}
             </>
-          ) : (
+          )}
+
+          {mode === 'email' && (
             <>
               <Input
                 type="email"
@@ -122,11 +139,19 @@ export default function LoginModal({ open, onClose }: Props) {
               <Button
                 variant="ghost"
                 className="w-full justify-center text-sm text-muted-foreground"
-                onClick={() => setShowForm(false)}
+                onClick={() => setMode('choice')}
               >
                 {t('goBack')}
               </Button>
             </>
+          )}
+
+          {mode === 'phone' && (
+            <PhoneSignInForm
+              mode="login"
+              onSuccess={onClose}
+              onCancel={() => setMode('choice')}
+            />
           )}
         </div>
       </DialogContent>
