@@ -1,9 +1,16 @@
 import type { BrowserContext, Page } from "@playwright/test";
+import { encode as nextAuthEncode } from "next-auth/jwt";
 
 const API_URL =
   process.env.TEST_API_URL ??
   process.env.NEXT_PUBLIC_API_URL ??
   "http://localhost:3410";
+
+const BASE_URL =
+  process.env.TEST_BASE_URL ?? "http://localhost:3100";
+
+const NEXTAUTH_SECRET =
+  process.env.NEXTAUTH_SECRET ?? "test-nextauth-secret-min-32-chars-long";
 
 /**
  * Injects the `accessToken` cookie from a raw Set-Cookie header string
@@ -33,6 +40,49 @@ export async function injectAuthCookie(
   ]);
 
   void apiOrigin; // used for documentation
+}
+
+/**
+ * Mints a NextAuth session-token cookie and injects it into the browser
+ * context. Required for any test that navigates to a middleware-gated
+ * route (`/settings/*`, `/dashboard/*`, `/messages/*`, `/offers/*`,
+ * `/admin/*`) — see apps/web/src/middleware.ts. The mint uses the same
+ * NEXTAUTH_SECRET passed to next start (set in playwright.config.ts), so
+ * `getToken()` on the server side accepts it.
+ *
+ * For tests that only need API auth (e.g. /profile, which is not gated
+ * by the middleware), use injectAuthCookie alone.
+ */
+export async function injectNextAuthSession(
+  context: BrowserContext,
+  payload: {
+    email: string;
+    name?: string;
+    adminRole?: "USER" | "MODERATOR" | "ADMIN";
+  },
+): Promise<void> {
+  const token = await nextAuthEncode({
+    token: {
+      email: payload.email,
+      name: payload.name ?? "Test User",
+      adminRole: payload.adminRole ?? "USER",
+      // Future-proofing: any other claims required by jwt callback can
+      // be added here without breaking existing callers.
+    },
+    secret: NEXTAUTH_SECRET,
+  });
+
+  await context.addCookies([
+    {
+      name: "next-auth.session-token",
+      value: token,
+      domain: new URL(BASE_URL).hostname,
+      path: "/",
+      httpOnly: true,
+      secure: false,
+      sameSite: "Lax",
+    },
+  ]);
 }
 
 /**
