@@ -19,6 +19,8 @@ export type CurrentUser = {
   firstName?: string;
   lastName?: string;
   phone?: string;
+  phoneVerified?: boolean;
+  phoneVerifiedAt?: string | null;
   accountType?: string;
   avatarUrl?: string | null;
   role?: UserRole;

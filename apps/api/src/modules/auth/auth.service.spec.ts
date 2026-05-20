@@ -4,6 +4,7 @@ import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../database/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import {
   createMockPrismaService,
   MockPrismaService,
@@ -13,6 +14,13 @@ jest.mock('bcrypt');
 
 const mockJwtService = {
   signAsync: jest.fn().mockResolvedValue('mock-jwt-token'),
+};
+
+const mockFirebaseService = {
+  isEnabled: jest.fn().mockReturnValue(false),
+  verifyIdToken: jest.fn().mockResolvedValue(null),
+  getUserByPhone: jest.fn().mockResolvedValue(null),
+  deleteFirebaseUser: jest.fn().mockResolvedValue(undefined),
 };
 
 describe('AuthService', () => {
@@ -27,6 +35,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: FirebaseService, useValue: mockFirebaseService },
       ],
     }).compile();
 

@@ -25,7 +25,16 @@ export type AuditLogEntry =
   | (AuditBase & { action: 'ADMIN_RESTORE_LISTING'; metadata?: Record<string, never> })
   | (AuditBase & { action: 'USER_DELETE_LISTING'; metadata?: Record<string, never> })
   | (AuditBase & { action: 'USER_CANCEL_OFFER'; metadata?: Record<string, never> })
-  | (AuditBase & { action: 'LOGIN_SUSPICIOUS'; metadata?: Record<string, unknown> });
+  | (AuditBase & { action: 'LOGIN_SUSPICIOUS'; metadata?: Record<string, unknown> })
+  | (AuditBase & {
+      action: 'PHONE_LOGIN';
+      metadata: { phone: string; created: boolean };
+    })
+  | (AuditBase & { action: 'PHONE_LINK'; metadata: { phone: string } })
+  | (AuditBase & {
+      action: 'PHONE_UNLINK';
+      metadata?: Record<string, never>;
+    });
 
 @Injectable()
 export class AuditService {
