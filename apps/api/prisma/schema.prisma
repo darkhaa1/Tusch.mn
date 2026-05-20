@@ -85,11 +85,14 @@ enum VerificationStatus {
 
 model User {
   id          String   @id @default(cuid())
-  email       String   @unique
-  password    String
+  email       String?  @unique
+  password    String?
   firstName   String
   lastName    String
-  phone       String
+  phone       String?  @unique
+  phoneVerified    Boolean   @default(false)
+  phoneVerifiedAt  DateTime?
+  firebaseUid      String?   @unique
   accountType String
   role        UserRole  @default(CLIENT)
   isAdmin     Boolean   @default(false)
@@ -97,6 +100,7 @@ model User {
   status      UserStatus @default(ACTIVE)
   avatarUrl   String?
   emailVerified    Boolean  @default(false)
+  emailVerifiedAt  DateTime?
   emailVerifyToken String?  @unique
   emailVerifyTokenExp DateTime?
   resetToken     String?   @unique
@@ -130,6 +134,8 @@ model User {
   deletedAt   DateTime?
 
   @@index([deletedAt])
+  @@index([phone])
+  @@index([firebaseUid])
 }
 
 model Listing {

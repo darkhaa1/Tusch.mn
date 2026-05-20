@@ -10,6 +10,7 @@ import { CustomThrottlerGuard } from './common/throttler';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { FirebaseModule } from './modules/firebase/firebase.module';
 import { HealthModule } from './modules/health/health.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { ListingsModule } from './modules/listings/listings.module';
@@ -47,6 +48,7 @@ import { UserModule } from './modules/user/user.module';
     }),
     HealthModule,
     MetricsModule,
+    FirebaseModule,
     AuthModule,
     AuditModule,
     UserModule,

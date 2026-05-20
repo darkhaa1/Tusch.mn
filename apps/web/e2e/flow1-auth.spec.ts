@@ -9,7 +9,7 @@
 
 import { test, expect } from "@playwright/test";
 import { injectAuthCookie } from "./helpers/auth";
-import { seedUser, uniqueEmail, apiLogin } from "./helpers/api";
+import { seedUser, uniqueEmail, uniquePhone, apiLogin } from "./helpers/api";
 
 const API_URL =
   process.env.TEST_API_URL ??
@@ -75,7 +75,7 @@ test.describe("Flow 1 — Auth", () => {
         password: "CorrectPassword123!",
         firstName: "Wrong",
         lastName: "PW",
-        phone: "99000001",
+        phone: uniquePhone(),
         accountType: "basic",
       }),
     });
