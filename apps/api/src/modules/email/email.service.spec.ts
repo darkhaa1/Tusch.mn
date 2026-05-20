@@ -11,6 +11,20 @@ jest.mock('resend', () => ({
   })),
 }));
 
+// `@react-email/render` ships ESM-only and uses a dynamic import that
+// Jest cannot resolve without --experimental-vm-modules. Stub it: the
+// rendered HTML is replaced by a deterministic string that embeds the
+// values we care about, which is enough to assert template wiring.
+jest.mock('@react-email/render', () => ({
+  render: jest.fn(async (element: any) => {
+    const props = (element?.props ?? {}) as Record<string, unknown>;
+    const fields = Object.entries(props)
+      .map(([k, v]) => `${k}=${String(v)}`)
+      .join('|');
+    return `<rendered-template ${fields}>`;
+  }),
+}));
+
 function buildConfig(values: Record<string, string | undefined>): ConfigService {
   return {
     get: <T = string>(key: string, defaultValue?: T): T | undefined => {
@@ -152,23 +166,59 @@ describe('EmailService', () => {
     });
   });
 
-  describe('US-E2 stub methods', () => {
+  describe('high-level methods', () => {
     const enabledService = () =>
       buildService({
         RESEND_API_KEY: 're_test_key',
         RESEND_FROM_EMAIL: 'noreply@tusch.mn',
+        FRONTEND_URL: 'https://tusch.test',
       });
 
-    it('sendEmailVerification throws "Not implemented yet"', async () => {
-      await expect(
-        enabledService().sendEmailVerification('a@b.com', 'tok'),
-      ).rejects.toThrow(/Not implemented yet/);
+    it('sendEmailVerification renders the template and sends with the verify URL', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'mid_v' }, error: null });
+
+      await enabledService().sendEmailVerification(
+        'a@b.com',
+        'tok_abc',
+        'Bataa',
+      );
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const payload = mockSend.mock.calls[0][0];
+      expect(payload.to).toBe('a@b.com');
+      expect(payload.subject).toBe('Имэйлээ баталгаажуулна уу');
+      // Text fallback is built in-service (not via render), so it embeds
+      // both the user name and the verification URL deterministically.
+      expect(payload.text).toContain('Bataa');
+      expect(payload.text).toContain(
+        'https://tusch.test/verify-email?token=tok_abc',
+      );
+      expect(typeof payload.html).toBe('string');
+      expect(payload.html.length).toBeGreaterThan(0);
+      expect(payload.tags).toEqual([
+        { name: 'flow', value: 'email-verification' },
+      ]);
     });
 
-    it('sendPasswordReset throws "Not implemented yet"', async () => {
-      await expect(
-        enabledService().sendPasswordReset('a@b.com', 'tok'),
-      ).rejects.toThrow(/Not implemented yet/);
+    it('sendPasswordReset renders the template and sends with the reset URL', async () => {
+      mockSend.mockResolvedValue({ data: { id: 'mid_r' }, error: null });
+
+      await enabledService().sendPasswordReset(
+        'a@b.com',
+        'tok_xyz',
+        'Bataa',
+      );
+
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      const payload = mockSend.mock.calls[0][0];
+      expect(payload.subject).toBe('Нууц үг сэргээх');
+      expect(payload.text).toContain('Bataa');
+      expect(payload.text).toContain(
+        'https://tusch.test/reset-password?token=tok_xyz',
+      );
+      expect(payload.tags).toEqual([
+        { name: 'flow', value: 'password-reset' },
+      ]);
     });
 
     it('sendOfferNotification throws "Not implemented yet"', async () => {

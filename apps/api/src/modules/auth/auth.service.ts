@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -16,15 +17,37 @@ import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { AVATAR_UPLOAD_DIR } from '../../common/multer/constants';
 import { randomUUID, randomBytes, createHash } from 'crypto';
 import { FirebaseService } from '../firebase/firebase.service';
+import { EmailService } from '../email/email.service';
 import { normalizeMongolianPhone } from '../../common/utils/phone';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private firebaseService: FirebaseService,
+    private emailService: EmailService,
   ) {}
+
+  /**
+   * Try to send a transactional email but never surface a failure to the
+   * caller. Auth flows (register, forgot-password, resend) treat email as
+   * best-effort: the user must be able to complete the action even if
+   * SMTP is down.
+   */
+  private async sendBestEffort(
+    label: string,
+    fn: () => Promise<void>,
+  ): Promise<void> {
+    try {
+      await fn();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'unknown';
+      this.logger.error(`[${label}] email send failed: ${msg}`);
+    }
+  }
 
   /** Sign the standard Tusch access token used by all auth flows. */
   private signAccessToken(user: {
@@ -64,6 +87,14 @@ export class AuthService {
         acceptedTermsAt: new Date(),
       },
     });
+
+    await this.sendBestEffort('register/verify-email', () =>
+      this.emailService.sendEmailVerification(
+        user.email!,
+        rawToken,
+        user.firstName,
+      ),
+    );
 
     const response: { token?: string } = {};
     if (process.env.NODE_ENV !== 'production') {
@@ -250,8 +281,16 @@ export class AuthService {
       },
     });
 
-    // Return success with raw token only in development mode
-    // In production, the token would be sent via email instead
+    await this.sendBestEffort('forgot-password', () =>
+      this.emailService.sendPasswordReset(
+        user.email!,
+        rawToken,
+        user.firstName,
+      ),
+    );
+
+    // The dev-only raw token in the response stays for local testing,
+    // but production never sees it.
     const response: { success: boolean; token?: string } = { success: true };
     if (process.env.NODE_ENV !== 'production') {
       response.token = rawToken;
@@ -328,6 +367,10 @@ export class AuthService {
       throw new UnauthorizedException('Unauthorized');
     }
 
+    if (!user.email) {
+      throw new BadRequestException('Имэйл хаяг бүртгэгдээгүй байна');
+    }
+
     if (user.emailVerified) {
       throw new BadRequestException('Имэйл аль хэдийн баталгаажсан байна');
     }
@@ -342,6 +385,14 @@ export class AuthService {
         emailVerifyTokenExp: expiration,
       },
     });
+
+    await this.sendBestEffort('resend-verification', () =>
+      this.emailService.sendEmailVerification(
+        user.email!,
+        rawToken,
+        user.firstName,
+      ),
+    );
 
     const response: { message: string; token?: string } = {
       message: 'Баталгаажуулах холбоос дахин илгээгдлээ',

@@ -89,6 +89,13 @@
       "unlinkPasswordPrompt": "Enter your password to confirm",
       "unlinkUnavailable": "Cannot unlink \u2014 phone is the only sign-in method on this account",
       "notConfigured": "Phone sign-in is not available"
+    },
+    "banner": {
+      "unverifiedEmail": "Please verify your email",
+      "resend": "Resend",
+      "resending": "Sending…",
+      "resendSent": "Sent",
+      "resendError": "Failed to send"
     }
   },
   "listings": {

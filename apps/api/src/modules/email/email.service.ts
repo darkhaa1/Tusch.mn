@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { render } from '@react-email/render';
 import { Resend } from 'resend';
+import { VerifyEmailTemplate } from './templates/VerifyEmailTemplate';
+import { PasswordResetTemplate } from './templates/PasswordResetTemplate';
 
 export interface SendEmailParams {
   to: string | string[];
@@ -35,11 +38,15 @@ export class EmailService {
   private readonly resend: Resend | null;
   private readonly fromEmail: string | null;
   private readonly fromName: string;
+  private readonly frontendUrl: string;
 
   constructor(config: ConfigService) {
     const apiKey = config.get<string>('RESEND_API_KEY');
     this.fromEmail = config.get<string>('RESEND_FROM_EMAIL') ?? null;
     this.fromName = config.get<string>('RESEND_FROM_NAME') ?? 'Tusch';
+    this.frontendUrl = (
+      config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000'
+    ).replace(/\/$/, '');
 
     if (apiKey && this.fromEmail) {
       this.resend = new Resend(apiKey);
@@ -119,25 +126,63 @@ export class EmailService {
     }
   }
 
-  // ── High-level methods — bodies land in US-E2 ────────────────────────
-  // Signatures are frozen so callers (AuthService, NotificationsService,
-  // etc.) can wire them in without further churn.
+  // ── High-level methods ───────────────────────────────────────────────
 
+  /**
+   * Send the "verify your email" message. The raw verification token is
+   * embedded in the magic link; the API stores only its SHA-256 hash.
+   */
   async sendEmailVerification(
-    _to: string,
-    _token: string,
-    _locale: 'mn' | 'en' = 'mn',
+    to: string,
+    rawToken: string,
+    userName: string,
   ): Promise<void> {
-    throw new Error('Not implemented yet — US-E2');
+    const verificationUrl = `${this.frontendUrl}/verify-email?token=${encodeURIComponent(rawToken)}`;
+    const html = await render(
+      VerifyEmailTemplate({ userName, verificationUrl }),
+    );
+    const text =
+      `Сайн байна уу, ${userName || 'Хэрэглэгч'}!\n\n` +
+      `Tusch.mn-д тавтай морилно уу. Доорх холбоосыг хөтөч рүүгээ хуулж тавьж имэйлээ баталгаажуулна уу:\n` +
+      `${verificationUrl}\n\n` +
+      `Энэ холбоос 24 цагийн дотор дуусна.`;
+
+    await this.send({
+      to,
+      subject: 'Имэйлээ баталгаажуулна уу',
+      html,
+      text,
+      tags: [{ name: 'flow', value: 'email-verification' }],
+    });
   }
 
+  /**
+   * Send the "reset your password" message. Same hashing model as the
+   * verification flow — the raw token is in the link only.
+   */
   async sendPasswordReset(
-    _to: string,
-    _token: string,
-    _locale: 'mn' | 'en' = 'mn',
+    to: string,
+    rawToken: string,
+    userName: string,
   ): Promise<void> {
-    throw new Error('Not implemented yet — US-E2');
+    const resetUrl = `${this.frontendUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+    const html = await render(PasswordResetTemplate({ userName, resetUrl }));
+    const text =
+      `Сайн байна уу, ${userName || 'Хэрэглэгч'}!\n\n` +
+      `Та Tusch.mn-д нууц үг сэргээх хүсэлт илгээсэн байна. Доорх холбоосыг хөтөч рүүгээ хуулж тавьж шинэ нууц үг үүсгэнэ үү:\n` +
+      `${resetUrl}\n\n` +
+      `Энэ холбоос 1 цагийн дотор дуусна.`;
+
+    await this.send({
+      to,
+      subject: 'Нууц үг сэргээх',
+      html,
+      text,
+      tags: [{ name: 'flow', value: 'password-reset' }],
+    });
   }
+
+  // ── Stubs landing in US-E3 ───────────────────────────────────────────
 
   async sendOfferNotification(
     _to: string,

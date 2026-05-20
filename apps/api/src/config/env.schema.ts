@@ -23,6 +23,11 @@ const envSchema = z
     CORS_ORIGIN: z
       .string({ required_error: 'CORS_ORIGIN is required' }),
 
+    // Public URL of the web app — used to build links in transactional
+    // emails (verify-email, password-reset, etc.). Defaults to the local
+    // dev origin when omitted.
+    FRONTEND_URL: z.string().url().default('http://localhost:3000'),
+
     // Cookie domain (optional — used in Set-Cookie header)
     COOKIE_DOMAIN: z.string().optional(),
 

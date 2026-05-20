@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../database/prisma.service';
 import { FirebaseService } from '../firebase/firebase.service';
+import { EmailService } from '../email/email.service';
 import {
   createMockPrismaService,
   MockPrismaService,
@@ -23,6 +24,12 @@ const mockFirebaseService = {
   deleteFirebaseUser: jest.fn().mockResolvedValue(undefined),
 };
 
+const mockEmailService = {
+  isEnabled: jest.fn().mockReturnValue(false),
+  sendEmailVerification: jest.fn().mockResolvedValue(undefined),
+  sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+};
+
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: MockPrismaService;
@@ -36,6 +43,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: mockJwtService },
         { provide: FirebaseService, useValue: mockFirebaseService },
+        { provide: EmailService, useValue: mockEmailService },
       ],
     }).compile();
 
