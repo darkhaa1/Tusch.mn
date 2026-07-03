@@ -1,0 +1,19 @@
+digraph messagerie {
+  rankdir=TB;
+  bgcolor="transparent";
+  node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f4ede1", color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=9, color="#8a7f6f", fontcolor="#8a7f6f"];
+
+  s   [label="Expéditeur", fillcolor="#faf6ee"];
+  send[label="POST /messages\nJwtAuthGuard + EmailVerifiedGuard\nThrottleByUser MESSAGES_SEND (30/min)", fillcolor="#e8ddc8"];
+  svc [label="MessagesService.send()\nlié à un listingId"];
+  db  [label="Prisma → INSERT Message\n(readAt = null)", shape=cylinder, fillcolor="#e8ddc8"];
+  notif[label="Notification NEW_MESSAGE\n+ email (si préférence ON)"];
+  r   [label="Destinataire", fillcolor="#faf6ee"];
+  poll[label="Polling 30 s\nGET /messages/threads\nGET /messages/unread-count"];
+  read[label="PATCH /messages/:id/read\n(readAt = now)"];
+
+  s -> send -> svc -> db;
+  db -> notif -> r;
+  r -> poll -> read;
+}

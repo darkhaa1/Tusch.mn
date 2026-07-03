@@ -1,0 +1,19 @@
+digraph auth3 {
+  rankdir=LR;
+  bgcolor="transparent";
+  node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f4ede1", color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=9, color="#8a7f6f", fontcolor="#8a7f6f"];
+
+  email [label="Email + mot de passe\nPOST /auth/login\nbcrypt", fillcolor="#faf6ee"];
+  phone [label="Téléphone (Firebase)\nPOST /auth/phone/login\nID token vérifié", fillcolor="#faf6ee"];
+  oauth [label="OAuth Google\nNextAuth → POST /auth/oauth-login\nupsert sur email", fillcolor="#faf6ee"];
+
+  jwt   [label="JWT signé\n(sub, email, adminRole)", fillcolor="#e8ddc8"];
+  cookie[label="Cookie httpOnly\naccessToken · sameSite lax · 7 j", fillcolor="#5e6b3a", fontcolor="#f4ede1"];
+  api   [label="Toutes les routes protégées\n(JwtAuthGuard)"];
+
+  email -> jwt;
+  phone -> jwt;
+  oauth -> jwt;
+  jwt -> cookie -> api;
+}

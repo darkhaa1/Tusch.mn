@@ -1,0 +1,36 @@
+digraph erd {
+  rankdir=LR;
+  bgcolor="transparent";
+  splines=true;
+  node [fontname="Helvetica", fontsize=9, color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=8, color="#8a7f6f", fontcolor="#8a7f6f", arrowhead=crow, arrowtail=none, dir=both, arrowsize=0.8];
+
+  User [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>User</b></font></td></tr><tr><td align="left">id (cuid) PK</td></tr><tr><td align="left">email? UNIQUE</td></tr><tr><td align="left">phone? UNIQUE</td></tr><tr><td align="left">firebaseUid? UNIQUE</td></tr><tr><td align="left">role / adminRole</td></tr><tr><td align="left">status</td></tr><tr><td align="left">verificationStatus</td></tr><tr><td align="left">emailNotifications JSON</td></tr><tr><td align="left">deletedAt?</td></tr></table>>, shape=box, style="filled", fillcolor="#faf6ee"];
+  Listing [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>Listing</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">description</td></tr><tr><td align="left">price</td></tr><tr><td align="left">category?</td></tr><tr><td align="left">location?</td></tr><tr><td align="left">status</td></tr><tr><td align="left">searchVector tsvector</td></tr><tr><td align="left">userId FK</td></tr><tr><td align="left">deletedAt?</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  ListingImage [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>ListingImage</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">listingId FK</td></tr><tr><td align="left">url / thumbnailUrl</td></tr><tr><td align="left">position</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  Offer [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>Offer</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">listingId FK</td></tr><tr><td align="left">providerId FK</td></tr><tr><td align="left">price / message</td></tr><tr><td align="left">status (6)</td></tr><tr><td align="left">expiresAt</td></tr><tr><td align="left">completedAt?</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  Review [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>Review</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">offerId FK</td></tr><tr><td align="left">reviewerId FK</td></tr><tr><td align="left">targetUserId FK</td></tr><tr><td align="left">rating / comment</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  Message [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>Message</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">senderId FK</td></tr><tr><td align="left">recipientId FK</td></tr><tr><td align="left">listingId FK</td></tr><tr><td align="left">content</td></tr><tr><td align="left">readAt?</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  Notification [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>Notification</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">userId FK</td></tr><tr><td align="left">type (enum 10)</td></tr><tr><td align="left">title / body</td></tr><tr><td align="left">readAt?</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  Report [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>Report</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">reporterId FK</td></tr><tr><td align="left">targetType / targetId</td></tr><tr><td align="left">reason / status</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  ServiceZone [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>ServiceZone</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">userId FK</td></tr><tr><td align="left">city / district?</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  FavoriteListing [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>FavoriteListing</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">userId FK</td></tr><tr><td align="left">listingId FK</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  FavoriteProvider [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>FavoriteProvider</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">userId FK</td></tr><tr><td align="left">providerId FK</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+  AdminActionLog [label=<<table border="0" cellborder="0" cellspacing="0"><tr><td bgcolor="#a8542a"><font color="#f4ede1"><b>AdminActionLog</b></font></td></tr><tr><td align="left">id PK</td></tr><tr><td align="left">adminId FK</td></tr><tr><td align="left">action</td></tr><tr><td align="left">targetType / targetId</td></tr><tr><td align="left">meta JSON?</td></tr></table>>, shape=box, style="filled", fillcolor="#f4ede1"];
+
+  User -> Listing [label="1..n"];
+  Listing -> ListingImage [label="1..n"];
+  Listing -> Offer [label="1..n"];
+  User -> Offer [label="provider 1..n"];
+  Offer -> Review [label="1..n"];
+  User -> Review [label="given / received"];
+  User -> Message [label="sent / received"];
+  Listing -> Message [label="1..n"];
+  User -> Notification [label="1..n"];
+  User -> Report [label="1..n"];
+  User -> ServiceZone [label="1..n"];
+  User -> FavoriteListing [label="1..n"];
+  Listing -> FavoriteListing [label="1..n"];
+  User -> FavoriteProvider [label="1..n"];
+  User -> AdminActionLog [label="1..n"];
+}

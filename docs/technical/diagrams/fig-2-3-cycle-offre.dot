@@ -1,0 +1,23 @@
+digraph offre {
+  rankdir=LR;
+  bgcolor="transparent";
+  node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=9, color="#8a7f6f", fontcolor="#8a7f6f"];
+
+  start [label="Prestataire crée\nune offre", shape=circle, width=0.3, fixedsize=false, fillcolor="#1a1714", fontcolor="#f4ede1"];
+  pending  [label="PENDING\n(expiresAt = +7 j)", fillcolor="#f4ede1"];
+  accepted [label="ACCEPTED", fillcolor="#e8ddc8"];
+  rejected [label="REJECTED", fillcolor="#faf6ee"];
+  cancelled[label="CANCELLED", fillcolor="#faf6ee"];
+  expired  [label="EXPIRED", fillcolor="#faf6ee"];
+  completed[label="COMPLETED\n(completedAt)", fillcolor="#5e6b3a", fontcolor="#f4ede1"];
+  review   [label="Avis croisé\n(Review)", shape=box, style="rounded,filled", fillcolor="#a8542a", fontcolor="#f4ede1"];
+
+  start -> pending;
+  pending  -> accepted  [label="client accepte"];
+  pending  -> rejected  [label="client refuse"];
+  pending  -> cancelled [label="prestataire annule"];
+  pending  -> expired   [label="7 jours écoulés"];
+  accepted -> completed [label="client valide\nla prestation"];
+  completed -> review   [label="REVIEW_REQUESTED\n(2 parties)"];
+}
