@@ -2,6 +2,14 @@ import { readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { cleanDatabase, prisma } from './utils/e2e-database';
 
+// Importing @prisma/client (via e2e-database above) re-loads the repo-root
+// .env through Prisma's bundled dotenv, silently restoring the Resend
+// secrets that setup-e2e.ts deleted. Delete them again post-import so e2e
+// runs can never hit the real Resend API.
+delete process.env.RESEND_API_KEY;
+delete process.env.RESEND_FROM_EMAIL;
+delete process.env.RESEND_FROM_NAME;
+
 const UPLOAD_DIRS = [
   join(process.cwd(), 'uploads', 'avatars'),
   join(process.cwd(), 'uploads', 'listings'),

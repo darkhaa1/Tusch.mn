@@ -11,7 +11,8 @@
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1",
     "^@repo/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
-    "^@react-email/render$": "<rootDir>/utils/react-email-render-mock.ts"
+    "^@react-email/render$": "<rootDir>/utils/react-email-render-mock.ts",
+    "^resend$": "<rootDir>/utils/resend-mock.ts"
   },
   "transform": {
     "^.+\\.(t|j)sx?$": "ts-jest"
