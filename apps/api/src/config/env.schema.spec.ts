@@ -86,4 +86,52 @@ describe('validateEnv', () => {
       ).toThrow(/FIREBASE_PROJECT_ID|FIREBASE_CLIENT_EMAIL/);
     });
   });
+
+  describe('Resend vars', () => {
+    it('allows all Resend vars to be absent (feature disabled)', () => {
+      expect(() => validateEnv(validEnv)).not.toThrow();
+    });
+
+    it('defaults RESEND_FROM_NAME to "Tusch" when omitted', () => {
+      const result = validateEnv(validEnv);
+      expect(result.RESEND_FROM_NAME).toBe('Tusch');
+    });
+
+    it('accepts a complete Resend config', () => {
+      expect(() =>
+        validateEnv({
+          ...validEnv,
+          RESEND_API_KEY: 're_some_key',
+          RESEND_FROM_EMAIL: 'noreply@tusch.mn',
+          RESEND_FROM_NAME: 'Tusch',
+        }),
+      ).not.toThrow();
+    });
+
+    it('rejects an API key that does not start with "re_"', () => {
+      expect(() =>
+        validateEnv({
+          ...validEnv,
+          RESEND_API_KEY: 'bad_key',
+          RESEND_FROM_EMAIL: 'noreply@tusch.mn',
+        }),
+      ).toThrow(/RESEND_API_KEY/);
+    });
+
+    it('requires RESEND_FROM_EMAIL when RESEND_API_KEY is set', () => {
+      expect(() =>
+        validateEnv({ ...validEnv, RESEND_API_KEY: 're_some_key' }),
+      ).toThrow(/RESEND_FROM_EMAIL/);
+    });
+
+    it('rejects a malformed RESEND_FROM_EMAIL', () => {
+      expect(() =>
+        validateEnv({
+          ...validEnv,
+          RESEND_API_KEY: 're_some_key',
+          RESEND_FROM_EMAIL: 'not-an-email',
+        }),
+      ).toThrow(/RESEND_FROM_EMAIL/);
+    });
+  });
 });

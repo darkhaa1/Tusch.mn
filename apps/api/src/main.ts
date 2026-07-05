@@ -49,7 +49,7 @@ async function bootstrap() {
   app.use('/favicon.ico', (_req: Request, res: Response) => res.status(204).end());
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
   app.enableCors({
-    origin: process.env.CORS_ORIGIN,
+    origin: process.env.CORS_ORIGIN?.split(',') || [],
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

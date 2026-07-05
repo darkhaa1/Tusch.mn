@@ -5,9 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NotificationType, OfferStatus } from '@repo/shared';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
 const REVIEW_WINDOW_DAYS = 30;
@@ -17,7 +19,15 @@ export class ReviewsService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private emailService: EmailService,
+    private config: ConfigService,
   ) {}
+
+  private get frontendUrl(): string {
+    return (
+      this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000'
+    ).replace(/\/$/, '');
+  }
 
   private reviewInclude = {
     reviewer: {
@@ -102,6 +112,15 @@ export class ReviewsService {
       title: 'Vous avez recu un avis',
       body: reviewerName + ' vous a laisse un avis.',
     });
+
+    this.emailService.dispatchToUserId(targetUserId, (recipient) =>
+      this.emailService.sendNewReviewEmail(recipient, {
+        fromUserName: reviewerName,
+        rating: dto.rating,
+        commentSnippet: dto.comment,
+        profileUrl: `${this.frontendUrl}/u/${targetUserId}`,
+      }),
+    );
 
     return review;
   }

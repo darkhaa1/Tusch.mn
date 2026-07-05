@@ -5,10 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NotificationType, OfferStatus, UserRole } from '@repo/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import { renderTemplate } from '../notifications/notification-templates';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { CompleteOfferDto } from './dto/complete-offer.dto';
@@ -34,7 +36,19 @@ export class OffersService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private emailService: EmailService,
+    private config: ConfigService,
   ) {}
+
+  private get frontendUrl(): string {
+    return (
+      this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000'
+    ).replace(/\/$/, '');
+  }
+
+  private listingTitle(listing: { description?: string | null }): string {
+    return (listing.description ?? '').slice(0, 60) || 'Зар';
+  }
 
   async create(listingId: string, dto: CreateOfferDto, userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -94,6 +108,15 @@ export class OffersService {
       type: NotificationType.NEW_OFFER,
       ...renderTemplate('NEW_OFFER', { providerName }),
     });
+
+    this.emailService.dispatchToUserId(listing.userId, (recipient) =>
+      this.emailService.sendNewOfferEmail(recipient, {
+        providerName,
+        listingTitle: this.listingTitle(offer.listing),
+        offerAmount: offer.price,
+        offerUrl: `${this.frontendUrl}/listings/${listingId}?offer=${offer.id}`,
+      }),
+    );
 
     return offer;
   }
@@ -236,6 +259,28 @@ export class OffersService {
       }),
     ]);
 
+    const clientName = [
+      offer.listing.userId,
+    ].length > 0
+      ? null
+      : null;
+    void clientName;
+
+    this.emailService.dispatchToUserId(offer.providerId, async (recipient) => {
+      const client = await this.prisma.user.findUnique({
+        where: { id: offer.listing.userId },
+        select: { firstName: true, lastName: true },
+      });
+      const clientFullName =
+        [client?.firstName, client?.lastName].filter(Boolean).join(' ') ||
+        'Захиалагч';
+      return this.emailService.sendOfferAcceptedEmail(recipient, {
+        clientName: clientFullName,
+        listingTitle: this.listingTitle(offer.listing),
+        offerUrl: `${this.frontendUrl}/listings/${offer.listing.id}?offer=${id}`,
+      });
+    });
+
     return updatedOffer;
   }
 
@@ -265,6 +310,16 @@ export class OffersService {
       type: NotificationType.OFFER_REJECTED,
       ...renderTemplate('OFFER_REJECTED', {}),
     });
+
+    const rejectedListing = await this.prisma.listing.findUnique({
+      where: { id: offer.listingId },
+      select: { description: true },
+    });
+    this.emailService.dispatchToUserId(offer.providerId, (recipient) =>
+      this.emailService.sendOfferRejectedEmail(recipient, {
+        listingTitle: this.listingTitle(rejectedListing ?? { description: null }),
+      }),
+    );
 
     return updatedOffer;
   }
@@ -330,6 +385,22 @@ export class OffersService {
         }),
       }),
     ]);
+
+    const reviewUrl = `${this.frontendUrl}${reviewLink}`;
+    this.emailService.dispatchToUserId(clientId, (recipient) =>
+      this.emailService.sendOfferCompletedEmail(recipient, {
+        otherPartyName: providerName || 'Үйлчилгээ үзүүлэгч',
+        listingTitle: this.listingTitle(offer.listing),
+        reviewUrl,
+      }),
+    );
+    this.emailService.dispatchToUserId(offer.providerId, (recipient) =>
+      this.emailService.sendOfferCompletedEmail(recipient, {
+        otherPartyName: clientName || 'Захиалагч',
+        listingTitle: this.listingTitle(offer.listing),
+        reviewUrl,
+      }),
+    );
 
     return completedOffer;
   }

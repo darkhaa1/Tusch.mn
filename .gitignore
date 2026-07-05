@@ -11,13 +11,11 @@ build/
 out/
 .codex/
 
-# Environment files
+# Environment files — ignore everything starting with .env
 .env
-.env.local
-.env.*.local
-.env.production
-.env.staging
+.env.*
 # Do NOT ignore .env.example — it must be versioned
+!.env.example
 
 # Logs
 *.log
@@ -57,3 +55,10 @@ apps/web/test-results/
 
 # Misc
 *.pem
+
+# Claude Code worktrees (locaux, jamais versionnés)
+.claude/worktrees/
+
+# Documentation technique — sortie binaire (le .docx ne doit pas être versionné ;
+# les sources Markdown + diagrammes le sont)
+docs/technical/output/

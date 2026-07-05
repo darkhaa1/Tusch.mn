@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import AppShell from "@web/components/layout/AppShell";
 import { ProfileHeader } from "@web/features/profile/components/ProfileHeader";
 import { ProfileTabs } from "@web/features/profile/components/ProfileTabs";
+import { SecurityImprovementBanner } from "@web/features/profile/components/SecurityImprovementBanner";
 import { useCurrentUser } from "@web/lib/hooks/useApi";
 
 export default function ProfilePage() {
@@ -30,6 +31,7 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <div className="space-y-4">
+        <SecurityImprovementBanner />
         <ProfileHeader user={headerUser} />
         <Suspense fallback={null}>
           <ProfileTabs user={currentUser} />

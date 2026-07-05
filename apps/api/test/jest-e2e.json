@@ -1,5 +1,5 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": ["js", "json", "ts", "tsx"],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
@@ -10,9 +10,11 @@
   "testTimeout": 30000,
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/../src/$1",
-    "^@repo/shared(.*)$": "<rootDir>/../../../packages/shared/src$1"
+    "^@repo/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
+    "^@react-email/render$": "<rootDir>/utils/react-email-render-mock.ts",
+    "^resend$": "<rootDir>/utils/resend-mock.ts"
   },
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)sx?$": "ts-jest"
   }
 }

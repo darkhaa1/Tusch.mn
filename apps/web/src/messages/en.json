@@ -89,6 +89,55 @@
       "unlinkPasswordPrompt": "Enter your password to confirm",
       "unlinkUnavailable": "Cannot unlink \u2014 phone is the only sign-in method on this account",
       "notConfigured": "Phone sign-in is not available"
+    },
+    "banner": {
+      "unverifiedEmail": "Please verify your email",
+      "resend": "Resend",
+      "resending": "Sending…",
+      "resendSent": "Sent",
+      "resendError": "Failed to send"
+    }
+  },
+  "security": {
+    "title": "Security",
+    "email": {
+      "section": "Email",
+      "verified": "Verified",
+      "notVerified": "Not verified",
+      "notSet": "No email on file",
+      "resend": "Resend",
+      "resending": "Sending…",
+      "resendSent": "Sent",
+      "resendError": "Failed to send",
+      "unlinkOnlyAuthMethod": "This is your only sign-in method"
+    },
+    "phone": {
+      "section": "Phone"
+    },
+    "password": {
+      "section": "Password",
+      "setLabel": "•••••••• set",
+      "change": "Change password",
+      "create": "Create password",
+      "createHint": "Adding a password lets you sign in with email + password as a backup.",
+      "createNotice": "This flow is not available yet — coming soon.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "success": "Password updated",
+      "tooShort": "Password must be at least 8 characters",
+      "mismatch": "Passwords do not match",
+      "genericError": "Something went wrong — please try again"
+    },
+    "banner": {
+      "title": "Strengthen your account security",
+      "cta": "Go to settings",
+      "dismiss": "Dismiss",
+      "reasonVerifyEmail": "Please verify your email",
+      "reasonAddPhone": "Link a phone number for safer sign-in",
+      "reasonAddPassword": "Add a password as a backup sign-in method"
     }
   },
   "listings": {
@@ -366,6 +415,24 @@
       "reviewsTotal": "Reviews",
       "loadError": "Failed to load statistics."
     }
+  },
+  "settings": {
+    "notifications": {
+      "title": "Email notifications",
+      "description": "Choose when to be notified by email.",
+      "loading": "Loading…"
+    }
+  },
+  "notif": {
+    "newMessage": "New message",
+    "newOffer": "New offer",
+    "offerAccepted": "Offer accepted",
+    "offerRejected": "Offer declined",
+    "offerCompleted": "Service completed",
+    "newReview": "New review",
+    "listingFlagged": "Listing flagged",
+    "weeklyDigest": "Weekly digest",
+    "transactionalNotice": "Mandatory emails (verify, password reset) are always sent."
   },
   "errors": {
     "generic": "Something went wrong.",

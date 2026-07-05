@@ -1,0 +1,18 @@
+digraph authphone {
+  rankdir=TB;
+  bgcolor="transparent";
+  node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f4ede1", color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=9, color="#8a7f6f", fontcolor="#8a7f6f"];
+
+  u    [label="Utilisateur\nsaisit +976XXXXXXXX", fillcolor="#faf6ee"];
+  rc   [label="Firebase JS SDK\nreCAPTCHA + envoi SMS"];
+  otp  [label="Saisie du code OTP\n→ Firebase ID token"];
+  post [label="POST /auth/phone/login\nThrottle 10/min", fillcolor="#e8ddc8"];
+  verify[label="FirebaseService.verifyIdToken()\n(Firebase Admin SDK)"];
+  match[label="Normalise E.164 (+976)\nMatch firebaseUid / phone\nsinon création", shape=diamond, fillcolor="#e8ddc8"];
+  jwt  [label="Signe JWT → cookie httpOnly\naccessToken (7 j)", fillcolor="#5e6b3a", fontcolor="#f4ede1"];
+  audit[label="AuditService.log(PHONE_LOGIN)"];
+
+  u -> rc -> otp -> post -> verify -> match -> jwt -> audit;
+  verify -> u [label="503 si Firebase non configuré", style=dashed, constraint=false];
+}

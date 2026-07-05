@@ -40,6 +40,13 @@ import { GetProvidersQueryDto } from './dto/get-providers-query.dto';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
 import { GetUser } from '../../common/decorators/get-user.decorator';
 import { AuthenticatedRequest } from '../../common/types/request.types';
+import { UpdateEmailPreferencesDto } from './dto/update-email-preferences.dto';
+import {
+  DEFAULT_EMAIL_NOTIFICATION_PREFERENCES,
+  type EmailNotificationKey,
+  mergeEmailPreferences,
+} from '@repo/shared';
+import { PrismaService } from '../../database/prisma.service';
 
 @Controller('users')
 @ApiTags('users')
@@ -48,7 +55,127 @@ export class UserController {
     private readonly userService: UserService,
     private readonly verificationService: UserVerificationService,
     private readonly zonesService: UserServiceZonesService,
+    private readonly prisma: PrismaService,
   ) {}
+
+  @Get('me/auth-methods')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get the auth methods configured on the current user',
+    description:
+      'Returns email, phone, hasPassword + canUnlinkEmail / canUnlinkPhone ' +
+      'guard flags. Values are only returned for the authenticated user — ' +
+      'callers cannot inspect other users (anti-IDOR).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Auth methods snapshot',
+    schema: {
+      example: {
+        email: { value: 'darkhaa@example.com', verified: true },
+        phone: { value: '+97699112233', verified: true },
+        hasPassword: true,
+        canUnlinkEmail: true,
+        canUnlinkPhone: true,
+      },
+    },
+  })
+  async getAuthMethods(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.id!;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        email: true,
+        emailVerified: true,
+        phone: true,
+        phoneVerified: true,
+        password: true,
+      },
+    });
+    if (!user) throw new BadRequestException('User not found');
+
+    const hasEmail = !!user.email;
+    const hasPhone = !!user.phone;
+    const hasPassword = !!user.password;
+    // Count distinct auth methods. Email alone (without password) is not a
+    // login method — it gates verification but cannot be used to sign in.
+    const methodCount =
+      (hasEmail && hasPassword ? 1 : 0) + (hasPhone ? 1 : 0);
+
+    return {
+      email: hasEmail
+        ? { value: user.email, verified: user.emailVerified }
+        : null,
+      phone: hasPhone
+        ? { value: user.phone, verified: user.phoneVerified }
+        : null,
+      hasPassword,
+      canUnlinkEmail: hasEmail && methodCount > 1,
+      canUnlinkPhone: hasPhone && methodCount > 1,
+    };
+  }
+
+  @Get('me/email-preferences')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get email notification preferences' })
+  @ApiResponse({
+    status: 200,
+    description: 'Preferences (with defaults applied for missing keys)',
+  })
+  async getEmailPreferences(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.id!;
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailNotifications: true },
+    });
+    const stored =
+      user?.emailNotifications &&
+      typeof user.emailNotifications === 'object' &&
+      !Array.isArray(user.emailNotifications)
+        ? (user.emailNotifications as Record<string, unknown>)
+        : {};
+    const merged = {
+      ...DEFAULT_EMAIL_NOTIFICATION_PREFERENCES,
+    } as Record<EmailNotificationKey, boolean>;
+    for (const key of Object.keys(merged) as EmailNotificationKey[]) {
+      const value = stored[key];
+      if (typeof value === 'boolean') merged[key] = value;
+    }
+    return { preferences: merged };
+  }
+
+  @Patch('me/email-preferences')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update email notification preferences (partial)' })
+  @ApiBody({ type: UpdateEmailPreferencesDto })
+  @ApiResponse({ status: 200, description: 'Updated preferences' })
+  async updateEmailPreferences(
+    @Req() req: AuthenticatedRequest,
+    @Body() patch: UpdateEmailPreferencesDto,
+  ) {
+    const userId = req.user.id!;
+    const current = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailNotifications: true },
+    });
+    const merged = mergeEmailPreferences(
+      current?.emailNotifications ?? {},
+      patch,
+    );
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { emailNotifications: merged as object },
+    });
+    const fullView = {
+      ...DEFAULT_EMAIL_NOTIFICATION_PREFERENCES,
+      ...merged,
+    };
+    return { preferences: fullView };
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get()
