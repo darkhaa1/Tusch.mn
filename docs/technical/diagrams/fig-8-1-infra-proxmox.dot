@@ -1,0 +1,34 @@
+digraph infra {
+  rankdir=TB;
+  bgcolor="transparent";
+  node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f4ede1", color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=9, color="#8a7f6f", fontcolor="#8a7f6f"];
+
+  net  [label="Internet", shape=ellipse, fillcolor="#faf6ee"];
+  rfw  [label="Hetzner Robot Firewall\n(filtrage en amont)", fillcolor="#e8ddc8"];
+  ts   [label="Tailscale\nadmin 100.68.52.59", fillcolor="#e8ddc8"];
+
+  subgraph cluster_host {
+    label="Serveur dédié Hetzner AX41-NVMe  ·  Proxmox VE 8  ·  Falkenstein"; style="rounded,filled"; fillcolor="#faf6ee"; color="#d9cfba"; fontname="Helvetica"; fontcolor="#1a1714";
+
+    vmbr0[label="vmbr0 (WAN)\nIP publique", shape=box, fillcolor="#f4ede1"];
+    vmbr1[label="vmbr1 (LAN privé 10.10.0.0/24)\nNAT MASQUERADE + DNAT 80/443", shape=box, fillcolor="#f4ede1"];
+
+    subgraph cluster_ct101 {
+      label="CT 101 · LXC"; style="rounded,filled"; fillcolor="#e8ddc8"; color="#d9cfba"; fontcolor="#1a1714";
+      caddy[label="tusch-caddy-01\n10.10.0.20\nCaddy + Let's Encrypt", fillcolor="#f4ede1"];
+    }
+    subgraph cluster_ct200 {
+      label="CT 200 · LXC"; style="rounded,filled"; fillcolor="#e8ddc8"; color="#d9cfba"; fontcolor="#1a1714";
+      app[label="tusch-app-01 · 10.10.0.30\nNode 22 · Next.js + NestJS\nPostgreSQL 15", fillcolor="#f4ede1"];
+    }
+    lvm[label="Stockage LVM-thin\n(snapshots LXC)", shape=cylinder, fillcolor="#f4ede1"];
+  }
+
+  net -> rfw -> vmbr0;
+  vmbr0 -> vmbr1 [label="DNAT 80/443 → 10.10.0.20"];
+  vmbr1 -> caddy;
+  caddy -> app [label="reverse proxy interne"];
+  app -> lvm [style=dashed, label="snapshots"];
+  ts -> vmbr0 [label="accès admin chiffré", style=dashed, constraint=false];
+}

@@ -1,0 +1,20 @@
+digraph publication {
+  rankdir=TB;
+  bgcolor="transparent";
+  node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f4ede1", color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=9, color="#8a7f6f", fontcolor="#8a7f6f"];
+
+  u   [label="Utilisateur\n(rôle PROVIDER / BOTH)", fillcolor="#faf6ee"];
+  form[label="Formulaire /listings/create\n(validation Zod côté client)"];
+  g   [label="JwtAuthGuard + EmailVerifiedGuard\nThrottle LISTINGS_CREATE (10/min)", fillcolor="#e8ddc8"];
+  svc [label="ListingsService.create()\nValidation DTO class-validator"];
+  db  [label="Prisma → INSERT Listing\n(status=ACTIVE)", shape=cylinder, fillcolor="#e8ddc8"];
+  img [label="POST /listings/:id/images\nMulter + sharp (thumbnail)\nThrottle UPLOAD"];
+  fs  [label="Stockage /uploads\n+ ListingImage (position)", shape=cylinder, fillcolor="#e8ddc8"];
+  ts  [label="Trigger SQL → searchVector\n(tsvector full-text)", fillcolor="#e8ddc8"];
+
+  u -> form -> g -> svc -> db;
+  db -> ts [label="à l'écriture"];
+  svc -> img [label="puis upload images", style=dashed];
+  img -> fs;
+}

@@ -1,0 +1,43 @@
+digraph architecture {
+  rankdir=LR;
+  bgcolor="transparent";
+  node [fontname="Helvetica", fontsize=11, color="#d9cfba", fontcolor="#1a1714"];
+  edge [fontname="Helvetica", fontsize=9, color="#8a7f6f", fontcolor="#8a7f6f"];
+
+  subgraph cluster_client {
+    label="Client"; style="rounded,filled"; fillcolor="#faf6ee"; color="#d9cfba"; fontname="Helvetica"; fontcolor="#1a1714";
+    nav [label="Navigateur\n(mobile-first)", shape=box, style="rounded,filled", fillcolor="#f4ede1"];
+  }
+
+  subgraph cluster_edge {
+    label="Cloudflare"; style="rounded,filled"; fillcolor="#faf6ee"; color="#d9cfba"; fontname="Helvetica"; fontcolor="#1a1714";
+    cf [label="DNS + Proxy\n(mode Proxied)\nTLS edge / WAF", shape=box, style="rounded,filled", fillcolor="#f4ede1"];
+  }
+
+  subgraph cluster_caddy {
+    label="CT 101  ·  10.10.0.20"; style="rounded,filled"; fillcolor="#faf6ee"; color="#d9cfba"; fontname="Helvetica"; fontcolor="#1a1714";
+    caddy [label="Caddy\nreverse proxy HTTPS\nLet's Encrypt", shape=box, style="rounded,filled", fillcolor="#e8ddc8"];
+  }
+
+  subgraph cluster_app {
+    label="CT 200  tusch-app-01  ·  10.10.0.30"; style="rounded,filled"; fillcolor="#faf6ee"; color="#d9cfba"; fontname="Helvetica"; fontcolor="#1a1714";
+    web [label="Next.js 16\n(SSR / App Router)\n:3000", shape=box, style="rounded,filled", fillcolor="#f4ede1"];
+    api [label="NestJS 11\nAPI REST\n:3310", shape=box, style="rounded,filled", fillcolor="#f4ede1"];
+    pg  [label="PostgreSQL 15", shape=cylinder, style="filled", fillcolor="#e8ddc8"];
+  }
+
+  subgraph cluster_ext {
+    label="Services externes"; style="rounded,filled"; fillcolor="#faf6ee"; color="#d9cfba"; fontname="Helvetica"; fontcolor="#1a1714";
+    fb [label="Firebase Auth\n(SMS / Phone)", shape=box, style="rounded,filled", fillcolor="#f4ede1"];
+    rs [label="Resend\n(email transactionnel)", shape=box, style="rounded,filled", fillcolor="#f4ede1"];
+  }
+
+  nav   -> cf    [label="HTTPS"];
+  cf    -> caddy [label="443 (origin)"];
+  caddy -> web   [label="tusch.mn"];
+  caddy -> api   [label="api.tusch.mn"];
+  web   -> api   [label="REST / cookies httpOnly"];
+  api   -> pg    [label="Prisma"];
+  api   -> fb    [label="verifyIdToken", style=dashed];
+  api   -> rs    [label="send()", style=dashed];
+}
